@@ -1,0 +1,57 @@
+# Usage
+
+## Install and run with uv
+
+```bash
+uv venv
+uv run mdkv --help
+```
+
+## Create a document
+
+```bash
+uv run mdkv init --title "Doc" --author "You" --out doc.mdkv
+uv run mdkv info doc.mdkv
+uv run mdkv validate doc.mdkv
+uv run mdkv export doc.mdkv > out.md
+uv run mdkv export --html doc.mdkv > out.html
+```
+
+## CLI utilities
+
+```bash
+# list tracks as JSON
+uv run mdkv list-tracks doc.mdkv
+
+# add a commentary track
+uv run mdkv add-track doc.mdkv --id notes --type commentary --lang "" --content "Note"
+
+# export selected track types as Markdown
+uv run mdkv export-tracks doc.mdkv --types primary,commentary
+```
+
+## Python API
+
+```python
+from datetime import datetime
+from mdkv.model import MDKVDocument, Track
+from mdkv.io import save_mdkv, load_mdkv
+from mdkv.validate import validate_document
+
+Doc = MDKVDocument(title="T", authors=["A"], created=datetime.utcnow())
+Doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Title\n\nText"))
+Doc.list_languages()  # ["en"]
+
+save_mdkv(Doc, "doc.mdkv")
+loaded = load_mdkv("doc.mdkv")
+validate_document(loaded)
+
+# access and remove
+track = loaded.get_track("primary")
+removed = loaded.remove_track("primary")
+```
+
+## Logging & workflows
+
+- Configure logging with `mdkv.common.configure_logging()`.
+- See `examples/logged_workflow.py` for an end-to-end script that logs steps and writes outputs to `workflow_out/`.

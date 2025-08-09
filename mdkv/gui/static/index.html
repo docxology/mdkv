@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MDKV GUI</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="toolbar">
+      <input id="openPath" placeholder="Path to .mdkv" />
+      <button id="btnOpen">Open</button>
+      <button id="btnSave">Save</button>
+      <button id="btnValidate">Validate</button>
+    </div>
+    <div class="panes">
+      <textarea id="left" placeholder="MDKV combined markdown (editable)"></textarea>
+      <div class="preview">
+        <div class="preview-toolbar">
+          <label>Track:</label>
+          <select id="trackSelect"></select>
+        </div>
+        <iframe id="right"></iframe>
+      </div>
+    </div>
+    <div class="status" id="status"></div>
+    <script src="/static/main.js"></script>
+  </body>
+  </html>
+
+
