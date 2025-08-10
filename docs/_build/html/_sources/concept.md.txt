@@ -75,6 +75,16 @@ uv run mdkv export --html doc.mdkv > out.html
 - Governance: explicit `revision`/metadata support validation and audits
  - Examples: see `library/definitions/` for small, bilingual, large multilingual, code, and revisions samples
 
+## Why this matters
+
+Traditional single-file Markdown breaks down when the same document needs alternate languages, audience notes, or channel-specific extracts. MDKV keeps everything together but decoupled:
+
+- Authoring: teams can work in parallel on `primary`, `translation`, and `commentary` tracks.
+- Publishing: choose which tracks to include at render time without editing content.
+- Review: `revision` tracks and manifest metadata encode change intent explicitly.
+
+This design balances portability (plain Markdown) with structure (manifest + tracks), enabling predictable automation and human-friendly workflows.
+
 ## Interop
 
 - Container: standard ZIP; no custom filesystem requirements

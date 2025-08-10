@@ -218,6 +218,29 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
 
         return MarkdownIt().render(to_markdown(state.doc))
 
+    @app.post("/api/render/tracks_html", response_class=HTMLResponse)
+    def render_tracks_html(payload: dict) -> str:
+        if not state.doc:
+            raise HTTPException(400, "no document loaded")
+        from markdown_it import MarkdownIt
+        # Accept a list of track_ids; if missing, render all; if empty list, render nothing
+        ids = payload.get("track_ids")
+        if ids is None:
+            return MarkdownIt().render(to_markdown(state.doc))
+        if not isinstance(ids, list):
+            raise HTTPException(422, "track_ids must be a list")
+        if len(ids) == 0:
+            return MarkdownIt().render("<!-- MDKV: empty selection -->")
+        # Compose markdown from subset in document order
+        parts: list[str] = [f"<!-- MDKV: {state.doc.title} -->"]
+        idset = set(str(x) for x in ids)
+        for t in state.doc.tracks.values():
+            if t.track_id not in idset:
+                continue
+            header = f"\n\n<!-- track:{t.track_id} type:{t.track_type} lang:{t.language} -->\n\n"
+            parts.append(header + t.content)
+        return MarkdownIt().render("".join(parts))
+
     @app.post("/api/validate")
     def validate() -> dict:
         if not state.doc:

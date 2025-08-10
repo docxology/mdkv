@@ -1,5 +1,8 @@
 let primaryId = null;
-let currentTrackId = null;
+let selectedTrackIds = new Set();
+// 'all' means render all tracks regardless of selectedTrackIds
+// 'custom' means render exactly selectedTrackIds (can be empty → render nothing)
+let selectionMode = 'all';
 
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts));
@@ -24,8 +27,8 @@ async function refresh() {
     document.getElementById('left').value = md.markdown;
   } catch {}
   try {
-    await populateTrackSelect();
-    await renderSelectedTrack();
+    await populateTrackFilters();
+    await renderSelectedTracks();
   } catch {}
 }
 
@@ -71,53 +74,91 @@ const liveUpdate = debounce(async () => {
     for (const s of sections) {
       await api('/api/track', { method: 'POST', body: JSON.stringify({ id: s.id, content: s.content }) });
     }
-    await renderSelectedTrack();
+    await renderSelectedTracks();
     setStatus('Live updated');
   } catch (e) {
     // ignore during typing
   }
 }, 300);
 
-async function populateTrackSelect() {
+async function populateTrackFilters() {
   try {
-    const select = document.getElementById('trackSelect');
+    const container = document.getElementById('trackFilters');
     const tracks = await api('/api/tracks');
-    // Build options
-    select.innerHTML = '';
-    // All option first
-    const allOpt = document.createElement('option');
-    allOpt.value = '__ALL__';
-    allOpt.textContent = 'All tracks';
-    select.appendChild(allOpt);
-    let firstId = null;
+    container.innerHTML = '';
+    // Add an "All" checkbox for quick toggle
+    const allWrapper = document.createElement('label');
+    const allCb = document.createElement('input');
+    allCb.type = 'checkbox';
+    allCb.id = 'track_all';
+    allCb.checked = selectionMode === 'all';
+    allWrapper.appendChild(allCb);
+    allWrapper.appendChild(document.createTextNode('All'));
+    container.appendChild(allWrapper);
+
+    const updateAllChecked = () => {
+      allCb.checked = selectionMode === 'all';
+    };
+
+    allCb.addEventListener('change', async () => {
+      if (allCb.checked) {
+        selectionMode = 'all';
+        selectedTrackIds.clear();
+        // ensure all individual boxes are checked visually
+        for (const input of container.querySelectorAll('input[type="checkbox"][data-track-id]')) {
+          input.checked = true;
+        }
+        updateAllChecked();
+        await renderSelectedTracks();
+      } else {
+        // switching off All puts us in custom mode, keep current individual checks
+        selectionMode = 'custom';
+        // recompute selectedTrackIds from current boxes
+        selectedTrackIds = new Set(
+          Array.from(container.querySelectorAll('input[type="checkbox"][data-track-id]:checked'))
+            .map(cb => cb.dataset.trackId)
+        );
+        updateAllChecked();
+        await renderSelectedTracks();
+      }
+    });
+
     for (const t of tracks) {
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      const label = t.type === 'primary' && t.language ? 'English (primary)' : `${t.type}${t.language ? ' (' + t.language + ')' : ''}`;
-      opt.textContent = label;
-      select.appendChild(opt);
-      if (!firstId) firstId = t.id;
-    }
-    if (!currentTrackId) currentTrackId = firstId;
-    select.value = currentTrackId || '__ALL__';
-    // Ensure change handler is bound once
-    if (!select.dataset.bound) {
-      select.addEventListener('change', async () => {
-        await renderSelectedTrack();
-        // Left pane remains full combined markdown; do not alter it on selection.
+      const label = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = t.id;
+      cb.dataset.trackId = t.id;
+      cb.checked = selectionMode === 'all' ? true : selectedTrackIds.has(t.id);
+      label.appendChild(cb);
+      const txt = t.type === 'primary' && t.language ? 'English (primary)' : `${t.type}${t.language ? ' (' + t.language + ')' : ''}`;
+      label.appendChild(document.createTextNode(' ' + txt));
+      container.appendChild(label);
+      cb.addEventListener('change', async () => {
+        // any manual change implies custom mode
+        selectionMode = 'custom';
+        if (cb.checked) {
+          selectedTrackIds.add(t.id);
+        } else {
+          selectedTrackIds.delete(t.id);
+        }
+        updateAllChecked();
+        await renderSelectedTracks();
       });
-      select.dataset.bound = '1';
     }
   } catch (e) {
     // no doc yet
   }
 }
 
-async function renderSelectedTrack() {
-  const select = document.getElementById('trackSelect');
-  currentTrackId = select.value || currentTrackId;
-  if (!currentTrackId) return;
-  const html = currentTrackId === '__ALL__' ? await api('/api/render/all_html') : await api(`/api/render/track_html?track_id=${encodeURIComponent(currentTrackId)}`);
+async function renderSelectedTracks() {
+  if (selectionMode === 'all') {
+    const html = await api('/api/render/all_html');
+    document.getElementById('right').srcdoc = html;
+    return;
+  }
+  const ids = [...selectedTrackIds];
+  const html = await api('/api/render/tracks_html', { method: 'POST', body: JSON.stringify({ track_ids: ids }) });
   document.getElementById('right').srcdoc = html;
 }
 
@@ -140,16 +181,9 @@ function parseCombinedTracks(text) {
 }
 
 async function setEditorFromSelection() {
-  const select = document.getElementById('trackSelect');
-  const tid = select.value || currentTrackId;
-  if (!tid) return;
-  if (tid === '__ALL__') {
-    const md = await api('/api/render/markdown');
-    document.getElementById('left').value = md.markdown;
-  } else {
-    const t = await api(`/api/track/${encodeURIComponent(tid)}`);
-    document.getElementById('left').value = t.content || '';
-  }
+  // Editor always holds combined markdown for all tracks
+  const md = await api('/api/render/markdown');
+  document.getElementById('left').value = md.markdown;
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -165,8 +199,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnSave').addEventListener('click', save);
   document.getElementById('btnValidate').addEventListener('click', validate);
   document.getElementById('left').addEventListener('input', liveUpdate);
-  await populateTrackSelect();
-  await renderSelectedTrack();
+  await populateTrackFilters();
+  await renderSelectedTracks();
   // initial populate if a document is preloaded
   refresh();
 });

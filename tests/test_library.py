@@ -17,7 +17,7 @@ def test_library_build_and_validate(tmp_path: Path):
         report.append((p.name, set(t.track_type for t in doc.tracks.values()), doc.list_languages()))
     # names and features
     names = {n for n, _, _ in report}
-    assert {"small_en.mdkv", "large_multilingual.mdkv", "bilingual_es.mdkv", "code_snippets.mdkv", "revisions.mdkv"}.issuperset(names)
+    assert {"small_en.mdkv", "large_multilingual.mdkv", "bilingual_es.mdkv", "code_snippets.mdkv", "revisions.mdkv", "active_inference.mdkv"}.issuperset(names)
     # bilingual_es includes translation and commentary/media tracks
     bi = next((r for r in report if r[0] == "bilingual_es.mdkv"), None)
     assert bi and "translation" in bi[1] and "commentary" in bi[1] and "media_ref" in bi[1]

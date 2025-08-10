@@ -55,6 +55,10 @@ uv run mdkv export --html doc.mdkv > primary.html
 uv run mdkv gui --path doc.mdkv
 ```
 
+GUI notes:
+- The preview supports multi-select via checkboxes (All or any subset).
+- Backend also exposes `POST /api/render/tracks_html` to render a specific subset by `track_ids`.
+
 ## Metadata
 
 ```bash

@@ -83,3 +83,11 @@ uv run mdkv gui --path doc.mdkv
 # or with the convenience launcher
 python3 run_gui.py --path doc.mdkv
 ```
+
+In the GUI preview toolbar, use checkboxes to toggle which tracks are shown:
+- All: renders all tracks.
+- Custom: uncheck All and select any combination of tracks; the preview updates live. Selecting none shows an empty preview.
+
+The editor pane always holds the full combined Markdown (round-trippable).
+
+To record a short demo (optional): see `examples/record_gui_demo.py`. If you have `ffmpeg` and ImageMagick, you can convert the recorded `.webm` to `.gif` for embedding.

@@ -110,6 +110,16 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <li><p>Examples: see <code class="docutils literal notranslate"><span class="pre">library/definitions/</span></code> for small, bilingual, large multilingual, code, and revisions samples</p></li>
 </ul>
 </section>
+<section id="why-this-matters">
+<h2>Why this matters<a class="headerlink" href="#why-this-matters" title="Link to this heading">¶</a></h2>
+<p>Traditional single-file Markdown breaks down when the same document needs alternate languages, audience notes, or channel-specific extracts. MDKV keeps everything together but decoupled:</p>
+<ul class="simple">
+<li><p>Authoring: teams can work in parallel on <code class="docutils literal notranslate"><span class="pre">primary</span></code>, <code class="docutils literal notranslate"><span class="pre">translation</span></code>, and <code class="docutils literal notranslate"><span class="pre">commentary</span></code> tracks.</p></li>
+<li><p>Publishing: choose which tracks to include at render time without editing content.</p></li>
+<li><p>Review: <code class="docutils literal notranslate"><span class="pre">revision</span></code> tracks and manifest metadata encode change intent explicitly.</p></li>
+</ul>
+<p>This design balances portability (plain Markdown) with structure (manifest + tracks), enabling predictable automation and human-friendly workflows.</p>
+</section>
 <section id="interop">
 <h2>Interop<a class="headerlink" href="#interop" title="Link to this heading">¶</a></h2>
 <ul class="simple">
@@ -153,6 +163,7 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <li class="toctree-l2"><a class="reference internal" href="#file-structure">File structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#core-functions">Core functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#implications">Implications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-this-matters">Why this matters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#interop">Interop</a></li>
 </ul>
 </li>
