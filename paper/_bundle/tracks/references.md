@@ -1,0 +1,6 @@
+- Matroska (MKV) overview: https://en.wikipedia.org/wiki/Matroska
+- CommonMark specification: https://commonmark.org
+- YAML 1.2 specification: https://yaml.org/spec/
+- ZIP Appnote (PKWARE): https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
+- markdown‑it project: https://github.com/markdown-it/markdown-it
+- Astral uv project: https://github.com/astral-sh/uv
