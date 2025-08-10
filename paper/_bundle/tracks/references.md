@@ -1,6 +1,6 @@
-- Matroska (MKV) overview: https://en.wikipedia.org/wiki/Matroska
-- CommonMark specification: https://commonmark.org
-- YAML 1.2 specification: https://yaml.org/spec/
-- ZIP Appnote (PKWARE): https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
-- markdown‑it project: https://github.com/markdown-it/markdown-it
-- Astral uv project: https://github.com/astral-sh/uv
+- Matroska (MKV) overview: [Wikipedia](https://en.wikipedia.org/wiki/Matroska)
+- CommonMark specification: [commonmark.org](https://commonmark.org)
+- YAML 1.2 specification: [yaml.org/spec](https://yaml.org/spec/)
+- ZIP Appnote (PKWARE): [PKWARE Appnote](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+- markdown‑it‑py project: [executablebooks/markdown-it-py](https://github.com/executablebooks/markdown-it-py)
+- Astral uv project: [astral-sh/uv](https://github.com/astral-sh/uv)
