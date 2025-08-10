@@ -13,6 +13,7 @@ from mdkv.core.validate import validate_document
 from mdkv.core.errors import ValidationError
 from mdkv.services.export import to_html, to_markdown
 from mdkv.storage import load_mdkv, save_mdkv
+from mdkv.library import build_all_examples
 
 
 class MDKVState:
@@ -42,12 +43,39 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             "tracks": list(state.doc.tracks) if state.doc else [],
         }
 
+    @app.get("/api/library")
+    def list_library() -> dict:
+        """Return available example `.mdkv` files under `library/definitions`.
+
+        If built files are missing under `library/_built`, they are generated.
+        """
+        repo_root = Path(__file__).resolve().parents[2]
+        defs = repo_root / "library" / "definitions"
+        out_dir = repo_root / "library" / "_built"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        built_paths = list(out_dir.glob("*.mdkv"))
+        if not built_paths:
+            try:
+                build_all_examples(defs, out_dir)
+                built_paths = list(out_dir.glob("*.mdkv"))
+            except Exception as e:
+                raise HTTPException(500, f"failed to build examples: {e}")
+        return {
+            "files": [
+                {"name": p.name, "path": str(p)}
+                for p in sorted(built_paths)
+            ]
+        }
+
     @app.post("/api/open")
     def open_file(payload: dict) -> dict:
         p = Path(payload.get("path", "")).expanduser()
         if not p.exists():
             raise HTTPException(404, "file not found")
-        doc = load_mdkv(p)
+        try:
+            doc = load_mdkv(p)
+        except Exception as e:  # surface container/manifest issues as 400
+            raise HTTPException(400, f"failed to open document: {e}")
         state.path = p
         state.doc = doc
         return {"ok": True, "title": doc.title, "tracks": list(doc.tracks)}
@@ -120,16 +148,21 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
     def upsert_track(payload: dict) -> dict:
         if not state.doc:
             raise HTTPException(400, "no document loaded")
+        if "id" not in payload or not str(payload["id"]).strip():
+            raise HTTPException(422, "missing track id")
         track_id = payload["id"]
         t = state.doc.get_track(track_id)
         if t is None:
-            t = Track(
-                track_id=track_id,
-                track_type=payload.get("type", "commentary"),
-                language=payload.get("language"),
-                path=f"tracks/{track_id}.md",
-                content=payload.get("content", ""),
-            )
+            try:
+                t = Track(
+                    track_id=track_id,
+                    track_type=payload.get("type", "commentary"),
+                    language=payload.get("language"),
+                    path=f"tracks/{track_id}.md",
+                    content=payload.get("content", ""),
+                )
+            except ValueError as e:
+                raise HTTPException(400, str(e))
             state.doc.add_track(t)
         else:
             t.track_type = payload.get("type", t.track_type)

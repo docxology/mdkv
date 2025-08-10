@@ -35,7 +35,7 @@ uv run mdkv export --html doc.mdkv > out.html
 uv run sphinx-build -b html docs docs/_build/html
 ```
 
-See `docs/concept.md` for the format concept, `docs/cli.md` for CLI details, and `examples/logged_workflow.py` for a logged, end-to-end workflow that writes outputs to `workflow_out/`.
+See `docs/concept.md` for the format concept, `docs/format.md` for the container/manifest schema, `docs/architecture.md` for package layout, `docs/cli.md` for CLI details, and `examples/logged_workflow.py` for a logged, end-to-end workflow that writes outputs to `workflow_out/`.
 
 ## Development
 
@@ -50,7 +50,7 @@ See `docs/concept.md` for the format concept, `docs/cli.md` for CLI details, and
 - `mdkv.services`: search and export
 - `mdkv.cli`: CLI entry point (`mdkv`)
 
-License: MIT
+License: Apache-2.0. See the `LICENSE` file.
 
 ## Concept overview
 
@@ -58,6 +58,16 @@ License: MIT
 - Tracks: `primary`, `translation`, `commentary`, `code`, `reference`, `media_ref`, `revision`
 - Validation: requires `title`, `authors`, and a `primary` track
 - Export: Markdown (all or filtered tracks) and HTML (primary)
+
+Export files example:
+
+```python
+from pathlib import Path
+from mdkv.export import export_to_files
+
+# write selected tracks as individual .md files
+export_to_files(loaded, Path("out_tracks"), include_track_types=["primary", "commentary"])
+```
 
 Example layout:
 

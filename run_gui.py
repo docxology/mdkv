@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import importlib
 import subprocess
 import sys
@@ -52,13 +51,16 @@ def main() -> None:
     # ensure deps
     ensure_module("fastapi")
     ensure_module("uvicorn")
+    # used by HTML rendering endpoints
+    ensure_module("markdown_it", pip_name="markdown-it-py")
 
     # import after ensuring install
-    from mdkv.gui import run as run_gui
+    # import ensures package is available; actual server is started via -c command
+    import mdkv.gui as _gui  # noqa: F401
     from mdkv.demo import write_demo_mdkv
 
     # start server in a background process using current interpreter
-    env = dict(**os.environ)
+    # inherit environment
     open_path = args.path
     if not open_path:
         demo_dir = Path("demo")
@@ -76,7 +78,9 @@ def main() -> None:
     ]
     proc = subprocess.Popen(server_cmd)  # noqa: S603
 
-    url = f"http://{args.host}:{args.port}/"
+    # when binding to 0.0.0.0/::, open the loopback address in browser
+    browse_host = "127.0.0.1" if args.host in {"0.0.0.0", "::"} else args.host
+    url = f"http://{browse_host}:{args.port}/"
     if wait_for(url, timeout_seconds=15):
         webbrowser.open(url)
     else:

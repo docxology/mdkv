@@ -1,0 +1,34 @@
+title: Bilingual With Annotations
+authors: ["Lib"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Bilingual EN
+
+      Hello, this is the English version. See the Spanish translation.
+
+  - id: translation-es
+    type: translation
+    language: es
+    content: |
+      # Bilingüe ES
+
+      Hola, esta es la versión en español.
+
+  - id: annotations
+    type: commentary
+    content: |
+      # Editorial Notes
+      - Please proofread
+      - Confirm terminology
+
+  - id: media
+    type: media_ref
+    content: |
+      # Media
+      - https://example.org/image.png
+      - https://example.org/audio.mp3
+
+

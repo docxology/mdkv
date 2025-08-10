@@ -15,6 +15,9 @@ async function refresh() {
   } catch (e) {
     // no document loaded yet
   }
+  try {
+    await populateLibrarySelect();
+  } catch {}
   // Always load the combined markdown (all tracks) into the editor
   try {
     const md = await api('/api/render/markdown');
@@ -34,11 +37,10 @@ async function loadPath(p) {
 
 async function save() {
   const content = document.getElementById('left').value;
-  // naive: push entire combined markdown by splitting to primary track only for demo
-  // In a full implementation, we'd parse markers per track. Here we set primary.
-  if (primaryId) {
-    // language not critical for update; server keeps previous if omitted
-    await api('/api/track', { method: 'POST', body: JSON.stringify({ id: primaryId, type: 'primary', content }) });
+  // Always treat the left pane as the full combined markdown.
+  const sections = parseCombinedTracks(content);
+  for (const s of sections) {
+    await api('/api/track', { method: 'POST', body: JSON.stringify({ id: s.id, content: s.content }) });
   }
   await api('/api/save', { method: 'POST' });
   setStatus('Saved');
@@ -100,7 +102,10 @@ async function populateTrackSelect() {
     select.value = currentTrackId || '__ALL__';
     // Ensure change handler is bound once
     if (!select.dataset.bound) {
-      select.addEventListener('change', renderSelectedTrack);
+      select.addEventListener('change', async () => {
+        await renderSelectedTrack();
+        // Left pane remains full combined markdown; do not alter it on selection.
+      });
       select.dataset.bound = '1';
     }
   } catch (e) {
@@ -152,6 +157,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const p = document.getElementById('openPath').value;
     if (p) await loadPath(p);
   });
+  const libSelect = document.getElementById('libSelect');
+  libSelect.addEventListener('change', async () => {
+    const p = libSelect.value;
+    if (p) await loadPath(p);
+  });
   document.getElementById('btnSave').addEventListener('click', save);
   document.getElementById('btnValidate').addEventListener('click', validate);
   document.getElementById('left').addEventListener('input', liveUpdate);
@@ -160,5 +170,27 @@ window.addEventListener('DOMContentLoaded', async () => {
   // initial populate if a document is preloaded
   refresh();
 });
+
+async function populateLibrarySelect() {
+  try {
+    const r = await api('/api/library');
+    const select = document.getElementById('libSelect');
+    const existing = select.value;
+    select.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select from library…';
+    select.appendChild(placeholder);
+    for (const f of r.files) {
+      const opt = document.createElement('option');
+      opt.value = f.path;
+      opt.textContent = f.name;
+      select.appendChild(opt);
+    }
+    if (existing) select.value = existing;
+  } catch (e) {
+    // ignore if server lacks examples
+  }
+}
 
 

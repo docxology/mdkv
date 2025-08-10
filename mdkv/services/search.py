@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+"""Search utilities for MDKV documents.
+
+Provides a simple regex-based search across tracks with optional filtering by
+track type and language.
+"""
+
 import re
 from dataclasses import dataclass
 from typing import List, Iterable, Optional
@@ -22,6 +28,12 @@ def search_document(
     track_types: Optional[Iterable[str]] = None,
     languages: Optional[Iterable[str]] = None,
 ) -> List[SearchMatch]:
+    """Search `doc` for `pattern`.
+
+    - `track_types`: optional subset filter (e.g. `["primary", "commentary"]`)
+    - `languages`: optional subset filter (e.g. `["en", "es"]`)
+    Returns a list of `SearchMatch` with small surrounding extracts.
+    """
     regex = re.compile(pattern, flags)
     results: List[SearchMatch] = []
     allowed_types = set(track_types) if track_types else None

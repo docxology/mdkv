@@ -37,6 +37,7 @@ from datetime import datetime
 from mdkv.model import MDKVDocument, Track
 from mdkv.io import save_mdkv, load_mdkv
 from mdkv.validate import validate_document
+from mdkv.export import export_to_files
 
 Doc = MDKVDocument(title="T", authors=["A"], created=datetime.utcnow())
 Doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Title\n\nText"))
@@ -49,7 +50,15 @@ validate_document(loaded)
 # access and remove
 track = loaded.get_track("primary")
 removed = loaded.remove_track("primary")
+
+# write each track to its own .md file
+from pathlib import Path
+export_to_files(loaded, Path("out_tracks"), include_track_types=["primary", "commentary"])
 ```
+
+### From YAML definitions
+
+The `library/definitions/` directory contains YAML examples you can convert to `.mdkv` by writing a short loader that maps entries to `Track` objects and then calling `save_mdkv()`.
 
 ## Logging & workflows
 

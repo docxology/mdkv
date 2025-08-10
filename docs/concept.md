@@ -73,6 +73,7 @@ uv run mdkv export --html doc.mdkv > out.html
 - Layering: `commentary`/`reference` add context without touching primary
 - Composability: selective export builds views for audiences and channels
 - Governance: explicit `revision`/metadata support validation and audits
+ - Examples: see `library/definitions/` for small, bilingual, large multilingual, code, and revisions samples
 
 ## Interop
 

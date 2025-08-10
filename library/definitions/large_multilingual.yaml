@@ -1,0 +1,36 @@
+title: Large Multilingual Doc
+authors: ["Lib", "Team"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Large EN
+
+      This is a larger, multi-section English primary document.
+
+      - Feature A
+      - Feature B
+
+  - id: translation-fr
+    type: translation
+    language: fr
+    content: |
+      # Grand FR
+
+      Ceci est un plus grand document (français).
+
+  - id: notes
+    type: commentary
+    content: |
+      # Notes
+      - Draft v1
+      - Add diagrams
+
+  - id: refs
+    type: reference
+    content: |
+      - https://example.org/spec
+      - https://commonmark.org
+
+

@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="API Reference" href="api.html" />
-    <link rel="prev" title="MDKV concept" href="concept.html" />
+    <link rel="prev" title="MDKV format" href="format.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -59,6 +59,10 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 
 <span class="c1"># update track content</span>
 uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>update-track<span class="w"> </span>doc.mdkv<span class="w"> </span>--id<span class="w"> </span>commentary<span class="w"> </span>--content<span class="w"> </span><span class="s2">&quot;Updated note&quot;</span>
+
+<span class="c1"># rename id and then export a subset</span>
+uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>rename-track<span class="w"> </span>doc.mdkv<span class="w"> </span>--old-id<span class="w"> </span>commentary<span class="w"> </span>--new-id<span class="w"> </span>notes
+uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>export-tracks<span class="w"> </span>doc.mdkv<span class="w"> </span>--types<span class="w"> </span>primary,commentary<span class="w"> </span>&gt;<span class="w"> </span>exported.md
 </pre></div>
 </div>
 </section>
@@ -117,6 +121,8 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="concept.html">MDKV concept</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="format.html">MDKV format</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CLI Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#init-info-validate">Init, Info, Validate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#track-operations">Track Operations</a></li>
@@ -126,13 +132,14 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="concept.html" title="previous chapter">MDKV concept</a></li>
+      <li>Previous: <a href="format.html" title="previous chapter">MDKV format</a></li>
       <li>Next: <a href="api.html" title="next chapter">API Reference</a></li>
   </ul></li>
 </ul>

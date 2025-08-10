@@ -1,0 +1,24 @@
+title: Revisions History Doc
+authors: ["Lib"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Revisions Primary
+
+      Initial content.
+
+  - id: rev-1
+    type: revision
+    content: |
+      # Revision 1
+      - Fixed typos
+
+  - id: rev-2
+    type: revision
+    content: |
+      # Revision 2
+      - Expanded section on usage
+
+

@@ -51,7 +51,21 @@ track = loaded.get_track("primary")
 removed = loaded.remove_track("primary")
 ```
 
+### From YAML definitions
+
+The `library/definitions/` directory contains YAML examples you can convert to `.mdkv` by writing a short loader that maps entries to `Track` objects and then calling `save_mdkv()`.
+
 ## Logging & workflows
 
 - Configure logging with `mdkv.common.configure_logging()`.
 - See `examples/logged_workflow.py` for an end-to-end script that logs steps and writes outputs to `workflow_out/`.
+
+## GUI
+
+Launch the local web GUI (two-pane editor/preview):
+
+```bash
+uv run mdkv gui --path doc.mdkv
+# or with the convenience launcher
+python3 run_gui.py --path doc.mdkv
+```

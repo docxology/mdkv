@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-"""MDKV storage layer: read/write `.mdkv` containers.
+"""Persistence layer for MDKV containers.
 
-The `.mdkv` format is a ZIP archive containing a `manifest.yaml` plus Markdown
-files under the `tracks/` directory. This module serializes an
-`MDKVDocument` to disk and reconstructs it from a manifest and track files.
+A `.mdkv` file is a ZIP archive containing a `manifest.yaml` and a `tracks/`
+directory with UTF-8 Markdown files. This module serializes/deserializes
+`MDKVDocument` instances to/from that container format.
 """
 
 import zipfile
@@ -21,10 +21,10 @@ MANIFEST_NAME = "manifest.yaml"
 
 
 def _manifest_from_doc(doc: MDKVDocument) -> Dict[str, Any]:
-    """Build a manifest dict from an `MDKVDocument`.
+    """Create a manifest dictionary suitable for YAML emission.
 
-    The manifest records metadata and a table of track descriptors; track content
-    itself is kept in separate files inside the ZIP under `tracks/`.
+    The manifest lists metadata and an index of tracks with paths. Track content
+    is stored separately as files within the ZIP.
     """
     return {
         "title": doc.title,
@@ -45,10 +45,7 @@ def _manifest_from_doc(doc: MDKVDocument) -> Dict[str, Any]:
 
 
 def _doc_from_manifest(manifest: Dict[str, Any], file_reader: zipfile.ZipFile) -> MDKVDocument:
-    """Construct an `MDKVDocument` from a manifest + ZIP file reader.
-
-    Expects `manifest.yaml` schema as produced by `_manifest_from_doc`.
-    """
+    """Reconstruct a document from a parsed manifest and the ZIP handle."""
     doc = MDKVDocument(
         title=manifest["title"],
         authors=list(manifest.get("authors", [])),
@@ -72,9 +69,9 @@ def _doc_from_manifest(manifest: Dict[str, Any], file_reader: zipfile.ZipFile) -
 
 
 def save_mdkv(doc: MDKVDocument, output_path: Path) -> None:
-    """Write `doc` to a `.mdkv` file at `output_path`.
+    """Write `doc` to `output_path` as a `.mdkv` ZIP container.
 
-    Writes each track content at its `Track.path` and a `manifest.yaml` file.
+    Overwrites existing files. Creates parent directories as needed.
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -86,7 +83,10 @@ def save_mdkv(doc: MDKVDocument, output_path: Path) -> None:
 
 
 def load_mdkv(input_path: Path) -> MDKVDocument:
-    """Read a `.mdkv` file from `input_path` and return an `MDKVDocument`."""
+    """Load a `.mdkv` document from `input_path`.
+
+    Raises `KeyError`/`yaml.YAMLError` if the manifest is missing/invalid.
+    """
     with zipfile.ZipFile(Path(input_path), mode="r") as zf:
         with zf.open(MANIFEST_NAME) as f:
             manifest = yaml.safe_load(f.read().decode("utf-8"))

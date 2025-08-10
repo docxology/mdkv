@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Validation helpers for MDKV documents."""
+
 from dataclasses import dataclass
 from typing import List
 
@@ -13,6 +15,10 @@ class ValidationIssue:
 
 
 def validate_document(doc) -> List[ValidationIssue]:
+    """Validate required fields and presence of a primary track.
+
+    Returns a list of issues and raises `ValidationError` if any ERRORs exist.
+    """
     issues: List[ValidationIssue] = []
     if not doc.title:
         issues.append(ValidationIssue("ERROR", "title is required"))

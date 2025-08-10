@@ -1,0 +1,27 @@
+title: Code Snippets Doc
+authors: ["Lib"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Code Snippets
+
+      ```python
+      def add(a, b):
+          return a + b
+      ```
+
+  - id: code-js
+    type: code
+    content: |
+      ```js
+      function add(a, b) { return a + b }
+      ```
+
+  - id: refs
+    type: reference
+    content: |
+      - https://developer.mozilla.org/
+
+

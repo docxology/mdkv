@@ -1,0 +1,40 @@
+# Cursor Project Rules for MDKV
+
+## Principles
+- Favor test-driven, modular design. Keep orchestrators thin; put logic in modules.
+- Docs should be concise, demonstrative, and kept in sync with code (docstrings + Sphinx).
+- Prefer real data paths in examples; avoid mocks in documented flows.
+
+## Code Style
+- Python 3.9+; explicit, readable names (no 1–2 char vars).
+- Guard clauses over deep nesting; handle errors/edges early.
+- Keep comments minimal; document “why”.
+- Public API documented via docstrings; update `docs/api.rst` if surfacing new modules.
+
+## Package Structure
+- `mdkv.core`: data model + validation
+- `mdkv.storage`: persist/load `.mdkv` (ZIP + YAML manifest)
+- `mdkv.services`: search/export utilities
+- `mdkv.cli`: CLI entrypoints
+
+## Track Types
+`primary`, `translation`, `commentary`, `code`, `reference`, `media_ref`, `revision`.
+
+## Documentation
+- Pages: concept, format, architecture, usage, CLI, API, license.
+- Build: `uv run sphinx-build -b html docs docs/_build/html`.
+- Keep README pointers: concept, format, architecture, CLI, examples.
+
+## Public API
+- Re-exported in `mdkv/__init__.py`: `MDKVDocument`, `Track`, `allowed_track_types`,
+  `ValidationError`, `validate_document`, `ValidationIssue`, `search_document`,
+  `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`, `save_mdkv`, `load_mdkv`.
+- If adding API, update `__all__`, docstrings, and docs.
+
+## Examples & Definitions
+- `library/definitions/` are canonical YAML samples; utility script `examples/load_from_yaml.py` converts them to `.mdkv`.
+
+## CI Guidance (future)
+- Validate docs build + run tests on each change.
+
+

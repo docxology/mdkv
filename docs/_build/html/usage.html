@@ -85,6 +85,10 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <span class="n">removed</span> <span class="o">=</span> <span class="n">loaded</span><span class="o">.</span><span class="n">remove_track</span><span class="p">(</span><span class="s2">&quot;primary&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<section id="from-yaml-definitions">
+<h3>From YAML definitions<a class="headerlink" href="#from-yaml-definitions" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">library/definitions/</span></code> directory contains YAML examples you can convert to <code class="docutils literal notranslate"><span class="pre">.mdkv</span></code> by writing a short loader that maps entries to <code class="docutils literal notranslate"><span class="pre">Track</span></code> objects and then calling <code class="docutils literal notranslate"><span class="pre">save_mdkv()</span></code>.</p>
+</section>
 </section>
 <section id="logging-workflows">
 <h2>Logging &amp; workflows<a class="headerlink" href="#logging-workflows" title="Link to this heading">¶</a></h2>
@@ -92,6 +96,15 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <li><p>Configure logging with <code class="docutils literal notranslate"><span class="pre">mdkv.common.configure_logging()</span></code>.</p></li>
 <li><p>See <code class="docutils literal notranslate"><span class="pre">examples/logged_workflow.py</span></code> for an end-to-end script that logs steps and writes outputs to <code class="docutils literal notranslate"><span class="pre">workflow_out/</span></code>.</p></li>
 </ul>
+</section>
+<section id="gui">
+<h2>GUI<a class="headerlink" href="#gui" title="Link to this heading">¶</a></h2>
+<p>Launch the local web GUI (two-pane editor/preview):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>gui<span class="w"> </span>--path<span class="w"> </span>doc.mdkv
+<span class="c1"># or with the convenience launcher</span>
+python3<span class="w"> </span>run_gui.py<span class="w"> </span>--path<span class="w"> </span>doc.mdkv
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -129,11 +142,15 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <li class="toctree-l2"><a class="reference internal" href="#cli-utilities">CLI utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#python-api">Python API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logging-workflows">Logging &amp; workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gui">GUI</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="concept.html">MDKV concept</a></li>
+<li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="format.html">MDKV format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">CLI Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
 <div class="relations">

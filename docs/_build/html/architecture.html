@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Architecture &#8212; MDKV  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MDKV format" href="format.html" />
+    <link rel="prev" title="MDKV concept" href="concept.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h1>
+<p>MDKV is split into clear layers:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mdkv.core</span></code>: domain model and validation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mdkv.storage</span></code>: read/write <code class="docutils literal notranslate"><span class="pre">.mdkv</span></code> containers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mdkv.services</span></code>: search and export utilities</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mdkv.cli</span></code>: user-facing command line interface</p></li>
+</ul>
+<section id="package-responsibilities">
+<h2>Package responsibilities<a class="headerlink" href="#package-responsibilities" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">core.model</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Track</span></code>, <code class="docutils literal notranslate"><span class="pre">MDKVDocument</span></code>, helper methods, allowed track types</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">core.validate</span></code>:</p>
+<ul>
+<li><p>minimal validation (required metadata + primary track)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage.io</span></code>:</p>
+<ul>
+<li><p>ZIP packaging, YAML manifest read/write</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">services.search</span></code>:</p>
+<ul>
+<li><p>regex search with track type/language filters</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">services.export</span></code>:</p>
+<ul>
+<li><p>multi-track Markdown export and primary-HTML rendering</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cli.main</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">init</span></code>, <code class="docutils literal notranslate"><span class="pre">info</span></code>, <code class="docutils literal notranslate"><span class="pre">validate</span></code>, track ops, search, export</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="data-flow">
+<h2>Data flow<a class="headerlink" href="#data-flow" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>CLI/API creates an <code class="docutils literal notranslate"><span class="pre">MDKVDocument</span></code>, adds tracks</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage.save_mdkv()</span></code> writes a ZIP with manifest and <code class="docutils literal notranslate"><span class="pre">tracks/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage.load_mdkv()</span></code> reconstructs the document</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">services.search/export</span></code> operate on the in-memory document</p></li>
+</ol>
+</section>
+<section id="extension-points">
+<h2>Extension points<a class="headerlink" href="#extension-points" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Additional track types with domain-specific meaning</p></li>
+<li><p>Alternate exporters (PDF/EPUB) built on <code class="docutils literal notranslate"><span class="pre">to_markdown()</span></code></p></li>
+<li><p>Richer validation rules in <code class="docutils literal notranslate"><span class="pre">core.validate</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">MDKV</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concept.html">MDKV concept</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#package-responsibilities">Package responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-flow">Data flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extension-points">Extension points</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="format.html">MDKV format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="concept.html" title="previous chapter">MDKV concept</a></li>
+      <li>Next: <a href="format.html" title="next chapter">MDKV format</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, MDKV Authors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/architecture.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

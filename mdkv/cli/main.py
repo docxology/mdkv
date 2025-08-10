@@ -13,9 +13,11 @@ from mdkv.core.errors import ValidationError
 from mdkv.services.export import to_markdown, to_html
 from mdkv.services.search import search_document
 from mdkv.gui import run as run_gui
+from mdkv import __version__, __license__
 
 
 @click.group()
+@click.version_option(version=__version__, prog_name="mdkv")
 def main() -> None:
     """MDKV command-line interface."""
 
@@ -170,4 +172,12 @@ def gui_cmd(path: Path | None, host: str, port: int) -> None:
     """Launch local MDKV GUI web app."""
     run_gui(host=host, port=port, path=str(path) if path else None)
 
+
+@main.command("license")
+def license_cmd() -> None:
+    """Show license information."""
+    click.echo(
+        "MDKV is licensed under the Apache License, Version 2.0 (Apache-2.0).\n"
+        "See the LICENSE file in the repository or distribution for full text."
+    )
 

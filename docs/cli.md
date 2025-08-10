@@ -4,6 +4,16 @@
 uv run mdkv --help
 ```
 
+## Version and License
+
+```bash
+# show version
+uv run mdkv --version
+
+# show license info
+uv run mdkv license
+```
+
 ## Init, Info, Validate
 
 ```bash
@@ -26,6 +36,10 @@ uv run mdkv rename-track doc.mdkv --old-id notes --new-id commentary
 
 # update track content
 uv run mdkv update-track doc.mdkv --id commentary --content "Updated note"
+
+# rename id and then export a subset
+uv run mdkv rename-track doc.mdkv --old-id commentary --new-id notes
+uv run mdkv export-tracks doc.mdkv --types primary,commentary > exported.md
 ```
 
 ## Export

@@ -1,0 +1,12 @@
+title: Small English Doc
+authors: ["Lib"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Small EN
+
+      Hello from the small example.
+
+
