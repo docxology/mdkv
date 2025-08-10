@@ -30,14 +30,16 @@ uv run mdkv add-track doc.mdkv --id notes --type commentary --lang "" --content 
 uv run mdkv export-tracks doc.mdkv --types primary,commentary
 ```
 
-## Python API
+## Python API (public surface)
 
 ```python
 from datetime import datetime
-from mdkv.model import MDKVDocument, Track
-from mdkv.io import save_mdkv, load_mdkv
-from mdkv.validate import validate_document
-from mdkv.export import export_to_files
+from mdkv import (
+  MDKVDocument, Track,
+  save_mdkv, load_mdkv,
+  validate_document,
+  export_to_files,
+)
 
 Doc = MDKVDocument(title="T", authors=["A"], created=datetime.utcnow())
 Doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Title\n\nText"))
@@ -58,7 +60,14 @@ export_to_files(loaded, Path("out_tracks"), include_track_types=["primary", "com
 
 ### From YAML definitions
 
-The `library/definitions/` directory contains YAML examples you can convert to `.mdkv` by writing a short loader that maps entries to `Track` objects and then calling `save_mdkv()`.
+The `library/definitions/` directory contains YAML examples you can convert to `.mdkv` using the included helper:
+
+```python
+from pathlib import Path
+from mdkv.library import build_all_examples
+
+build_all_examples(Path('library/definitions'), Path('library/_built'))
+```
 
 ## Logging & workflows
 

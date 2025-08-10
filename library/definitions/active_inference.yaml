@@ -1,0 +1,599 @@
+title: Active Inference and the Free Energy Principle — A Multilingual Compendium
+authors: ["Research Group", "MDKV Examples"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Active Inference and the Free Energy Principle
+
+      Active Inference (AIF) is a unifying framework for understanding perception,
+      action, and learning as Bayesian inference under a generative model. Central
+      to AIF is the Free Energy Principle (FEP): systems that persist in changing
+      environments must resist a natural tendency to disorder by minimizing a
+      variational bound—“free energy”—on surprisal.
+
+      ## Key Intuitions
+
+      - Organisms embody generative models that predict sensory input.
+      - Perception updates beliefs to reduce prediction errors (via variational inference).
+      - Action changes the world to make sensations conform to predictions (closed-loop control).
+      - Learning updates model parameters and structure to improve predictions over time.
+
+      ## Precision and Attention
+
+      The influence of a prediction error depends on its precision (inverse variance).
+      Precision weighting is often identified with attentional gain control: higher
+      precision on a channel increases the impact of its errors on belief updates,
+      shaping perception and action selection.
+
+      ## Variational Free Energy (Sketch)
+
+      Let observations be \(o\), latent states \(s\), parameters \(\theta\), and a
+      generative model \(p_\theta(o, s) = p_\theta(o \mid s) p_\theta(s)\). Using an
+      approximate posterior \(q(s)\), the variational free energy is
+
+      \[\begin{aligned}
+      \mathcal{F}(q, \theta; o)
+      &= \mathrm{KL}\big(q(s) \;\Vert\; p_\theta(s \mid o)\big) - \log p_\theta(o) \\
+      &= \mathbb{E}_{q(s)}[\log q(s) - \log p_\theta(o, s)] \;\; \ge 0.
+      \end{aligned}\]
+
+      Minimizing \(\mathcal{F}\) with respect to \(q\) performs approximate
+      inference; minimizing with respect to \(\theta\) performs learning.
+
+      ## Predictive Coding Perspective
+
+      Predictive coding casts cortical processing as hierarchical prediction error
+      minimization. Higher levels generate predictions; lower levels report
+      residuals. Message passing implements gradient flows on \(\mathcal{F}\).
+
+      ## Actions as Inference
+
+      In AIF, action selects policies that minimize expected free energy (EFE),
+      balancing accuracy (fit to expected data) and complexity (divergence from
+      prior preferences). This yields epistemic actions (seek information) and
+      pragmatic actions (seek preferred outcomes).
+
+      ## Planning as Inference (High-Level)
+
+      - Define policies \(\pi\) over control sequences.
+      - Evaluate EFE: \(G(\pi) = \mathbb{E}_{q(o, s \mid \pi)}[ -\log p(o \mid s) + \mathrm{KL}(q(s\mid o,\pi) \Vert p(s)) ]\).
+      - Select policies with minimal \(G(\pi)\).
+
+      ## Worked Example (Toy)
+
+      Below is a minimal Python-like sketch for computing a simple variational
+      update and simulating policy selection over a small discrete state space.
+
+      ```python
+      import numpy as np
+
+      def softmax(x):
+          z = x - np.max(x)
+          e = np.exp(z)
+          return e / e.sum()
+
+      def expected_free_energy(Qs, A, C):
+          # Qs: posterior over states; A: likelihood p(o|s); C: log-preferences over o
+          Po = A @ Qs  # predictive distribution over observations
+          risk = -(Po * C).sum()  # negative expected utility
+          ambiguity = -(Po * np.log(Po + 1e-16)).sum()  # entropy proxy
+          return risk + 0.1 * ambiguity
+
+      # Tiny example
+      A = np.array([[0.8, 0.2],   # p(o=0|s=0), p(o=0|s=1)
+                    [0.2, 0.8]])  # p(o=1|s=0), p(o=1|s=1)
+      C = np.array([0.0, 2.0])    # prefer o=1
+      Qs = np.array([0.5, 0.5])   # prior
+
+      G = expected_free_energy(Qs, A, C)
+      policy_prob = softmax(-np.array([G, G + 0.5]))
+      print(G, policy_prob)
+      ```
+
+      ## Applications
+
+      - Sensorimotor control and robotics (goal-directed behavior with uncertainty)
+      - Computational psychiatry (modelling priors and precision)
+      - Adaptive experimentation (active learning)
+
+      ## Further Reading
+
+      See the `refs` track for a curated list.
+
+      ## Hierarchical Generative Models
+
+      Hierarchies support abstraction and temporal depth. Higher levels encode
+      slower variables and priors that contextualize lower-level dynamics. Belief
+      updates proceed via message passing: predictions down, errors up.
+
+      ## Continuous Control (Sketch)
+
+      In continuous settings, generalized coordinates and Gaussian assumptions give
+      closed-form updates resembling Kalman filtering, with control laws emerging
+      from gradients of expected free energy under policy priors.
+
+  - id: translation-es
+    type: translation
+    language: es
+    content: |
+      # Inferencia Activa y el Principio de Energía Libre
+
+      La Inferencia Activa (AIF) es un marco unificador para entender la
+      percepción, la acción y el aprendizaje como inferencia bayesiana bajo un
+      modelo generativo. El Principio de Energía Libre (FEP) sostiene que los
+      sistemas que persisten deben minimizar una cota variacional—“energía
+      libre”—sobre la sorpresa.
+
+      ## Ideas Clave
+
+      - Los organismos incorporan modelos generativos que predicen la entrada sensorial.
+      - La percepción actualiza creencias para reducir errores de predicción.
+      - La acción cambia el mundo para alinear sensaciones con predicciones.
+      - El aprendizaje ajusta parámetros y estructura del modelo.
+
+      ## Precisión y Atención
+
+      La influencia de un error de predicción depende de su precisión (inversa de
+      la varianza). El ponderado por precisión se asocia al control atencional:
+      mayor precisión implica mayor impacto del error en las actualizaciones de
+      creencias y en la selección de acciones.
+
+      ## Energía Libre Variacional (Esbozo)
+
+      Sea \(o\) la observación, \(s\) los estados latentes y \(\theta\) los
+      parámetros, con \(p_\theta(o,s)=p_\theta(o\mid s)p_\theta(s)\) y un
+      posterior aproximado \(q(s)\):
+
+      \[\mathcal{F}(q,\theta;o)=\mathbb{E}_{q(s)}[\log q(s)-\log p_\theta(o,s)]\ge 0.\]
+
+      Minimizar \(\mathcal{F}\) en \(q\) realiza inferencia; en \(\theta\), aprendizaje.
+
+      ## Codificación Predictiva
+
+      La corteza se concibe como una jerarquía que minimiza errores de predicción.
+      Niveles altos generan predicciones; niveles bajos reportan residuos. El
+      paso de mensajes implementa flujos de gradiente sobre \(\mathcal{F}\).
+
+      ## La Acción como Inferencia
+
+      La acción selecciona políticas que minimizan la energía libre esperada (EFE),
+      equilibrando exactitud y complejidad. Surgen acciones epistémicas (informativas)
+      y pragmáticas (orientadas a metas).
+
+      ## Planificación como Inferencia (Alta Nivel)
+
+      - Definir políticas \(\pi\) sobre secuencias de control.
+      - Evaluar \(G(\pi)\) como EFE bajo \(q(o,s\mid\pi)\).
+      - Elegir políticas con \(G(\pi)\) mínimo.
+
+      ## Ejemplo de Trabajo (Juguete)
+
+      Un pequeño ejemplo en Python aparece en la pista principal; el código es
+      idéntico y los comentarios en español pueden agregarse según necesidad.
+
+      ## Aplicaciones
+
+      - Control sensorimotor y robótica
+      - Psiquiatría computacional
+      - Aprendizaje activo
+
+      ## Lecturas Adicionales
+
+      Consulte la pista `refs`.
+
+      ## Modelos Generativos Jerárquicos
+
+      Las jerarquías apoyan abstracción y profundidad temporal; los niveles altos
+      contextualizan dinámicas de niveles bajos mediante priors.
+
+      ## Control Continuo (Esbozo)
+
+      En continuo, las actualizaciones se asemejan a Kalman; las leyes de control
+      emergen de gradientes de EFE.
+
+  - id: translation-fr
+    type: translation
+    language: fr
+    content: |
+      # Inférence Active et Principe d'Énergie Libre
+
+      L'inférence active (AIF) unifie perception, action et apprentissage comme
+      inférence bayésienne sous un modèle génératif. Le principe d'énergie libre
+      (FEP) stipule que les systèmes persistants minimisent une borne
+      variationnelle — l'énergie libre — sur la surprise.
+
+      ## Intuitions Clés
+
+      - Les organismes incarnent des modèles génératifs prédictifs.
+      - La perception met à jour les croyances pour réduire l'erreur de prédiction.
+      - L'action modifie le monde pour faire correspondre les sensations aux prédictions.
+      - L'apprentissage ajuste paramètres et structure du modèle.
+
+      ## Précision et Attention
+
+      La précision (inverse de la variance) module le poids des erreurs et peut
+      s'interpréter comme un gain attentionnel.
+
+      ## Énergie Libre Variationnelle (Esquisse)
+
+      \[\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0.\]
+
+      Minimiser en \(q\) ≈ inférence; en \(\theta\) ≈ apprentissage.
+
+      ## Codage Prédictif
+
+      Traitement hiérarchique: prédictions descendantes, erreurs ascendantes.
+
+      ## L'Action comme Inférence
+
+      La sélection de politiques minimise l'énergie libre attendue (EFE),
+      conciliant utilité attendue et complexité.
+
+      ## Planification comme Inférence
+
+      - Définir des politiques \(\pi\)
+      - Évaluer \(G(\pi)\)
+      - Choisir \(\arg\min G\)
+
+      ## Exemple (Jouet)
+
+      Voir le code dans la piste principale.
+
+      ## Applications et Lectures
+
+      Robotique, psychiatrie computationnelle, apprentissage actif; voir `refs`.
+
+      ## Modèles Hiérarchiques et Contrôle Continu
+
+      Profondeur temporelle, Kalman généralisé, lois de contrôle issues de \(G\).
+
+  - id: translation-de
+    type: translation
+    language: de
+    content: |
+      # Aktive Inferenz und das Freie-Energie-Prinzip
+
+      Aktive Inferenz (AIF) vereint Wahrnehmung, Handlung und Lernen als
+      bayessche Inferenz unter einem generativen Modell. Das
+      Freie-Energie-Prinzip besagt, dass persistente Systeme eine
+      Variationsschranke auf Überraschung minimieren.
+
+      ## Zentrale Intuitionen
+
+      - Generative Modelle sagen sensorische Eingänge voraus.
+      - Wahrnehmung aktualisiert Überzeugungen, um Vorhersagefehler zu reduzieren.
+      - Handlung verändert die Welt, um Vorhersagen zu erfüllen.
+      - Lernen passt Parameter und Struktur an.
+
+      ## Präzision und Aufmerksamkeit
+
+      Präzision gewichtet Fehler und bestimmt deren Einfluss auf Updates und
+      Handlungswahl.
+
+      ## Variationale Freie Energie (Skizze)
+
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+
+      ## Prädiktives Kodieren, Handlung als Inferenz, Planung als Inferenz
+
+      Hierarchische Nachrichtweitergabe; Politikauswahl minimiert erwartete freie
+      Energie.
+
+      ## Beispiel, Anwendungen, Literatur
+
+      Siehe Hauptspur und `refs`. Hierarchische Modelle, kontinuierliche Kontrolle.
+
+  - id: translation-zh
+    type: translation
+    language: zh
+    content: |
+      # 主动推断与自由能原理
+
+      主动推断（AIF）把感知、行动与学习统一为在生成模型下的贝叶斯推断。
+      自由能原理指出：能在环境中持续存在的系统需最小化对“惊奇”的变分上界——自由能。
+
+      ## 关键直觉
+
+      - 机体内含可预测感觉的生成模型。
+      - 知觉通过变分推断更新信念以降低预测误差。
+      - 行动改变世界，使感觉符合预测。
+      - 学习更新模型参数与结构。
+
+      ## 精度与注意
+
+      误差信号的影响取决于其精度（方差的倒数），常被解释为注意增益。
+
+      ## 变分自由能（概要）
+
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\)。
+
+      ## 预测编码、作为推断的行动、作为推断的规划
+
+      分层消息传递；策略选择最小化期望自由能。
+
+      ## 示例、应用与阅读
+
+      见主轨代码与 `refs`；并含层级模型和连续控制要点。
+
+  - id: translation-ar
+    type: translation
+    language: ar
+    content: |
+      # الاستدلال النشط ومبدأ الطاقة الحرة
+
+      يوحّد الاستدلال النشط (AIF) الإدراك والفعل والتعلّم بوصفها استدلالًا
+      بايزيًا تحت نموذج توليدي. ينصّ مبدأ الطاقة الحرة على تقليل حدٍّ
+      تغييري على الدهشة.
+
+      ## أفكار أساسية
+
+      - نموذج توليدي يتنبأ بالمدخلات الحسية.
+      - الإدراك يحدّث المعتقدات لتقليل أخطاء التنبؤ.
+      - الفعل يغيّر العالم ليتوافق الإحساس مع التنبؤ.
+      - التعلّم يحدّث معلمات وبنية النموذج.
+
+      ## الدقّة والانتباه
+
+      وزن الخطأ يعتمد على دقته (معكوس التباين) ويرتبط بالكسب الانتباهي.
+
+      ## الطاقة الحرة التغييرية (موجز)
+
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+
+      ## الترميز التنبؤي والفعل بوصفه استدلالًا
+
+      تمرير رسائل هرمي؛ اختيار السياسات يقلّل الطاقة الحرة المتوقعة.
+
+      ## مثال وتطبيقات وقراءات
+
+      راجع الشيفرة في المسار الرئيسي و`refs`، إضافةً إلى النماذج الهرمية والتحكم المستمر.
+
+  - id: translation-hi
+    type: translation
+    language: hi
+    content: |
+      # सक्रिय अनुमान और मुक्त ऊर्जा सिद्धांत
+
+      सक्रिय अनुमान (AIF) संवेदन, क्रिया और सीख को जनरेटिव मॉडल के तहत
+      बेयज़ियन अनुमान के रूप में एकीकृत करता है। मुक्त ऊर्जा सिद्धांत बताता
+      है कि प्रणालियाँ आश्चर्य पर एक परिवर्तनशील सीमा—मुक्त ऊर्जा—को कम करती हैं।
+
+      ## मुख्य बिंदु
+
+      - जनरेटिव मॉडल संवेदन की भविष्यवाणी करता है।
+      - धारणा भविष्यवाणी त्रुटि कम करने हेतु विश्वास अद्यतन करती है।
+      - क्रिया दुनिया बदलती है ताकि संवेदन भविष्यवाणी से मेल खाए।
+      - सीखना पैरामीटर/संरचना अद्यतन करता है।
+
+      ## प्रीसिशन और अटेंशन
+
+      त्रुटि का प्रभाव उसकी प्रीसिशन (वैरिएंस का व्युत्क्रम) पर निर्भर करता है।
+
+      ## परिवर्तनशील मुक्त ऊर्जा (संक्षेप)
+
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+
+      ## प्रिडिक्टिव कोडिंग और योजना-रूप में अनुमान
+
+      पदानुक्रमित संदेश-पारगमन; नीतियाँ अपेक्षित मुक्त ऊर्जा को कम करती हैं।
+
+      ## उदाहरण, अनुप्रयोग, पठन
+
+      मुख्य ट्रैक का कोड देखें; `refs` देखें; पदानुक्रमित मॉडल और सतत नियंत्रण।
+
+  - id: translation-ru
+    type: translation
+    language: ru
+    content: |
+      # Активный вывод и принцип свободной энергии
+
+      Активный вывод (AIF) объединяет восприятие, действие и обучение как
+      байесовский вывод под генеративной моделью. Принцип свободной энергии
+      утверждает минимизацию вариационной границы удивления.
+
+      ## Ключевые идеи
+
+      - Генеративные модели предсказывают сенсорные данные.
+      - Восприятие обновляет убеждения, снижая ошибку предсказания.
+      - Действие меняет мир, согласуя ощущения с предсказаниями.
+      - Обучение обновляет параметры и структуру.
+
+      ## Точность и внимание
+
+      Вес ошибки зависит от точности (обратной дисперсии), что связано с вниманием.
+
+      ## Вариационная свободная энергия (эскиз)
+
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+
+      ## Предсказательное кодирование и планирование как вывод
+
+      Иерархическая передача сообщений; выбор политики минимизирует ожидаемую свободную энергию.
+
+      ## Пример, приложения, литература
+
+      См. основной трек и `refs`; иерархические модели, непрерывное управление.
+
+  - id: translation-ja
+    type: translation
+    language: ja
+    content: |
+      # アクティブ・インファレンスと自由エネルギー原理
+
+      アクティブ・インファレンス（AIF）は，生成モデルの下でのベイズ推論と
+      して知覚・行為・学習を統一する枠組みである。自由エネルギー原理は，
+      驚きに対する変分上界（自由エネルギー）の最小化を主張する。
+
+      ## 主要な直観
+
+      - 生成モデルは感覚入力を予測する。
+      - 知覚は予測誤差を減らすよう信念を更新する。
+      - 行為は世界を変え，感覚を予測に一致させる。
+      - 学習はパラメータと構造を更新する。
+
+      ## 精度と注意
+
+      誤差信号の影響は精度（分散の逆数）に依存し，注意ゲインとして解釈できる。
+
+      ## 変分自由エネルギー（概略）
+
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\)。
+
+      ## 予測符号化・推論としての行為・推論としての計画
+
+      階層的メッセージパッシング；政策選択は期待自由エネルギーを最小化。
+
+      ## 例・応用・文献
+
+      主トラックのコードと `refs` を参照。階層モデルと連続制御の要点も含む。
+
+  - id: editorial-notes
+    type: commentary
+    content: |
+      # Commentary — Editorial and Curation Guidelines
+
+      - Ensure consistent mathematical notation across languages and sections.
+      - Cover both epistemic and pragmatic terms in the EFE exposition.
+      - Cross-link planning-as-inference from actions and predictive coding.
+      - Prefer concise, reproducible examples over lengthy prose when possible.
+
+  - id: math-notes
+    type: commentary
+    content: |
+      # Commentary — Mathematical Derivations and Notes
+
+      - Derive the variational free energy from Jensen's inequality.
+      - Note the relationships among ELBO, negative log-evidence, and \(\mathcal{F}\).
+      - Outline gradients under mean-field assumptions.
+
+      ## Gradients (Sketch)
+
+      Let \(q(s)\) be in an exponential family with natural parameter \(\eta\).
+      Then \(\nabla_\eta \mathcal{F} = \nabla_\eta \mathbb{E}_q[\log q - \log p]\).
+
+  - id: debates
+    type: commentary
+    content: |
+      # Commentary — Debates, Clarifications, and Open Questions
+
+      - On the interpretation of priors as preferences.
+      - The role of precision (inverse variance) in attention and learning rates.
+      - Relation to reinforcement learning and control-as-inference.
+
+  - id: glossary
+    type: commentary
+    content: |
+      # Commentary — Glossary of Terms
+
+      - Generative model: A probabilistic model that defines how data are
+        generated from latent causes.
+      - Precision: Inverse variance; modulates the influence of prediction errors.
+      - Expected Free Energy (EFE): Anticipated free energy under a candidate policy.
+
+  - id: code-python-simulation
+    type: code
+    content: |
+      ```python
+      import numpy as np
+
+      class DiscreteAIF:
+          def __init__(self, A, B, C, prior_states):
+              self.A = A  # likelihood p(o|s)
+              self.B = B  # transitions p(s'|s,a)
+              self.C = C  # log-preferences over observations
+              self.Qs = prior_states.astype(float)
+
+          def posterior_update(self, o):
+              ll = np.log(self.A[o] + 1e-16)
+              qs = self.Qs + ll
+              qs = np.exp(qs - qs.max()); qs /= qs.sum()
+              self.Qs = qs
+              return qs
+
+          def expected_free_energy(self, a):
+              Ps = self.B[a] @ self.Qs
+              Po = self.A @ Ps
+              risk = -(Po * self.C).sum()
+              ambiguity = -(Po * np.log(Po + 1e-16)).sum()
+              return risk + 0.1 * ambiguity
+
+      # Example sizes: 2 states, 2 observations, 2 actions
+      A = np.array([[0.8, 0.2], [0.2, 0.8]])
+      B = np.stack([
+          np.array([[0.9, 0.1],[0.1,0.9]]),
+          np.array([[0.7, 0.3],[0.3,0.7]])
+      ])
+      C = np.array([0.0, 2.0])
+      agent = DiscreteAIF(A, B, C, prior_states=np.array([0.5, 0.5]))
+
+      obs = 1
+      Qs = agent.posterior_update(obs)
+      Gs = [agent.expected_free_energy(a) for a in range(2)]
+      print(Qs, Gs)
+      ```
+
+  - id: code-pseudocode
+    type: code
+    content: |
+      ```text
+      Initialize generative model (A, B, C); initialize Q(s)
+      Repeat:
+        Observe o
+        Update Q(s) via variational message passing
+        For each action a:
+          Evaluate EFE G(a)
+        Select action a* = argmin_a G(a)
+        Act and observe next o
+      ```
+
+  - id: refs
+    type: reference
+    content: |
+      - https://commonmark.org
+      - https://en.wikipedia.org/wiki/Variational_Bayesian_methods
+      - https://en.wikipedia.org/wiki/Free_energy_principle
+      - https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1000211
+      - https://arxiv.org/abs/1909.10859
+      - https://proceedings.neurips.cc/paper/2011/file/7a614fd06c325499f1680b9896beedeb-Paper.pdf
+      - https://www.sciencedirect.com/topics/neuroscience/predictive-coding
+
+  - id: media
+    type: media_ref
+    content: |
+      - https://www.youtube.com/watch?v=GqaVBa7bL3E
+      - https://example.org/slides/aif_tutorial.pdf
+      - https://example.org/images/aif_overview.png
+
+  - id: rev-1
+    type: revision
+    content: |
+      # Revision 1
+      - Added translations and glossary.
+
+  - id: rev-2
+    type: revision
+    content: |
+      # Revision 2
+      - Expanded code examples and planning-as-inference section.
+
+  - id: rev-3
+    type: revision
+    content: |
+      # Revision 3
+      - Clarified relations to ELBO and evidence.
+
+  - id: rev-4
+    type: revision
+    content: |
+      # Revision 4
+      - Added debates on priors-as-preferences.
+
+  - id: rev-5
+    type: revision
+    content: |
+      # Revision 5
+      - Minor language fixes across tracks.
+
+

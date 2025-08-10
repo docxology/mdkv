@@ -1,16 +1,23 @@
 API Reference
 =============
 
-Model
------
+Public API
+----------
 
-.. automodule:: mdkv.model
+.. automodule:: mdkv
    :members:
    :undoc-members:
    :show-inheritance:
 
-IO
---
+Core Model
+----------
+
+.. automodule:: mdkv.model
+   :members:
+   :show-inheritance:
+
+Storage I/O
+-----------
 
 .. automodule:: mdkv.io
    :members:

@@ -65,12 +65,15 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 </pre></div>
 </div>
 </section>
-<section id="python-api">
-<h2>Python API<a class="headerlink" href="#python-api" title="Link to this heading">¶</a></h2>
+<section id="python-api-public-surface">
+<h2>Python API (public surface)<a class="headerlink" href="#python-api-public-surface" title="Link to this heading">¶</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mdkv.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MDKVDocument</span><span class="p">,</span> <span class="n">Track</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mdkv.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_mdkv</span><span class="p">,</span> <span class="n">load_mdkv</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mdkv.validate</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_document</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mdkv</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+  <span class="n">MDKVDocument</span><span class="p">,</span> <span class="n">Track</span><span class="p">,</span>
+  <span class="n">save_mdkv</span><span class="p">,</span> <span class="n">load_mdkv</span><span class="p">,</span>
+  <span class="n">validate_document</span><span class="p">,</span>
+  <span class="n">export_to_files</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">Doc</span> <span class="o">=</span> <span class="n">MDKVDocument</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">authors</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">],</span> <span class="n">created</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">())</span>
 <span class="n">Doc</span><span class="o">.</span><span class="n">add_track</span><span class="p">(</span><span class="n">Track</span><span class="p">(</span><span class="s2">&quot;primary&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;tracks/primary.md&quot;</span><span class="p">,</span> <span class="s2">&quot;# Title</span><span class="se">\n\n</span><span class="s2">Text&quot;</span><span class="p">))</span>
@@ -83,11 +86,21 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <span class="c1"># access and remove</span>
 <span class="n">track</span> <span class="o">=</span> <span class="n">loaded</span><span class="o">.</span><span class="n">get_track</span><span class="p">(</span><span class="s2">&quot;primary&quot;</span><span class="p">)</span>
 <span class="n">removed</span> <span class="o">=</span> <span class="n">loaded</span><span class="o">.</span><span class="n">remove_track</span><span class="p">(</span><span class="s2">&quot;primary&quot;</span><span class="p">)</span>
+
+<span class="c1"># write each track to its own .md file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="n">export_to_files</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out_tracks&quot;</span><span class="p">),</span> <span class="n">include_track_types</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;primary&quot;</span><span class="p">,</span> <span class="s2">&quot;commentary&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 <section id="from-yaml-definitions">
 <h3>From YAML definitions<a class="headerlink" href="#from-yaml-definitions" title="Link to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">library/definitions/</span></code> directory contains YAML examples you can convert to <code class="docutils literal notranslate"><span class="pre">.mdkv</span></code> by writing a short loader that maps entries to <code class="docutils literal notranslate"><span class="pre">Track</span></code> objects and then calling <code class="docutils literal notranslate"><span class="pre">save_mdkv()</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">library/definitions/</span></code> directory contains YAML examples you can convert to <code class="docutils literal notranslate"><span class="pre">.mdkv</span></code> using the included helper:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mdkv.library</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_all_examples</span>
+
+<span class="n">build_all_examples</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;library/definitions&#39;</span><span class="p">),</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;library/_built&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
 </section>
 </section>
 <section id="logging-workflows">
@@ -140,7 +153,7 @@ python3<span class="w"> </span>run_gui.py<span class="w"> </span>--path<span cla
 <li class="toctree-l2"><a class="reference internal" href="#install-and-run-with-uv">Install and run with uv</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#create-a-document">Create a document</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cli-utilities">CLI utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#python-api">Python API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-api-public-surface">Python API (public surface)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logging-workflows">Logging &amp; workflows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gui">GUI</a></li>
 </ul>

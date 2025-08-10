@@ -38,6 +38,16 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>--help
 </pre></div>
 </div>
+<section id="version-and-license">
+<h2>Version and License<a class="headerlink" href="#version-and-license" title="Link to this heading">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># show version</span>
+uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>--version
+
+<span class="c1"># show license info</span>
+uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>license
+</pre></div>
+</div>
+</section>
 <section id="init-info-validate">
 <h2>Init, Info, Validate<a class="headerlink" href="#init-info-validate" title="Link to this heading">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>init<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;Doc&quot;</span><span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;You&quot;</span><span class="w"> </span>--out<span class="w"> </span>doc.mdkv
@@ -66,13 +76,16 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 </pre></div>
 </div>
 </section>
-<section id="export">
-<h2>Export<a class="headerlink" href="#export" title="Link to this heading">¶</a></h2>
+<section id="export-gui">
+<h2>Export &amp; GUI<a class="headerlink" href="#export-gui" title="Link to this heading">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># export selected track types to Markdown</span>
 uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>export-tracks<span class="w"> </span>doc.mdkv<span class="w"> </span>--types<span class="w"> </span>primary,commentary<span class="w"> </span>&gt;<span class="w"> </span>exported.md
 
 <span class="c1"># export HTML of primary track</span>
 uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--html<span class="w"> </span>doc.mdkv<span class="w"> </span>&gt;<span class="w"> </span>primary.html
+
+<span class="c1"># launch GUI</span>
+uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span>gui<span class="w"> </span>--path<span class="w"> </span>doc.mdkv
 </pre></div>
 </div>
 </section>
@@ -124,9 +137,10 @@ uv<span class="w"> </span>run<span class="w"> </span>mdkv<span class="w"> </span
 <li class="toctree-l1"><a class="reference internal" href="architecture.html">Architecture</a></li>
 <li class="toctree-l1"><a class="reference internal" href="format.html">MDKV format</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-and-license">Version and License</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#init-info-validate">Init, Info, Validate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#track-operations">Track Operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#export">Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#export-gui">Export &amp; GUI</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#metadata">Metadata</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#search">Search</a></li>
 </ul>

@@ -3,7 +3,7 @@ Name: mdkv
 Version: 0.1.0
 Summary: MDKV: Multitrack Markdown Container (zip-based) with tracks, metadata, validation, search, and export
 Author: MDKV Authors
-License: MIT
+License: Apache-2.0
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE

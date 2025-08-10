@@ -35,11 +35,350 @@
             
   <section id="api-reference">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h1>
+<section id="module-mdkv">
+<span id="public-api"></span><h2>Public API<a class="headerlink" href="#module-mdkv" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">MDKVDocument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version='0.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracks=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>In-memory representation of a <cite>.mdkv</cite> document.</p>
+<p>Includes metadata and a mapping of <cite>track_id</cite> → <cite>Track</cite>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.add_track">
+<span class="sig-name descname"><span class="pre">add_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.add_track" title="Link to this definition">¶</a></dt>
+<dd><p>Add a new <cite>track</cite>.</p>
+<p>Raises <cite>ValidationError</cite> if <cite>track_id</cite> already exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.authors">
+<span class="sig-name descname"><span class="pre">authors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">]</span></em><a class="headerlink" href="#mdkv.MDKVDocument.authors" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.created">
+<span class="sig-name descname"><span class="pre">created</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></em><a class="headerlink" href="#mdkv.MDKVDocument.created" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.find_tracks_by_type">
+<span class="sig-name descname"><span class="pre">find_tracks_by_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.find_tracks_by_type" title="Link to this definition">¶</a></dt>
+<dd><p>Return all tracks with the given <cite>track_type</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="#mdkv.Track" title="mdkv.core.model.Track"><code class="xref py py-class docutils literal notranslate"><span class="pre">Track</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.get_metadata">
+<span class="sig-name descname"><span class="pre">get_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.get_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Get a metadata value or <cite>default</cite> if missing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.get_track">
+<span class="sig-name descname"><span class="pre">get_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.get_track" title="Link to this definition">¶</a></dt>
+<dd><p>Return track by id or None if missing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mdkv.Track" title="mdkv.core.model.Track"><code class="xref py py-class docutils literal notranslate"><span class="pre">Track</span></code></a> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.list_languages">
+<span class="sig-name descname"><span class="pre">list_languages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.list_languages" title="Link to this definition">¶</a></dt>
+<dd><p>Return sorted list of languages present across tracks (excluding None).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">,</span> <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">]</span></em><a class="headerlink" href="#mdkv.MDKVDocument.metadata" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.remove_metadata">
+<span class="sig-name descname"><span class="pre">remove_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.remove_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Remove a metadata key if present.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.remove_track">
+<span class="sig-name descname"><span class="pre">remove_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.remove_track" title="Link to this definition">¶</a></dt>
+<dd><p>Remove and return a track by id.</p>
+<p>Raises <cite>KeyError</cite> if missing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mdkv.Track" title="mdkv.core.model.Track"><code class="xref py py-class docutils literal notranslate"><span class="pre">Track</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.rename_track">
+<span class="sig-name descname"><span class="pre">rename_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">old_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.rename_track" title="Link to this definition">¶</a></dt>
+<dd><p>Rename <cite>old_id</cite> to <cite>new_id</cite> and adjust its path if it targets a <cite>.md</cite> file.</p>
+<p>Raises <cite>ValueError</cite> if <cite>new_id</cite> exists or <cite>KeyError</cite> if <cite>old_id</cite> missing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.set_metadata">
+<span class="sig-name descname"><span class="pre">set_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.set_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Set or replace a metadata key/value pair.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.MDKVDocument.title" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.tracks">
+<span class="sig-name descname"><span class="pre">tracks</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">,</span> <a class="reference internal" href="#mdkv.Track" title="mdkv.core.model.Track"><code class="xref py py-class docutils literal notranslate"><span class="pre">Track</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#mdkv.MDKVDocument.tracks" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.update_track_content">
+<span class="sig-name descname"><span class="pre">update_track_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_content</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.MDKVDocument.update_track_content" title="Link to this definition">¶</a></dt>
+<dd><p>Replace the Markdown <cite>content</cite> of the track <cite>track_id</cite>.</p>
+<p>Raises <cite>KeyError</cite> if missing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.MDKVDocument.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'0.1'</span></em><a class="headerlink" href="#mdkv.MDKVDocument.version" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mdkv.SearchMatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">SearchMatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extract</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.SearchMatch" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.SearchMatch.end">
+<span class="sig-name descname"><span class="pre">end</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></em><a class="headerlink" href="#mdkv.SearchMatch.end" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.SearchMatch.extract">
+<span class="sig-name descname"><span class="pre">extract</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.SearchMatch.extract" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.SearchMatch.start">
+<span class="sig-name descname"><span class="pre">start</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></em><a class="headerlink" href="#mdkv.SearchMatch.start" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.SearchMatch.track_id">
+<span class="sig-name descname"><span class="pre">track_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.SearchMatch.track_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mdkv.Track">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">Track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">track_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.Track" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A single Markdown content track within a document.</p>
+<p>Fields:
+- <cite>track_id</cite>: unique identifier within the document
+- <cite>track_type</cite>: one of <cite>allowed_track_types()</cite>
+- <cite>language</cite>: ISO 639-1/BCP-47 code or None for non-linguistic tracks
+- <cite>path</cite>: path inside the container (must start with <cite>tracks/</cite>)
+- <cite>content</cite>: UTF-8 Markdown text</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.Track.content">
+<span class="sig-name descname"><span class="pre">content</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.Track.content" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.Track.language">
+<span class="sig-name descname"><span class="pre">language</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><span class="pre">]</span></em><a class="headerlink" href="#mdkv.Track.language" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.Track.path">
+<span class="sig-name descname"><span class="pre">path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.Track.path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.Track.track_id">
+<span class="sig-name descname"><span class="pre">track_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.Track.track_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.Track.track_type">
+<span class="sig-name descname"><span class="pre">track_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.Track.track_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="mdkv.ValidationError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">ValidationError</span></span><a class="headerlink" href="#mdkv.ValidationError" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised when MDKV document or track validation fails.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mdkv.ValidationIssue">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">ValidationIssue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.ValidationIssue" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.ValidationIssue.level">
+<span class="sig-name descname"><span class="pre">level</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.ValidationIssue.level" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mdkv.ValidationIssue.message">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#mdkv.ValidationIssue.message" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.allowed_track_types">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">allowed_track_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.allowed_track_types" title="Link to this definition">¶</a></dt>
+<dd><p>Return the list of supported track type identifiers.</p>
+<p>Order is informational only; callers should not rely on ordering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.export_to_files">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">export_to_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_track_types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.export_to_files" title="Link to this definition">¶</a></dt>
+<dd><p>Write track contents to individual <cite>.md</cite> files in <cite>output_dir</cite>.</p>
+<p>Filenames are derived from <cite>track_id</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.load_mdkv">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">load_mdkv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.load_mdkv" title="Link to this definition">¶</a></dt>
+<dd><p>Load a <cite>.mdkv</cite> document from <cite>input_path</cite>.</p>
+<p>Raises <cite>KeyError</cite>/<cite>yaml.YAMLError</cite> if the manifest is missing/invalid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#mdkv.MDKVDocument" title="mdkv.core.model.MDKVDocument"><code class="xref py py-class docutils literal notranslate"><span class="pre">MDKVDocument</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.save_mdkv">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">save_mdkv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.save_mdkv" title="Link to this definition">¶</a></dt>
+<dd><p>Write <cite>doc</cite> to <cite>output_path</cite> as a <cite>.mdkv</cite> ZIP container.</p>
+<p>Overwrites existing files. Creates parent directories as needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.search_document">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">search_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">languages</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.search_document" title="Link to this definition">¶</a></dt>
+<dd><p>Search <cite>doc</cite> for <cite>pattern</cite>.
+:rtype: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="#mdkv.SearchMatch" title="mdkv.services.search.SearchMatch"><code class="xref py py-class docutils literal notranslate"><span class="pre">SearchMatch</span></code></a>]</span></p>
+<ul class="simple">
+<li><p><cite>track_types</cite>: optional subset filter (e.g. <cite>[“primary”, “commentary”]</cite>)</p></li>
+<li><p><cite>languages</cite>: optional subset filter (e.g. <cite>[“en”, “es”]</cite>)</p></li>
+</ul>
+<p>Returns a list of <cite>SearchMatch</cite> with small surrounding extracts.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.to_html">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">to_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.to_html" title="Link to this definition">¶</a></dt>
+<dd><p>Render HTML for the primary track of <cite>doc</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.to_markdown">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">to_markdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_track_types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.to_markdown" title="Link to this definition">¶</a></dt>
+<dd><p>Render <cite>doc</cite> to Markdown.</p>
+<p>If <cite>include_track_types</cite> is provided, only those track types are exported.
+Each track is prefixed with a lightweight HTML comment header encoding
+metadata for round-trip compatibility.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mdkv.validate_document">
+<span class="sig-prename descclassname"><span class="pre">mdkv.</span></span><span class="sig-name descname"><span class="pre">validate_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mdkv.validate_document" title="Link to this definition">¶</a></dt>
+<dd><p>Validate required fields and presence of a primary track.</p>
+<p>Returns a list of issues and raises <cite>ValidationError</cite> if any ERRORs exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<a class="reference internal" href="#mdkv.ValidationIssue" title="mdkv.core.validate.ValidationIssue"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValidationIssue</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 <section id="module-mdkv.model">
-<span id="model"></span><h2>Model<a class="headerlink" href="#module-mdkv.model" title="Link to this heading">¶</a></h2>
+<span id="core-model"></span><h2>Core Model<a class="headerlink" href="#module-mdkv.model" title="Link to this heading">¶</a></h2>
 </section>
 <section id="module-mdkv.io">
-<span id="io"></span><h2>IO<a class="headerlink" href="#module-mdkv.io" title="Link to this heading">¶</a></h2>
+<span id="storage-i-o"></span><h2>Storage I/O<a class="headerlink" href="#module-mdkv.io" title="Link to this heading">¶</a></h2>
 </section>
 <section id="module-mdkv.validate">
 <span id="validation"></span><h2>Validation<a class="headerlink" href="#module-mdkv.validate" title="Link to this heading">¶</a></h2>
@@ -89,8 +428,9 @@
 <li class="toctree-l1"><a class="reference internal" href="format.html">MDKV format</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">CLI Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-mdkv.model">Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-mdkv.io">IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-mdkv">Public API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-mdkv.model">Core Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-mdkv.io">Storage I/O</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-mdkv.validate">Validation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-mdkv.search">Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-mdkv.export">Export</a></li>

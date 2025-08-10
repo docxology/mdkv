@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "MDKV: Multitrack Markdown Container (zip-based) with tracks, metadata, validation, search, and export"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 authors = [{ name = "MDKV Authors" }]
 dependencies = [
   "click>=8.1.3",

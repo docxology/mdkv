@@ -42,7 +42,7 @@ uv run mdkv rename-track doc.mdkv --old-id commentary --new-id notes
 uv run mdkv export-tracks doc.mdkv --types primary,commentary > exported.md
 ```
 
-## Export
+## Export & GUI
 
 ```bash
 # export selected track types to Markdown
@@ -50,6 +50,9 @@ uv run mdkv export-tracks doc.mdkv --types primary,commentary > exported.md
 
 # export HTML of primary track
 uv run mdkv export --html doc.mdkv > primary.html
+
+# launch GUI
+uv run mdkv gui --path doc.mdkv
 ```
 
 ## Metadata

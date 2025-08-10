@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from mdkv.core.model import MDKVDocument, Track
@@ -30,6 +30,15 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
 
     static_root = static_dir or Path(__file__).parent / "static"
     app.mount("/static", StaticFiles(directory=str(static_root)), name="static")
+
+    @app.get("/favicon.ico")
+    def favicon() -> Response:
+        svg_path = static_root / "favicon.svg"
+        if svg_path.exists():
+            svg = svg_path.read_text(encoding="utf-8")
+            return Response(content=svg, media_type="image/svg+xml")
+        # minimal empty icon fallback
+        return Response(content="", media_type="image/svg+xml")
 
     @app.get("/", response_class=HTMLResponse)
     def root() -> str:
