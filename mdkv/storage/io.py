@@ -93,12 +93,25 @@ def _doc_from_manifest(manifest: Dict[str, Any], file_reader: zipfile.ZipFile) -
     return doc
 
 
-def save_mdkv(doc: MDKVDocument, output_path: Path) -> None:
+def save_mdkv(
+    doc: MDKVDocument,
+    output_path: Path,
+    compression: int = zipfile.ZIP_DEFLATED,
+    compresslevel: int | None = None,
+) -> None:
     """Write ``doc`` to ``output_path`` as a ``.mdkv`` ZIP container.
 
     Overwrites existing files. Creates parent directories as needed.
     Raises ``ValidationError`` if two tracks share the same container path
     (which would cause silent data loss in the ZIP).
+
+    Args:
+        doc: Document to save.
+        output_path: Target file path.
+        compression: ZIP compression method (default ``ZIP_DEFLATED``).
+            Use ``ZIP_STORED`` for no compression (faster for already-compressed content).
+        compresslevel: Compression level 0-9 (default: zlib default). Only affects
+            ``ZIP_DEFLATED``. Ignored on Python < 3.7.
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,7 +124,10 @@ def save_mdkv(doc: MDKVDocument, output_path: Path) -> None:
                 f"tracks '{seen_paths[track.path]}' and '{track.track_id}' share path '{track.path}'"
             )
         seen_paths[track.path] = track.track_id
-    with zipfile.ZipFile(output_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+    kwargs: dict[str, Any] = {"mode": "w", "compression": compression}
+    if compresslevel is not None and hasattr(zipfile.ZipFile, "__init__"):
+        kwargs["compresslevel"] = compresslevel
+    with zipfile.ZipFile(output_path, **kwargs) as zf:
         for track in doc.tracks.values():
             zf.writestr(track.path, track.content)
         zf.writestr(MANIFEST_NAME, yaml.safe_dump(manifest, sort_keys=False))

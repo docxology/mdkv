@@ -161,6 +161,23 @@ def rename_track_cmd(path: Path, old_id: str, new_id: str) -> None:
     click.echo("OK")
 
 
+@main.command("move-track")
+@click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--id", "track_id", required=True)
+@click.option("--after-id", default=None, help="Track ID to insert after (omit for first position)")
+@_handle_load_errors
+def move_track_cmd(path: Path, track_id: str, after_id: str | None) -> None:
+    """Reorder a track within the document."""
+    doc = load_mdkv(path)
+    try:
+        doc.move_track(track_id, after_id)
+    except KeyError:
+        click.echo(f"ERROR: track '{track_id}' not found", err=True)
+        raise SystemExit(1)
+    save_mdkv(doc, path)
+    click.echo("OK")
+
+
 @main.command("update-track")
 @click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
 @click.option("--id", "track_id", required=True)
@@ -210,15 +227,18 @@ def get_meta(path: Path, key: str) -> None:
 @click.option("--types", default="", help="comma-separated track types filter")
 @click.option("--languages", default="", help="comma-separated languages filter")
 @click.option("--case-insensitive", "-i", is_flag=True, help="case-insensitive search")
+@click.option("--limit", type=int, default=None, help="Maximum number of matches to return")
 @_handle_load_errors
-def search_cmd(path: Path, pattern: str, types: str, languages: str, case_insensitive: bool) -> None:
+def search_cmd(path: Path, pattern: str, types: str, languages: str, case_insensitive: bool,
+               limit: int | None) -> None:
+    """Search across tracks for a regex pattern."""
     doc = load_mdkv(path)
     tt = [t.strip() for t in types.split(",") if t.strip()] if types else None
     ll = [l.strip() for l in languages.split(",") if l.strip()] if languages else None
     try:
         matches = search_document(
             doc, pattern=pattern, track_types=tt, languages=ll,
-            case_insensitive=case_insensitive,
+            case_insensitive=case_insensitive, limit=limit,
         )
     except re.error as e:
         click.echo(f"ERROR: invalid regex pattern: {e}", err=True)
@@ -275,19 +295,39 @@ def validate(path: Path, as_json: bool) -> None:  # type: ignore[override]
 @click.option("--out-dir", type=click.Path(file_okay=False, path_type=Path), default=None,
               help="Export tracks as individual files to this directory")
 @click.option("--metadata-header", is_flag=True, default=False, help="Include YAML frontmatter in Markdown output")
-@click.option("--format", "fmt", type=click.Choice(["markdown", "html", "json"]), default=None,
-              help="Output format (overrides --html; 'json' exports full document as JSON)")
+@click.option("--format", "fmt", type=click.Choice(["markdown", "html", "json", "pdf", "epub", "docx"]), default=None,
+              help="Output format (overrides --html; 'json' exports full document as JSON; pdf/epub/docx require pandoc)")
 @_handle_load_errors
 def export(path: Path, as_html: bool, types: str | None, out_dir: Path | None,
            metadata_header: bool, fmt: str | None) -> None:
-    """Export document to Markdown, HTML, JSON, or individual files."""
+    """Export document to Markdown, HTML, JSON, PDF, EPUB, DOCX, or individual files."""
     doc = load_mdkv(path)
     include = [t.strip() for t in types.split(",") if t.strip()] if types else None
     if out_dir:
         written = export_to_files(doc, out_dir, include_track_types=include)
         click.echo(json.dumps({"files": [str(p) for p in written]}, indent=2))
     elif fmt == "json":
-        click.echo(json.dumps(doc.to_dict(), indent=2))
+        data = doc.to_dict()
+        if include is not None:
+            data["tracks"] = [t for t in data["tracks"] if t["track_type"] in include]
+        click.echo(json.dumps(data, indent=2))
+    elif fmt in ("pdf", "epub", "docx"):
+        from mdkv.services.pandoc_export import to_pdf, to_epub, to_docx
+        out = path.with_suffix(f".{fmt}")
+        try:
+            if fmt == "pdf":
+                to_pdf(doc, out, include_track_types=include, metadata_header=True)
+            elif fmt == "epub":
+                to_epub(doc, out, include_track_types=include, metadata_header=True)
+            else:
+                to_docx(doc, out, include_track_types=include, metadata_header=True)
+        except FileNotFoundError as e:
+            click.echo(f"ERROR: {e}", err=True)
+            raise SystemExit(1)
+        except Exception as e:
+            click.echo(f"ERROR: pandoc conversion failed: {e}", err=True)
+            raise SystemExit(1)
+        click.echo(str(out))
     elif fmt == "html" or (fmt is None and as_html):
         click.echo(to_html(doc, include_track_types=include, metadata_header=metadata_header))
     else:
@@ -362,6 +402,65 @@ def stats_cmd(path: Path) -> None:
 def gui_cmd(path: Path | None, host: str, port: int) -> None:
     """Launch local MDKV GUI web app."""
     run_gui(host=host, port=port, path=str(path) if path else None)
+
+
+@main.command("completions")
+@click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))
+def completions_cmd(shell: str) -> None:
+    """Generate shell completion scripts."""
+    env_var = "_MDKV_COMPLETE"
+    click.echo(f"# Add this to your shell config (e.g. ~/.{shell}rc):")
+    click.echo(f'# eval "$(_MDKV_COMPLETE={shell}_source mdkv)"')
+    click.echo(f"# Or save this script and source it:")
+    click.echo("")
+    # Use click's built-in shell completion
+    import click.shell_completion as cs
+    # Click generates completions dynamically; we output the instruction
+    click.echo(f'export _MDKV_COMPLETE={shell}_source')
+    click.echo(f'eval "$(mdkv --generate-completions {shell} 2>/dev/null || true)"')
+
+
+@main.group("batch")
+def batch_group() -> None:
+    """Run operations across multiple .mdkv files."""
+
+
+@batch_group.command("validate")
+@click.argument("paths", nargs=-1, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON")
+@_handle_load_errors
+def batch_validate(paths: tuple[Path, ...], as_json: bool) -> None:
+    """Validate multiple documents."""
+    results = []
+    for p in paths:
+        try:
+            doc = load_mdkv(p)
+            issues = validate_document(doc)
+            results.append({"path": str(p), "ok": True, "issues": len(issues)})
+        except Exception as e:
+            results.append({"path": str(p), "ok": False, "error": str(e)})
+    if as_json:
+        click.echo(json.dumps(results, indent=2))
+    else:
+        for r in results:
+            status = "OK" if r["ok"] else "FAIL"
+            click.echo(f"{status}  {r['path']}")
+
+
+@batch_group.command("stats")
+@click.argument("paths", nargs=-1, type=click.Path(dir_okay=False, path_type=Path))
+@_handle_load_errors
+def batch_stats(paths: tuple[Path, ...]) -> None:
+    """Show stats for multiple documents."""
+    results = []
+    for p in paths:
+        try:
+            doc = load_mdkv(p)
+            stats = compute_stats(doc)
+            results.append(stats.to_dict())
+        except Exception as e:
+            results.append({"path": str(p), "error": str(e)})
+    click.echo(json.dumps(results, indent=2))
 
 
 @main.command("license")

@@ -18,10 +18,15 @@ MDKV is split into clear layers:
   - `Track.to_dict()` / `Track.from_dict()` for JSON serialization
   - `MDKVDocument.to_dict()` / `MDKVDocument.from_dict()` for JSON serialization
   - `MDKVDocument.count_tracks_by_type()` for statistics
+  - `MDKVDocument.track_ids` property — ordered list of track IDs
+  - `MDKVDocument.move_track()` — reorder tracks within document
+  - `Track.__eq__()` / `Track.__hash__()` — equality and hashing (path-based)
   - `__repr__` on both classes for debugging
 - `core.validate`:
+  - `validate_track()` — validate a single Track in isolation
   - ERROR-level: required metadata, primary track, path uniqueness
-  - WARN-level: empty content, code without fences, translation without language, bad version, multiple primaries
+  - WARN-level: empty content, code without fences, translation without language, bad version, multiple primaries, reserved track_id
+  - Reserved track_ids: `all`, `none`, `null`, `true`, `false`, `""` (empty string)
   - `ValidationIssue` carries `track_id` for track-level issues
 - `core.errors`:
   - `ValidationError` exception
@@ -32,6 +37,7 @@ MDKV is split into clear layers:
 - `services.search`:
   - Regex search with track type/language filters
   - `case_insensitive` convenience flag
+  - `limit` parameter to cap results
   - `SearchMatch` includes `track_type` and `language`
 - `services.export`:
   - `to_markdown()` with optional `include_track_types` and `metadata_header`
@@ -78,7 +84,7 @@ MDKV is split into clear layers:
 
 Re-exported from `mdkv.__init__`:
 - `MDKVDocument`, `Track`, `allowed_track_types`
-- `ValidationError`, `validate_document`, `ValidationIssue`
+- `ValidationError`, `validate_document`, `validate_track`, `ValidationIssue`
 - `search_document`, `SearchMatch`
 - `to_markdown`, `to_html`, `export_to_files`
 - `diff_documents`, `DiffResult`

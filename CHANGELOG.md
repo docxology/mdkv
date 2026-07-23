@@ -5,6 +5,31 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-07-23
+
+### Added
+- **Pandoc-based export**: `to_pdf()`, `to_epub()`, `to_docx()` services using pandoc subprocess
+  (mirrors docxology/template rendering approach — no new Python dependencies)
+- CLI `export --format pdf`, `--format epub`, `--format docx` (requires pandoc installed)
+- CLI `search --limit N` to cap number of matches
+- CLI `move-track` command for reordering tracks
+- CLI `batch validate` and `batch stats` subcommands for multi-file operations
+- CLI `completions` command for bash/zsh/fish shell completion instructions
+- CLI `export --format json --types` now filters tracks by type in JSON output
+- GUI `POST /api/move-track` endpoint for track reordering
+- GUI `GET /api/validate-track?track_id=...` for single-track validation
+- GUI `GET /api/search?limit=N` parameter
+- `save_mdkv(compression=, compresslevel=)` for configurable ZIP compression
+- `CODE_OF_CONDUCT.md` (Contributor Covenant)
+- `.github/ISSUE_TEMPLATE/bug_report.md` and `feature_request.md`
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- 21 new tests in `tests/test_v07_features.py` (including real pandoc PDF/EPUB/DOCX tests)
+
+### Changed
+- `mdkv.services.__init__` exports `to_pdf`, `to_epub`, `to_docx`
+- `mdkv.__init__` exports `to_pdf`, `to_epub`, `to_docx`
+- Version bumped to 0.7.0
+
 ## [0.6.0] - 2025-07-23
 
 ### Added

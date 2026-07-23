@@ -12,11 +12,12 @@ from .services import (
     to_markdown, to_html, export_to_files,
     diff_documents, DiffResult,
     compute_stats, DocumentStats,
+    to_pdf, to_epub, to_docx,
 )
 from .storage import save_mdkv, load_mdkv, MDKVFormatError
 
 __license__ = "Apache-2.0"
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
     "core",
@@ -40,6 +41,9 @@ __all__ = [
     "DiffResult",
     "compute_stats",
     "DocumentStats",
+    "to_pdf",
+    "to_epub",
+    "to_docx",
     "save_mdkv",
     "load_mdkv",
     "MDKVFormatError",

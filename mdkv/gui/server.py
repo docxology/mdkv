@@ -195,6 +195,38 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             t.content = payload.get("content", t.content)
         return {"ok": True}
 
+    @app.post("/api/move-track")
+    def move_track(payload: dict) -> dict:
+        doc = _require_doc()
+        track_id = payload.get("track_id")
+        if not track_id:
+            raise HTTPException(422, "missing track_id")
+        after_id = payload.get("after_id")
+        try:
+            doc.move_track(track_id, after_id)
+        except KeyError:
+            raise HTTPException(404, "track not found")
+        return {"ok": True, "track_ids": doc.track_ids}
+
+    @app.get("/api/validate-track")
+    def validate_single_track(track_id: str) -> dict:
+        doc = _require_doc()
+        t = doc.get_track(track_id)
+        if t is None:
+            raise HTTPException(404, "track not found")
+        from mdkv.core.validate import validate_track
+        try:
+            issues = validate_track(t)
+            return {
+                "ok": True,
+                "warnings": [
+                    {"level": i.level, "message": i.message, "track_id": i.track_id}
+                    for i in issues
+                ],
+            }
+        except ValidationError as exc:
+            return {"ok": False, "error": str(exc)}
+
     @app.delete("/api/track/{track_id}")
     def delete_track(track_id: str) -> dict:
         doc = _require_doc()
@@ -280,6 +312,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         types: str = "",
         languages: str = "",
         case_insensitive: bool = False,
+        limit: int = 0,
     ) -> dict:
         doc = _require_doc()
         tt = [t.strip() for t in types.split(",") if t.strip()] or None
@@ -288,6 +321,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             matches = search_document(
                 doc, pattern=pattern, track_types=tt, languages=ll,
                 case_insensitive=case_insensitive,
+                limit=limit if limit > 0 else None,
             )
         except re.error as exc:
             raise HTTPException(400, f"invalid regex pattern: {exc}")
