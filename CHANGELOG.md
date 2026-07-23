@@ -5,6 +5,30 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-07-23
+
+### Added
+- `Track.__eq__` and `Track.__hash__` for proper equality comparison and set membership
+- `MDKVDocument.track_ids` property returning track IDs in insertion order
+- `MDKVDocument.move_track(track_id, after_id)` for reordering tracks within a document
+- `search_document(limit=)` parameter to cap matches (prevents DoS via catastrophic backtracking)
+- `validate_track(track)` function for single-track validation (in addition to document-level)
+- Reserved track_id validation: warns on `all`, `none`, `null`, `true`, `false`, `""` (case-insensitive)
+- CLI `info --format table` for human-readable table output (default: `json`)
+- CLI `export --format json` for full document JSON export via `to_dict()`
+- CLI `export --format html` as alternative to `--html` flag
+- GUI `GET /api/document/json` endpoint returning full document as JSON
+- GUI `POST /api/import` endpoint to import a Markdown file into the loaded document as a new track
+- `docs/security.md` page documenting all defense-in-depth measures
+- `examples/diff_stats_example.py` demonstrating `diff_documents()` + `compute_stats()` together
+- `library/definitions/media_refs.yaml` exercising the `media_ref` track type
+- 30 new tests in `tests/test_v06_features.py`
+
+### Changed
+- `validate_track` exported from `mdkv.__init__` and `mdkv.core.__init__`
+- `docs/index.rst` includes `security` page in toctree
+- Version bumped to 0.6.0
+
 ## [0.5.0] - 2025-07-22
 
 ### Added

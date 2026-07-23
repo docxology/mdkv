@@ -17,6 +17,9 @@ from .errors import ValidationError
 # Semver-like pattern: MAJOR.MINOR or MAJOR.MINOR.PATCH with optional pre-release
 _VERSION_RE = re.compile(r"^\d+\.\d+(?:\.\d+)?(?:[-+].+)?$")
 
+# Track IDs that could confuse the GUI or CLI
+_RESERVED_TRACK_IDS = frozenset({"all", "none", "null", "true", "false", ""})
+
 
 @dataclass
 class ValidationIssue:
@@ -61,6 +64,12 @@ def validate_document(doc) -> List[ValidationIssue]:
     # --- Track-level checks ---
     seen_paths: dict[str, str] = {}  # path → track_id
     for tid, track in doc.tracks.items():
+        # Reserved track_id warning
+        if tid.lower() in _RESERVED_TRACK_IDS:
+            issues.append(
+                ValidationIssue("WARN", f"track_id '{tid}' is a reserved word and may cause issues", track_id=tid)
+            )
+
         # Path uniqueness
         if track.path in seen_paths:
             issues.append(
@@ -99,6 +108,45 @@ def validate_document(doc) -> List[ValidationIssue]:
         )
 
     # Fail on any ERROR
+    errors = [i for i in issues if i.level == "ERROR"]
+    if errors:
+        raise ValidationError("; ".join(i.message for i in errors))
+    return issues
+
+
+def validate_track(track) -> List[ValidationIssue]:
+    """Validate a single ``Track`` in isolation.
+
+    Returns a list of ``ValidationIssue`` objects.  Raises ``ValidationError``
+    if any ERROR-level issues are found.
+    """
+    issues: List[ValidationIssue] = []
+    tid = track.track_id
+
+    # Reserved track_id
+    if tid.lower() in _RESERVED_TRACK_IDS:
+        issues.append(
+            ValidationIssue("WARN", f"track_id '{tid}' is a reserved word and may cause issues", track_id=tid)
+        )
+
+    # Empty content
+    if not track.content.strip():
+        issues.append(
+            ValidationIssue("WARN", f"track '{tid}' has empty content", track_id=tid)
+        )
+
+    # Code track without fences
+    if track.track_type == "code" and "```" not in track.content:
+        issues.append(
+            ValidationIssue("WARN", f"code track '{tid}' contains no fenced code blocks", track_id=tid)
+        )
+
+    # Translation without language
+    if track.track_type == "translation" and not track.language:
+        issues.append(
+            ValidationIssue("WARN", f"translation track '{tid}' has no language set", track_id=tid)
+        )
+
     errors = [i for i in issues if i.level == "ERROR"]
     if errors:
         raise ValidationError("; ".join(i.message for i in errors))

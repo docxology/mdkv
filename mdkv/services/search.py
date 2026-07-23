@@ -42,12 +42,14 @@ def search_document(
     track_types: Optional[Iterable[str]] = None,
     languages: Optional[Iterable[str]] = None,
     case_insensitive: bool = False,
+    limit: Optional[int] = None,
 ) -> List[SearchMatch]:
     """Search ``doc`` for ``pattern``.
 
     - ``track_types``: optional subset filter (e.g. ``["primary", "commentary"]``)
     - ``languages``: optional subset filter (e.g. ``["en", "es"]``)
     - ``case_insensitive``: if ``True``, adds ``re.IGNORECASE`` to flags
+    - ``limit``: if provided, return at most this many matches
     Returns a list of ``SearchMatch`` with small surrounding extracts.
     """
     if case_insensitive:
@@ -57,6 +59,8 @@ def search_document(
     allowed_types = set(track_types) if track_types else None
     allowed_langs = set(languages) if languages else None
     for track_id, track in doc.tracks.items():
+        if limit is not None and len(results) >= limit:
+            break
         if allowed_types is not None and track.track_type not in allowed_types:
             continue
         if allowed_langs is not None and track.language not in allowed_langs:
@@ -76,4 +80,6 @@ def search_document(
                     extract=extract,
                 )
             )
+            if limit is not None and len(results) >= limit:
+                break
     return results

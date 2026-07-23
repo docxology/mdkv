@@ -4,6 +4,7 @@ from .core import (
     allowed_track_types,
     ValidationError,
     validate_document,
+    validate_track,
     ValidationIssue,
 )
 from .services import (
@@ -15,7 +16,7 @@ from .services import (
 from .storage import save_mdkv, load_mdkv, MDKVFormatError
 
 __license__ = "Apache-2.0"
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "core",
@@ -28,6 +29,7 @@ __all__ = [
     "allowed_track_types",
     "ValidationError",
     "validate_document",
+    "validate_track",
     "ValidationIssue",
     "search_document",
     "SearchMatch",

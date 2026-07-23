@@ -1,0 +1,29 @@
+title: Media References Doc
+authors: ["Lib"]
+tracks:
+  - id: primary
+    type: primary
+    language: en
+    content: |
+      # Media References
+
+      This document demonstrates the `media_ref` track type.
+
+      See the media track for external references.
+  - id: media
+    type: media_ref
+    language: null
+    content: |
+      # Media References
+
+      - https://example.org/video.mp4 (lecture recording)
+      - https://example.org/diagram.png (architecture diagram)
+      - https://example.org/audio.mp3 (podcast episode)
+  - id: refs
+    type: reference
+    language: null
+    content: |
+      # References
+
+      - RFC 9559 (Matroska format)
+      - CommonMark specification

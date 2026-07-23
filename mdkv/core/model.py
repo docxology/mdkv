@@ -66,6 +66,20 @@ class Track:
             f"language={self.language!r}, path={self.path!r}, content=<{len(self.content)} chars>)"
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Track):
+            return NotImplemented
+        return (
+            self.track_id == other.track_id
+            and self.track_type == other.track_type
+            and self.language == other.language
+            and self.path == other.path
+            and self.content == other.content
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.track_id, self.track_type, self.path))
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to a plain dict suitable for JSON/YAML emission."""
         return {
@@ -128,6 +142,11 @@ class MDKVDocument:
         langs = {t.language for t in self.tracks.values() if t.language}
         return sorted(langs)
 
+    @property
+    def track_ids(self) -> List[str]:
+        """Return the list of track IDs in insertion order."""
+        return list(self.tracks.keys())
+
     # management helpers
     def find_tracks_by_type(self, track_type: str) -> List[Track]:
         """Return all tracks with the given `track_type`."""
@@ -166,6 +185,33 @@ class MDKVDocument:
         if track.path.startswith("tracks/") and track.path.endswith(".md"):
             track.path = f"tracks/{new_id}.md"
         self.tracks[new_id] = track
+
+    def move_track(self, track_id: str, after_id: str | None) -> None:
+        """Reorder ``track_id`` to appear immediately after ``after_id`` in the track ordering.
+
+        If ``after_id`` is ``None``, move ``track_id`` to the first position.
+        Raises ``KeyError`` if ``track_id`` is missing, or if ``after_id`` is
+        provided but not found.
+        """
+        if track_id not in self.tracks:
+            raise KeyError(track_id)
+        if after_id is not None and after_id not in self.tracks:
+            raise KeyError(after_id)
+        # Rebuild the dict in the new order
+        track = self.tracks.pop(track_id)
+        new_tracks: Dict[str, Track] = {}
+        if after_id is None:
+            new_tracks[track_id] = track
+            new_tracks.update(self.tracks)
+        else:
+            for tid, t in self.tracks.items():
+                new_tracks[tid] = t
+                if tid == after_id:
+                    new_tracks[track_id] = track
+            # If after_id was the last track, track_id is already added above
+            if track_id not in new_tracks:
+                new_tracks[track_id] = track
+        self.tracks = new_tracks
 
     # metadata helpers
     def set_metadata(self, key: str, value: str) -> None:

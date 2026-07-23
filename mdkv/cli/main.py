@@ -55,20 +55,36 @@ def init(title: str, author: list[str], out: Path) -> None:
 
 @main.command()
 @click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--format", "fmt", type=click.Choice(["json", "table"]), default="json",
+              help="Output format (json or table)")
 @_handle_load_errors
-def info(path: Path) -> None:
+def info(path: Path, fmt: str) -> None:
+    """Show document metadata and track index."""
     doc = load_mdkv(path)
-    click.echo(json.dumps({
-        "title": doc.title,
-        "authors": doc.authors,
-        "version": doc.version,
-        "tracks": [{
-            "id": t.track_id,
-            "type": t.track_type,
-            "language": t.language,
-            "path": t.path,
-        } for t in doc.tracks.values()],
-    }, indent=2))
+    if fmt == "table":
+        click.echo(f"Title:   {doc.title}")
+        click.echo(f"Authors: {', '.join(doc.authors)}")
+        click.echo(f"Version: {doc.version}")
+        click.echo(f"Created: {doc.created.isoformat()}")
+        click.echo(f"Tracks:  {len(doc.tracks)}")
+        click.echo("")
+        click.echo(f"{'ID':<20} {'Type':<15} {'Language':<10} {'Path'}")
+        click.echo(f"{'--':<20} {'----':<15} {'--------':<10} {'----'}")
+        for t in doc.tracks.values():
+            lang = t.language or "-"
+            click.echo(f"{t.track_id:<20} {t.track_type:<15} {lang:<10} {t.path}")
+    else:
+        click.echo(json.dumps({
+            "title": doc.title,
+            "authors": doc.authors,
+            "version": doc.version,
+            "tracks": [{
+                "id": t.track_id,
+                "type": t.track_type,
+                "language": t.language,
+                "path": t.path,
+            } for t in doc.tracks.values()],
+        }, indent=2))
 
 
 @main.command("list-tracks")
@@ -259,16 +275,20 @@ def validate(path: Path, as_json: bool) -> None:  # type: ignore[override]
 @click.option("--out-dir", type=click.Path(file_okay=False, path_type=Path), default=None,
               help="Export tracks as individual files to this directory")
 @click.option("--metadata-header", is_flag=True, default=False, help="Include YAML frontmatter in Markdown output")
+@click.option("--format", "fmt", type=click.Choice(["markdown", "html", "json"]), default=None,
+              help="Output format (overrides --html; 'json' exports full document as JSON)")
 @_handle_load_errors
 def export(path: Path, as_html: bool, types: str | None, out_dir: Path | None,
-           metadata_header: bool) -> None:
-    """Export document to Markdown, HTML, or individual files."""
+           metadata_header: bool, fmt: str | None) -> None:
+    """Export document to Markdown, HTML, JSON, or individual files."""
     doc = load_mdkv(path)
     include = [t.strip() for t in types.split(",") if t.strip()] if types else None
     if out_dir:
         written = export_to_files(doc, out_dir, include_track_types=include)
         click.echo(json.dumps({"files": [str(p) for p in written]}, indent=2))
-    elif as_html:
+    elif fmt == "json":
+        click.echo(json.dumps(doc.to_dict(), indent=2))
+    elif fmt == "html" or (fmt is None and as_html):
         click.echo(to_html(doc, include_track_types=include, metadata_header=metadata_header))
     else:
         click.echo(to_markdown(doc, include_track_types=include, metadata_header=metadata_header))

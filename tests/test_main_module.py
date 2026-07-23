@@ -25,4 +25,4 @@ def test_python_m_mdkv_version():
         timeout=10,
     )
     assert result.returncode == 0
-    assert "0.5" in result.stdout
+    assert "0.6" in result.stdout

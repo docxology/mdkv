@@ -12,6 +12,7 @@ Run with `uv run python examples/<script>.py`.
 - `import_example.py`: import a Markdown file as a new `.mdkv` document, then validate.
 - `diff_example.py`: create two .mdkv documents, diff them, and print changes.
 - `stats_example.py`: print statistics and demonstrate `to_dict`/`from_dict` roundtrip.
+- `diff_stats_example.py`: demonstrate `diff_documents()` + `compute_stats()` together.
 - `record_gui_demo.py`: record a short GUI demo video (requires Playwright).
 
 Tip: launch the GUI with a demo document:

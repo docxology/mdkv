@@ -1,6 +1,6 @@
 from .errors import ValidationError
 from .model import MDKVDocument, Track, allowed_track_types
-from .validate import validate_document, ValidationIssue
+from .validate import validate_document, validate_track, ValidationIssue
 
 __all__ = [
     "ValidationError",
@@ -8,7 +8,6 @@ __all__ = [
     "Track",
     "allowed_track_types",
     "validate_document",
+    "validate_track",
     "ValidationIssue",
 ]
-
-

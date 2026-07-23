@@ -11,6 +11,7 @@ MDKV Documentation
    format
    cli
    api
+   security
    license
 
 .. note::

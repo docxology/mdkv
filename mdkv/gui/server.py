@@ -310,6 +310,41 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         doc = _require_doc()
         return compute_stats(doc).to_dict()
 
+    @app.get("/api/document/json")
+    def get_document_json() -> JSONResponse:
+        """Return the full document as JSON (using ``MDKVDocument.to_dict``)."""
+        doc = _require_doc()
+        return JSONResponse(doc.to_dict())
+
+    @app.post("/api/import")
+    def import_track(payload: dict) -> dict:
+        """Import a Markdown file into the loaded document as a new track."""
+        doc = _require_doc()
+        file_path = payload.get("path")
+        if not file_path:
+            raise HTTPException(422, "missing 'path' field")
+        p = Path(file_path).expanduser()
+        if not p.exists():
+            raise HTTPException(404, "file not found")
+        track_id = payload.get("id")
+        if not track_id or not str(track_id).strip():
+            raise HTTPException(422, "missing track id")
+        track_type = payload.get("type", "commentary")
+        language = payload.get("language")
+        content = p.read_text(encoding="utf-8")
+        try:
+            track = Track(
+                track_id=track_id,
+                track_type=track_type,
+                language=language,
+                path=f"tracks/{track_id}.md",
+                content=content,
+            )
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        doc.add_track(track)
+        return {"ok": True, "track_id": track_id}
+
     @app.post("/api/diff")
     def diff(payload: dict) -> dict:
         other_path = payload.get("path")
