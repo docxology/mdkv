@@ -69,6 +69,14 @@ Each file contains the UTF-8 Markdown for that track.
 - Translation tracks (`track_type: translation`) have no language set
 - Version string does not follow semver format (`MAJOR.MINOR[.PATCH]`)
 - Multiple primary tracks exist (expected exactly 1)
+- Reserved track_id values (`all`, `none`, `null`, `true`, `false`, `""`) — case-insensitive — may cause GUI or CLI confusion
+
+### Single-track validation
+
+`validate_track(track)` validates a single track in isolation, checking:
+reserved IDs, empty content, code tracks without fences, and translation
+tracks without language.  Returns WARN-level issues.  Available from both
+the Python API and the GUI (`GET /api/validate-track?track_id=...`).
 
 ## Error handling
 

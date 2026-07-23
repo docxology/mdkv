@@ -42,6 +42,16 @@ uv run mdkv validate doc.mdkv --json
 
 JSON output returns `{"ok": true, "issues": [...]}` or `{"ok": false, "error": "..."}`.
 
+### Info with table format
+
+```bash
+# JSON (default)
+uv run mdkv info doc.mdkv
+
+# Human-readable table
+uv run mdkv info doc.mdkv --format table
+```
+
 ## Import
 
 ```bash
@@ -80,24 +90,36 @@ uv run mdkv update-track doc.mdkv --id primary --file updated.md
 # rename id and then export a subset
 uv run mdkv rename-track doc.mdkv --old-id commentary --new-id notes
 uv run mdkv export-tracks doc.mdkv --types primary,commentary > exported.md
+
+# move a track to a new position
+uv run mdkv move-track doc.mdkv --id notes --after-id primary
+uv run mdkv move-track doc.mdkv --id notes   # move to first position
 ```
 
-## Export & GUI
+## Export
 
 ```bash
-# export selected track types to Markdown
-uv run mdkv export-tracks doc.mdkv --types primary,commentary > exported.md
+# Markdown (all tracks, default)
+uv run mdkv export doc.mdkv
 
-# export HTML of primary track (default)
-uv run mdkv export --html doc.mdkv > primary.html
+# HTML with specific track types
+uv run mdkv export doc.mdkv --html --types primary,commentary
 
-# export HTML with specific track types
-uv run mdkv export --html --types primary,commentary doc.mdkv > combined.html
+# Full document as JSON
+uv run mdkv export doc.mdkv --format json
 
-# export Markdown with YAML frontmatter
+# JSON with track type filter
+uv run mdkv export doc.mdkv --format json --types primary
+
+# PDF/EPUB/DOCX (requires pandoc installed)
+uv run mdkv export doc.mdkv --format pdf
+uv run mdkv export doc.mdkv --format epub
+uv run mdkv export doc.mdkv --format docx
+
+# Markdown with YAML frontmatter
 uv run mdkv export doc.mdkv --metadata-header > out.md
 
-# export tracks as individual files to a directory
+# Export tracks as individual files to a directory
 uv run mdkv export --out-dir tracks_out/ doc.mdkv
 
 # launch GUI
@@ -144,11 +166,36 @@ uv run mdkv search doc.mdkv --pattern beta --types primary --languages en
 
 # case-insensitive search
 uv run mdkv search doc.mdkv --pattern hello -i
+
+# limit number of matches
+uv run mdkv search doc.mdkv --pattern "." --limit 10
 ```
 
 Search results include `track_id`, `track_type`, `language`, `start`, `end`,
 and `extract` for each match. Invalid regex patterns return a clean error
 message with exit code 1.
+
+## Batch Operations
+
+```bash
+# validate multiple documents
+uv run mdkv batch validate doc1.mdkv doc2.mdkv doc3.mdkv
+
+# validate with JSON output
+uv run mdkv batch validate *.mdkv --json
+
+# show stats for multiple documents
+uv run mdkv batch stats doc1.mdkv doc2.mdkv
+```
+
+## Shell Completions
+
+```bash
+# generate completion instructions for bash, zsh, or fish
+uv run mdkv completions bash
+uv run mdkv completions zsh
+uv run mdkv completions fish
+```
 
 ## Error Handling
 

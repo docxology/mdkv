@@ -27,18 +27,24 @@
 
 ## Model API
 - `Track.to_dict()` / `Track.from_dict()` — JSON serialization
+- `Track.__eq__` / `Track.__hash__` — proper equality and set membership
 - `MDKVDocument.to_dict()` / `MDKVDocument.from_dict()` — JSON serialization
 - `MDKVDocument.count_tracks_by_type()` — type→count mapping
+- `MDKVDocument.track_ids` property — track IDs in insertion order
+- `MDKVDocument.move_track(track_id, after_id)` — reorder tracks
 - `__repr__` on both `Track` and `MDKVDocument`
 
 ## Validation
+- `validate_document(doc)` — full document validation
+- `validate_track(track)` — single-track validation
 - ERROR: missing title, authors, primary track; duplicate track paths.
 - WARN: empty content, code tracks without fences, translation without language,
-  bad version format, multiple primary tracks.
+  bad version format, multiple primary tracks, reserved track IDs.
 - `ValidationIssue` carries `track_id` for track-level issues.
+- Reserved IDs: `all`, `none`, `null`, `true`, `false`, `""` (case-insensitive).
 
 ## Search
-- `search_document()` supports `case_insensitive=True` flag
+- `search_document()` supports `case_insensitive=True` flag and `limit=N` parameter
 - `SearchMatch` includes `track_type` and `language`
 
 ## Export
@@ -53,18 +59,20 @@
 
 ## Public API
 - Re-exported in `mdkv/__init__.py`: `MDKVDocument`, `Track`, `allowed_track_types`,
-  `ValidationError`, `validate_document`, `ValidationIssue`, `search_document`,
-  `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`, `diff_documents`,
-  `DiffResult`, `compute_stats`, `DocumentStats`, `save_mdkv`, `load_mdkv`,
-  `MDKVFormatError`.
+  `ValidationError`, `validate_document`, `validate_track`, `ValidationIssue`,
+  `search_document`, `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`,
+  `diff_documents`, `DiffResult`, `compute_stats`, `DocumentStats`,
+  `to_pdf`, `to_epub`, `to_docx`, `save_mdkv`, `load_mdkv`, `MDKVFormatError`.
 - If adding API, update `__all__`, docstrings, and docs.
 - `py.typed` marker present for PEP 561.
 
 ## CLI Commands
-`init`, `info`, `list-tracks`, `add-track` (with `--file`), `remove-track`, `rename-track`,
-`update-track` (with `--file`), `export` (with `--metadata-header`), `export-tracks`,
-`search` (with `-i`), `validate` (with `--json`), `set-meta`, `get-meta`, `import`,
-`diff`, `stats`, `gui`, `license`.
+`init`, `info` (with `--format table/json`), `list-tracks`, `add-track` (with `--file`),
+`remove-track`, `rename-track`, `move-track` (with `--after-id`),
+`update-track` (with `--file`), `export` (with `--format`, `--metadata-header`, `--types`),
+`export-tracks`, `search` (with `-i`, `--limit`), `validate` (with `--json`),
+`set-meta`, `get-meta`, `import`, `diff`, `stats`, `gui`, `license`,
+`batch validate`, `batch stats`, `completions`.
 
 ## Diff & Stats
 - `diff_documents(doc_a, doc_b)` returns `DiffResult` with `has_changes` and `to_dict()`
@@ -79,10 +87,11 @@
 - CLI catches `FileNotFoundError`, `MDKVFormatError`, `re.error` with clean messages
 
 ## GUI API Endpoints
-- CRUD: `/api/document`, `/api/track`, `/api/tracks`, `/api/open`, `/api/save`
+- CRUD: `/api/document`, `/api/document/json`, `/api/track`, `/api/tracks`, `/api/open`, `/api/save`
 - Render: `/api/render/html`, `/api/render/markdown`, `/api/render/track_html`,
   `/api/render/all_html`, `/api/render/tracks_html`
-- Operations: `/api/search`, `/api/stats`, `/api/diff`, `/api/validate`
+- Operations: `/api/search` (with `limit`), `/api/stats`, `/api/diff`, `/api/validate`,
+  `/api/validate-track`, `/api/move-track`, `/api/import`
 - Library: `/api/library`, `/api/status`
 
 ## Examples & Definitions

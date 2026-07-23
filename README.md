@@ -126,7 +126,7 @@ from datetime import datetime, timezone
 from mdkv import (
     MDKVDocument, Track,
     save_mdkv, load_mdkv,
-    validate_document,
+    validate_document, validate_track,
     export_to_files,
     diff_documents,
     compute_stats,
@@ -135,12 +135,20 @@ from mdkv import (
 doc = MDKVDocument(title="T", authors=["A"], created=datetime.now(timezone.utc))
 doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Hello"))
 
+# Track IDs and ordering
+print(doc.track_ids)  # ["primary"]
+doc.add_track(Track("notes", "commentary", None, "tracks/notes.md", "note"))
+doc.move_track("notes", None)  # move notes to first position
+
 # Save and reload
 save_mdkv(doc, "doc.mdkv")
 loaded = load_mdkv("doc.mdkv")
 
 # Validate (returns issues, raises on ERROR)
 issues = validate_document(loaded)
+
+# Validate a single track
+track_issues = validate_track(loaded.get_track("primary"))
 
 # Diff two documents
 result = diff_documents(doc, loaded)
