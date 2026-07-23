@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -10,7 +11,16 @@ from .storage import save_mdkv
 
 
 def build_document_from_definition(defn: Dict[str, Any]) -> MDKVDocument:
-    doc = MDKVDocument(title=defn["title"], authors=list(defn.get("authors", [])), created=defn.get("created") or __import__("datetime").datetime.utcnow())
+    created = defn.get("created")
+    if isinstance(created, str):
+        created = datetime.fromisoformat(created)
+    elif created is None:
+        created = datetime.now(timezone.utc)
+    doc = MDKVDocument(
+        title=defn["title"],
+        authors=list(defn.get("authors", [])),
+        created=created,
+    )
     for t in defn.get("tracks", []):
         track = Track(
             track_id=t["id"],
@@ -39,5 +49,3 @@ def build_all_examples(definitions_dir: Path, out_dir: Path) -> List[Path]:
         save_mdkv(doc, out_path)
         outputs.append(out_path)
     return outputs
-
-

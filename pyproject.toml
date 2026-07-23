@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdkv"
-version = "0.1.0"
+version = "0.5.0"
 description = "MDKV: Multitrack Markdown Container (zip-based) with tracks, metadata, validation, search, and export"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -22,6 +22,7 @@ dependencies = [
 dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1.0",
+  "httpx>=0.28.0",
   "sphinx>=7.0.0",
   "myst-parser>=2.0.0",
   "sphinx-autodoc-typehints>=1.25.2",

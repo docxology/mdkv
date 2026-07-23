@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from mdkv.common import configure_logging, get_logger
@@ -17,7 +17,7 @@ def main() -> None:
     workdir.mkdir(exist_ok=True)
 
     # create
-    doc = MDKVDocument(title="Workflow", authors=["User"], created=datetime.utcnow())
+    doc = MDKVDocument(title="Workflow", authors=["User"], created=datetime.now(timezone.utc))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Title\n\nHello world"))
     doc.add_track(Track("notes", "commentary", None, "tracks/notes.md", "This is a note."))
     path = workdir / "workflow.mdkv"

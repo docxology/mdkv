@@ -1,2 +1,11 @@
-
 /.venv
+__pycache__/
+*.pyc
+*.egg-info/
+.coverage
+docs/_build/
+*.mdkv
+!demo/*.mdkv
+!library/_built/*.mdkv
+!paper/*.mdkv
+!gui_test.mdkv

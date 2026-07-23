@@ -2,9 +2,10 @@ from __future__ import annotations
 
 """Persistence layer for MDKV containers.
 
-A `.mdkv` file is a ZIP archive containing a `manifest.yaml` and a `tracks/`
-directory with UTF-8 Markdown files. This module serializes/deserializes
-`MDKVDocument` instances to/from that container format.
+A ``.mdkv`` file is a ZIP archive containing a ``manifest.yaml`` and a
+``tracks/`` directory with UTF-8 Markdown files. This module
+serializes/deserializes ``MDKVDocument`` instances to/from that container
+format.
 """
 
 import zipfile
@@ -15,9 +16,14 @@ from typing import Any, Dict
 import yaml
 
 from mdkv.core.model import MDKVDocument, Track
+from mdkv.core.errors import ValidationError
 
 
 MANIFEST_NAME = "manifest.yaml"
+
+
+class MDKVFormatError(Exception):
+    """Raised when a ``.mdkv`` container is structurally invalid."""
 
 
 def _manifest_from_doc(doc: MDKVDocument) -> Dict[str, Any]:
@@ -45,7 +51,16 @@ def _manifest_from_doc(doc: MDKVDocument) -> Dict[str, Any]:
 
 
 def _doc_from_manifest(manifest: Dict[str, Any], file_reader: zipfile.ZipFile) -> MDKVDocument:
-    """Reconstruct a document from a parsed manifest and the ZIP handle."""
+    """Reconstruct a document from a parsed manifest and the ZIP handle.
+
+    Raises ``MDKVFormatError`` if the manifest is missing required keys
+    or a referenced track file does not exist in the archive.
+    """
+    # Required manifest fields
+    for key in ("title", "created"):
+        if key not in manifest:
+            raise MDKVFormatError(f"manifest missing required key: {key}")
+
     doc = MDKVDocument(
         title=manifest["title"],
         authors=list(manifest.get("authors", [])),
@@ -53,29 +68,49 @@ def _doc_from_manifest(manifest: Dict[str, Any], file_reader: zipfile.ZipFile) -
         version=manifest.get("version", "0.1"),
     )
     doc.metadata.update(manifest.get("metadata", {}))
-    for t in manifest.get("tracks", []):
-        path = t["path"]
-        with file_reader.open(path) as f:
-            content = f.read().decode("utf-8")
-        track = Track(
-            track_id=t["track_id"],
-            track_type=t["track_type"],
-            language=t.get("language"),
-            path=path,
-            content=content,
-        )
+    for entry in manifest.get("tracks", []):
+        for key in ("track_id", "track_type", "path"):
+            if key not in entry:
+                raise MDKVFormatError(f"track entry missing required key: {key}")
+        path = entry["path"]
+        # Verify the track file exists in the archive
+        try:
+            with file_reader.open(path) as f:
+                content = f.read().decode("utf-8")
+        except KeyError:
+            raise MDKVFormatError(f"track file '{path}' not found in container")
+        try:
+            track = Track(
+                track_id=entry["track_id"],
+                track_type=entry["track_type"],
+                language=entry.get("language"),
+                path=path,
+                content=content,
+            )
+        except ValueError as exc:
+            raise MDKVFormatError(f"invalid track definition for '{entry.get('track_id', '?')}': {exc}")
         doc.add_track(track)
     return doc
 
 
 def save_mdkv(doc: MDKVDocument, output_path: Path) -> None:
-    """Write `doc` to `output_path` as a `.mdkv` ZIP container.
+    """Write ``doc`` to ``output_path`` as a ``.mdkv`` ZIP container.
 
     Overwrites existing files. Creates parent directories as needed.
+    Raises ``ValidationError`` if two tracks share the same container path
+    (which would cause silent data loss in the ZIP).
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     manifest = _manifest_from_doc(doc)
+    # Detect duplicate paths — ZIP would silently overwrite one track with another
+    seen_paths: dict[str, str] = {}
+    for track in doc.tracks.values():
+        if track.path in seen_paths:
+            raise ValidationError(
+                f"tracks '{seen_paths[track.path]}' and '{track.track_id}' share path '{track.path}'"
+            )
+        seen_paths[track.path] = track.track_id
     with zipfile.ZipFile(output_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         for track in doc.tracks.values():
             zf.writestr(track.path, track.content)
@@ -83,13 +118,22 @@ def save_mdkv(doc: MDKVDocument, output_path: Path) -> None:
 
 
 def load_mdkv(input_path: Path) -> MDKVDocument:
-    """Load a `.mdkv` document from `input_path`.
+    """Load a ``.mdkv`` document from ``input_path``.
 
-    Raises `KeyError`/`yaml.YAMLError` if the manifest is missing/invalid.
+    Raises ``MDKVFormatError`` for corrupt or missing manifests.
+    Raises ``FileNotFoundError`` if the file does not exist.
     """
-    with zipfile.ZipFile(Path(input_path), mode="r") as zf:
-        with zf.open(MANIFEST_NAME) as f:
-            manifest = yaml.safe_load(f.read().decode("utf-8"))
-        return _doc_from_manifest(manifest, zf)
-
-
+    p = Path(input_path)
+    if not p.exists():
+        raise FileNotFoundError(f"file not found: {p}")
+    try:
+        with zipfile.ZipFile(p, mode="r") as zf:
+            if MANIFEST_NAME not in zf.namelist():
+                raise MDKVFormatError(f"manifest '{MANIFEST_NAME}' not found in container")
+            with zf.open(MANIFEST_NAME) as f:
+                manifest = yaml.safe_load(f.read().decode("utf-8"))
+            if not isinstance(manifest, dict):
+                raise MDKVFormatError("manifest is not a valid YAML mapping")
+            return _doc_from_manifest(manifest, zf)
+    except zipfile.BadZipFile:
+        raise MDKVFormatError(f"not a valid ZIP archive: {p}")

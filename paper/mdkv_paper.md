@@ -420,11 +420,11 @@ uv run mdkv gui --path doc.mdkv
 
 ```python
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from mdkv import MDKVDocument, Track, export_to_files, to_markdown, save_mdkv, validate_document
 
 # write selected tracks as individual .md files
-doc = MDKVDocument(title="Doc", authors=["You"], created=datetime.utcnow(), version="0.1")
+doc = MDKVDocument(title="Doc", authors=["You"], created=datetime.now(timezone.utc), version="0.1")
 doc.add_track(Track(track_id="primary", track_type="primary", language="en", path="tracks/primary.md", content="# Hello\n"))
 
 # validate, save, export

@@ -14,7 +14,7 @@ Invariants:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .errors import ValidationError
 
@@ -59,6 +59,33 @@ class Track:
             raise ValueError("track_id must not be empty")
         if not self.path.startswith("tracks/"):
             raise ValueError("track path must be under 'tracks/' directory")
+
+    def __repr__(self) -> str:
+        return (
+            f"Track(track_id={self.track_id!r}, track_type={self.track_type!r}, "
+            f"language={self.language!r}, path={self.path!r}, content=<{len(self.content)} chars>)"
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to a plain dict suitable for JSON/YAML emission."""
+        return {
+            "track_id": self.track_id,
+            "track_type": self.track_type,
+            "language": self.language,
+            "path": self.path,
+            "content": self.content,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Track":
+        """Reconstruct a Track from a plain dict (inverse of ``to_dict``)."""
+        return cls(
+            track_id=data["track_id"],
+            track_type=data["track_type"],
+            language=data.get("language"),
+            path=data["path"],
+            content=data.get("content", ""),
+        )
 
 
 @dataclass
@@ -106,6 +133,13 @@ class MDKVDocument:
         """Return all tracks with the given `track_type`."""
         return [t for t in self.tracks.values() if t.track_type == track_type]
 
+    def count_tracks_by_type(self) -> Dict[str, int]:
+        """Return a mapping of ``track_type`` → count across all tracks."""
+        counts: Dict[str, int] = {}
+        for track in self.tracks.values():
+            counts[track.track_type] = counts.get(track.track_type, 0) + 1
+        return counts
+
     def update_track_content(self, track_id: str, new_content: str) -> None:
         """Replace the Markdown `content` of the track `track_id`.
 
@@ -146,4 +180,46 @@ class MDKVDocument:
         """Remove a metadata key if present."""
         self.metadata.pop(key, None)
 
+    # serialization helpers
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to a plain dict suitable for JSON/YAML emission.
 
+        Track content is included inline (unlike the storage manifest which
+        stores tracks as separate files).
+        """
+        return {
+            "title": self.title,
+            "authors": list(self.authors),
+            "created": self.created.isoformat(),
+            "version": self.version,
+            "metadata": dict(self.metadata),
+            "tracks": [t.to_dict() for t in self.tracks.values()],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MDKVDocument":
+        """Reconstruct an MDKVDocument from a plain dict (inverse of ``to_dict``).
+
+        Raises ``KeyError`` if required keys (title, created) are missing.
+        Raises ``ValidationError`` if track IDs collide.
+        """
+        created = data["created"]
+        if isinstance(created, str):
+            created = datetime.fromisoformat(created)
+        doc = cls(
+            title=data["title"],
+            authors=list(data.get("authors", [])),
+            created=created,
+            version=data.get("version", "0.1"),
+        )
+        doc.metadata.update(data.get("metadata", {}))
+        for track_data in data.get("tracks", []):
+            track = Track.from_dict(track_data)
+            doc.add_track(track)
+        return doc
+
+    def __repr__(self) -> str:
+        return (
+            f"MDKVDocument(title={self.title!r}, authors={self.authors!r}, "
+            f"version={self.version!r}, tracks={len(self.tracks)}, metadata={len(self.metadata)})"
+        )

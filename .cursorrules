@@ -8,17 +8,43 @@
 ## Code Style
 - Python 3.9+; explicit, readable names (no 1–2 char vars).
 - Guard clauses over deep nesting; handle errors/edges early.
-- Keep comments minimal; document “why”.
+- Keep comments minimal; document "why".
 - Public API documented via docstrings; update `docs/api.rst` if surfacing new modules.
+- Use `datetime.now(timezone.utc)` — never `datetime.utcnow()` (deprecated in 3.12+).
 
 ## Package Structure
 - `mdkv.core`: data model + validation
-- `mdkv.storage`: persist/load `.mdkv` (ZIP + YAML manifest)
+- `mdkv.storage`: persist/load `.mdkv` (ZIP + YAML manifest), `MDKVFormatError`
 - `mdkv.services`: search/export utilities
-- `mdkv.cli`: CLI entrypoints
+- `mdkv.cli`: CLI entrypoints (`python -m mdkv` also works via `__main__.py`)
+- `mdkv.gui`: FastAPI web GUI
+- `mdkv.common`: logging utilities
+- `mdkv.library`: example definition builder
+- `mdkv.demo`: demo document builder
 
 ## Track Types
 `primary`, `translation`, `commentary`, `code`, `reference`, `media_ref`, `revision`.
+
+## Model API
+- `Track.to_dict()` / `Track.from_dict()` — JSON serialization
+- `MDKVDocument.to_dict()` / `MDKVDocument.from_dict()` — JSON serialization
+- `MDKVDocument.count_tracks_by_type()` — type→count mapping
+- `__repr__` on both `Track` and `MDKVDocument`
+
+## Validation
+- ERROR: missing title, authors, primary track; duplicate track paths.
+- WARN: empty content, code tracks without fences, translation without language,
+  bad version format, multiple primary tracks.
+- `ValidationIssue` carries `track_id` for track-level issues.
+
+## Search
+- `search_document()` supports `case_insensitive=True` flag
+- `SearchMatch` includes `track_type` and `language`
+
+## Export
+- `to_markdown()` supports `metadata_header=True` for YAML frontmatter
+- `to_html()` supports `include_track_types` and `metadata_header`
+- `export_to_files()` returns `List[Path]` of written files
 
 ## Documentation
 - Pages: concept, format, architecture, usage, CLI, API, license.
@@ -28,13 +54,29 @@
 ## Public API
 - Re-exported in `mdkv/__init__.py`: `MDKVDocument`, `Track`, `allowed_track_types`,
   `ValidationError`, `validate_document`, `ValidationIssue`, `search_document`,
-  `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`, `save_mdkv`, `load_mdkv`.
+  `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`, `save_mdkv`, `load_mdkv`,
+  `MDKVFormatError`.
 - If adding API, update `__all__`, docstrings, and docs.
+- `py.typed` marker present for PEP 561.
+
+## CLI Commands
+`init`, `info`, `list-tracks`, `add-track`, `remove-track`, `rename-track`,
+`update-track`, `export`, `export-tracks`, `search` (with `-i`), `validate`,
+`set-meta`, `get-meta`, `import`, `diff`, `stats`, `gui`, `license`.
+
+## GUI API Endpoints
+- CRUD: `/api/document`, `/api/track`, `/api/tracks`, `/api/open`, `/api/save`
+- Render: `/api/render/html`, `/api/render/markdown`, `/api/render/track_html`,
+  `/api/render/all_html`, `/api/render/tracks_html`
+- Operations: `/api/search`, `/api/stats`, `/api/diff`, `/api/validate`
+- Library: `/api/library`, `/api/status`
 
 ## Examples & Definitions
-- `library/definitions/` are canonical YAML samples; utility script `examples/load_from_yaml.py` converts them to `.mdkv`.
+- `library/definitions/` are canonical YAML samples.
+- Examples: `create_doc`, `validate_doc`, `export_html`, `search_docs`, `roundtrip`,
+  `logged_workflow`, `load_from_yaml`, `import_example`, `diff_example`, `stats_example`.
 
-## CI Guidance (future)
+## CI Guidance
 - Validate docs build + run tests on each change.
-
-
+- Run: `uv run pytest -q --cov=mdkv --cov-report=term-missing`
+- Python 3.14 in CI.

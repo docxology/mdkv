@@ -6,11 +6,16 @@ from .core import (
     validate_document,
     ValidationIssue,
 )
-from .services import search_document, SearchMatch, to_markdown, to_html, export_to_files
-from .storage import save_mdkv, load_mdkv
+from .services import (
+    search_document, SearchMatch,
+    to_markdown, to_html, export_to_files,
+    diff_documents, DiffResult,
+    compute_stats, DocumentStats,
+)
+from .storage import save_mdkv, load_mdkv, MDKVFormatError
 
 __license__ = "Apache-2.0"
-__version__ = "0.1.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "core",
@@ -29,8 +34,11 @@ __all__ = [
     "to_markdown",
     "to_html",
     "export_to_files",
+    "diff_documents",
+    "DiffResult",
+    "compute_stats",
+    "DocumentStats",
     "save_mdkv",
     "load_mdkv",
+    "MDKVFormatError",
 ]
-
-

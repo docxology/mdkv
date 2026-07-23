@@ -5,6 +5,9 @@
 ```bash
 uv venv
 uv run mdkv --help
+
+# or use python -m
+python -m mdkv --help
 ```
 
 ## Create a document
@@ -17,6 +20,12 @@ uv run mdkv export doc.mdkv > out.md
 uv run mdkv export --html doc.mdkv > out.html
 ```
 
+## Import from Markdown
+
+```bash
+uv run mdkv import README.md --out imported.mdkv --title "Imported" --author "You"
+```
+
 ## CLI utilities
 
 ```bash
@@ -26,14 +35,26 @@ uv run mdkv list-tracks doc.mdkv
 # add a commentary track
 uv run mdkv add-track doc.mdkv --id notes --type commentary --lang "" --content "Note"
 
+# remove a track
+uv run mdkv remove-track doc.mdkv --id notes
+
 # export selected track types as Markdown
 uv run mdkv export-tracks doc.mdkv --types primary,commentary
+
+# diff two documents
+uv run mdkv diff doc_v1.mdkv doc_v2.mdkv
+
+# show statistics
+uv run mdkv stats doc.mdkv
+
+# case-insensitive search
+uv run mdkv search doc.mdkv --pattern "hello" -i
 ```
 
 ## Python API (public surface)
 
 ```python
-from datetime import datetime
+from datetime import datetime, timezone
 from mdkv import (
   MDKVDocument, Track,
   save_mdkv, load_mdkv,
@@ -41,11 +62,11 @@ from mdkv import (
   export_to_files,
 )
 
-Doc = MDKVDocument(title="T", authors=["A"], created=datetime.utcnow())
-Doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Title\n\nText"))
-Doc.list_languages()  # ["en"]
+doc = MDKVDocument(title="T", authors=["A"], created=datetime.now(timezone.utc))
+doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Title\n\nText"))
+doc.list_languages()  # ["en"]
 
-save_mdkv(Doc, "doc.mdkv")
+save_mdkv(doc, "doc.mdkv")
 loaded = load_mdkv("doc.mdkv")
 validate_document(loaded)
 
@@ -55,7 +76,26 @@ removed = loaded.remove_track("primary")
 
 # write each track to its own .md file
 from pathlib import Path
-export_to_files(loaded, Path("out_tracks"), include_track_types=["primary", "commentary"])
+written = export_to_files(loaded, Path("out_tracks"), include_track_types=["primary", "commentary"])
+```
+
+### JSON serialization
+
+```python
+from mdkv import MDKVDocument, Track
+from datetime import datetime, timezone
+
+doc = MDKVDocument(title="T", authors=["A"], created=datetime.now(timezone.utc))
+doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Hello"))
+
+# serialize to dict (JSON-compatible)
+data = doc.to_dict()
+import json
+print(json.dumps(data, indent=2))
+
+# reconstruct from dict
+restored = MDKVDocument.from_dict(data)
+assert restored.title == doc.title
 ```
 
 ### From YAML definitions
@@ -89,5 +129,14 @@ In the GUI preview toolbar, use checkboxes to toggle which tracks are shown:
 - Custom: uncheck All and select any combination of tracks; the preview updates live. Selecting none shows an empty preview.
 
 The editor pane always holds the full combined Markdown (round-trippable).
+
+### GUI REST API
+
+The GUI server exposes additional endpoints beyond the CRUD operations:
+
+- `GET /api/search?pattern=...&types=...&languages=...&case_insensitive=true` — search tracks
+- `GET /api/stats` — document statistics
+- `POST /api/diff` with `{"path": "other.mdkv"}` — diff against another document
+- `POST /api/validate` — returns warnings alongside errors
 
 To record a short demo (optional): see `examples/record_gui_demo.py`. If you have `ffmpeg` and ImageMagick, you can convert the recorded `.webm` to `.gif` for embedding.

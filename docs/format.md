@@ -12,7 +12,7 @@ Top-level fields:
 - `title`: string (required)
 - `authors`: list[string] (required, at least one)
 - `created`: ISO-8601 datetime string (required)
-- `version`: string (optional, default "0.1")
+- `version`: string (optional, default `"0.1"`)
 - `metadata`: object<string,string> (optional)
 - `tracks`: list[Track] (optional, but a `primary` track is required for validity)
 
@@ -54,10 +54,27 @@ Each file contains the UTF-8 Markdown for that track.
 
 ## Validation rules
 
+### ERROR-level (cause validation failure)
+
 - `title` and `authors` must be present
 - At least one track of `track_type: primary` must exist
 - Track `path` must begin with `tracks/`
 - `track_type` must be one of the supported values
+- Track paths must be unique (no two tracks share the same file path)
+
+### WARN-level (informational, do not block)
+
+- Track content is empty (whitespace-only)
+- Code tracks (`track_type: code`) contain no fenced code blocks (```)
+- Translation tracks (`track_type: translation`) have no language set
+- Version string does not follow semver format (`MAJOR.MINOR[.PATCH]`)
+- Multiple primary tracks exist (expected exactly 1)
+
+## Error handling
+
+- `MDKVFormatError` is raised when loading a corrupt or structurally invalid `.mdkv` file
+- `FileNotFoundError` is raised when the file does not exist
+- `ValidationError` is raised when validation finds ERROR-level issues
 
 ## Round-trip export headers
 
@@ -72,3 +89,16 @@ Editorial notes here
 ```
 
 These headers are informational; they are not required in individual track files within a `.mdkv` container.
+
+## Metadata header
+
+When exporting with `metadata_header=True`, a YAML frontmatter block is prepended:
+
+```yaml
+---
+title: Example
+authors: [Author]
+version: 0.1
+created: 2025-01-01T00:00:00
+---
+```

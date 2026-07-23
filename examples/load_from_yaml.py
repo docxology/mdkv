@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
@@ -14,7 +14,7 @@ def build_doc_from_definition(defn: Dict[str, Any]) -> MDKVDocument:
     doc = MDKVDocument(
         title=defn["title"],
         authors=list(defn.get("authors", [])),
-        created=datetime.utcnow(),
+        created=datetime.now(timezone.utc),
     )
     for t in defn.get("tracks", []):
         track_id = t["id"]
