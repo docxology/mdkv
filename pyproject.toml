@@ -36,14 +36,20 @@ where = ["."]
 include = ["mdkv*"]
 exclude = ["tests*"]
 
-[dependency-groups]
-dev = [
-    "fastapi[test]>=0.116.1",
-    "httpx>=0.28.1",
-    "myst-parser>=3.0.1",
-    "sphinx>=7.4.7",
-    "sphinx-autodoc-typehints>=2.3.0",
-    "starlette>=0.47.2",
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+minversion = "7.0"
+filterwarnings = [
+  "ignore::DeprecationWarning:fastapi.testclient",
 ]
 
+[tool.coverage.run]
+source = ["mdkv"]
+omit = ["tests/*", "*/__pycache__/*"]
 
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if __name__ == .__main__.:",
+]

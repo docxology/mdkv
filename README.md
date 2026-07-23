@@ -193,6 +193,12 @@ uv run pytest -q --cov=mdkv --cov-report=term-missing
 uv run sphinx-build -b html docs docs/_build/html
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
+
+## Roadmap
+
+See [TODO.md](TODO.md) for planned minor, medium, and major improvements.
+
 ## Package structure
 
 - `mdkv.core`: types, errors, validation

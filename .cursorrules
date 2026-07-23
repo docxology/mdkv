@@ -15,7 +15,7 @@
 ## Package Structure
 - `mdkv.core`: data model + validation
 - `mdkv.storage`: persist/load `.mdkv` (ZIP + YAML manifest), `MDKVFormatError`
-- `mdkv.services`: search/export utilities
+- `mdkv.services`: search, export, diff, stats utilities
 - `mdkv.cli`: CLI entrypoints (`python -m mdkv` also works via `__main__.py`)
 - `mdkv.gui`: FastAPI web GUI
 - `mdkv.common`: logging utilities
@@ -54,15 +54,29 @@
 ## Public API
 - Re-exported in `mdkv/__init__.py`: `MDKVDocument`, `Track`, `allowed_track_types`,
   `ValidationError`, `validate_document`, `ValidationIssue`, `search_document`,
-  `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`, `save_mdkv`, `load_mdkv`,
+  `SearchMatch`, `to_markdown`, `to_html`, `export_to_files`, `diff_documents`,
+  `DiffResult`, `compute_stats`, `DocumentStats`, `save_mdkv`, `load_mdkv`,
   `MDKVFormatError`.
 - If adding API, update `__all__`, docstrings, and docs.
 - `py.typed` marker present for PEP 561.
 
 ## CLI Commands
-`init`, `info`, `list-tracks`, `add-track`, `remove-track`, `rename-track`,
-`update-track`, `export`, `export-tracks`, `search` (with `-i`), `validate`,
-`set-meta`, `get-meta`, `import`, `diff`, `stats`, `gui`, `license`.
+`init`, `info`, `list-tracks`, `add-track` (with `--file`), `remove-track`, `rename-track`,
+`update-track` (with `--file`), `export` (with `--metadata-header`), `export-tracks`,
+`search` (with `-i`), `validate` (with `--json`), `set-meta`, `get-meta`, `import`,
+`diff`, `stats`, `gui`, `license`.
+
+## Diff & Stats
+- `diff_documents(doc_a, doc_b)` returns `DiffResult` with `has_changes` and `to_dict()`
+- `compute_stats(doc)` returns `DocumentStats` with `to_dict()`
+- Both shared by CLI and GUI (no copy-paste)
+
+## Security
+- `_safe_filename()` prevents path traversal in `export_to_files`
+- `yaml.safe_dump` for metadata_header frontmatter (YAML injection prevention)
+- HTML comment injection prevention (strip `-->` from track metadata in headers)
+- `save_mdkv` detects and rejects duplicate track paths
+- CLI catches `FileNotFoundError`, `MDKVFormatError`, `re.error` with clean messages
 
 ## GUI API Endpoints
 - CRUD: `/api/document`, `/api/track`, `/api/tracks`, `/api/open`, `/api/save`

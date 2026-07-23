@@ -35,11 +35,24 @@ uv run mdkv list-tracks doc.mdkv
 # add a commentary track
 uv run mdkv add-track doc.mdkv --id notes --type commentary --lang "" --content "Note"
 
+# add a track from a file
+uv run mdkv add-track doc.mdkv --id notes --type commentary --file notes.md
+
 # remove a track
 uv run mdkv remove-track doc.mdkv --id notes
 
+# rename a track
+uv run mdkv rename-track doc.mdkv --old-id notes --new-id annotations
+
+# update track content
+uv run mdkv update-track doc.mdkv --id primary --content "# Updated"
+uv run mdkv update-track doc.mdkv --id primary --file updated.md
+
 # export selected track types as Markdown
 uv run mdkv export-tracks doc.mdkv --types primary,commentary
+
+# export with YAML frontmatter
+uv run mdkv export doc.mdkv --metadata-header > out.md
 
 # diff two documents
 uv run mdkv diff doc_v1.mdkv doc_v2.mdkv
@@ -49,6 +62,16 @@ uv run mdkv stats doc.mdkv
 
 # case-insensitive search
 uv run mdkv search doc.mdkv --pattern "hello" -i
+
+# validate with JSON output (for CI/automation)
+uv run mdkv validate doc.mdkv --json
+
+# metadata operations
+uv run mdkv set-meta doc.mdkv author "Another"
+uv run mdkv get-meta doc.mdkv author
+
+# show license information
+uv run mdkv license
 ```
 
 ## Python API (public surface)
@@ -60,6 +83,8 @@ from mdkv import (
   save_mdkv, load_mdkv,
   validate_document,
   export_to_files,
+  diff_documents, DiffResult,
+  compute_stats, DocumentStats,
 )
 
 doc = MDKVDocument(title="T", authors=["A"], created=datetime.now(timezone.utc))
@@ -96,6 +121,28 @@ print(json.dumps(data, indent=2))
 # reconstruct from dict
 restored = MDKVDocument.from_dict(data)
 assert restored.title == doc.title
+```
+
+### Diff and stats
+
+```python
+from mdkv import diff_documents, compute_stats, load_mdkv
+
+doc_a = load_mdkv("doc_v1.mdkv")
+doc_b = load_mdkv("doc_v2.mdkv")
+
+# Compare two documents
+result = diff_documents(doc_a, doc_b)
+if result.has_changes:
+    print(result.to_dict())
+else:
+    print("Documents are identical")
+
+# Compute statistics
+stats = compute_stats(doc_a)
+print(f"{stats.track_count} tracks, {stats.total_characters} chars, {stats.total_lines} lines")
+print(f"Languages: {stats.languages}")
+print(f"Track types: {stats.tracks_by_type}")
 ```
 
 ### From YAML definitions
@@ -138,5 +185,8 @@ The GUI server exposes additional endpoints beyond the CRUD operations:
 - `GET /api/stats` — document statistics
 - `POST /api/diff` with `{"path": "other.mdkv"}` — diff against another document
 - `POST /api/validate` — returns warnings alongside errors
+- `POST /api/document` — update title, authors, version, and metadata
+- `POST /api/track` — create or update a track (validates track_type)
+- `DELETE /api/track/{track_id}` — remove a track (returns 404 if not found)
 
 To record a short demo (optional): see `examples/record_gui_demo.py`. If you have `ffmpeg` and ImageMagick, you can convert the recorded `.webm` to `.gif` for embedding.

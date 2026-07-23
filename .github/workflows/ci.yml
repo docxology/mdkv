@@ -24,7 +24,6 @@ jobs:
         run: |
           uv venv
           uv run pip install -e ".[dev]"
-          uv run pip install httpx
       - name: Run tests with coverage
         run: uv run pytest -q --cov=mdkv --cov-report=term-missing
       - name: Build docs
