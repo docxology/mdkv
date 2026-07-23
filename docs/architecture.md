@@ -51,6 +51,21 @@ MDKV is split into clear layers:
 - `services.stats`:
   - `compute_stats()` aggregates document statistics
   - `DocumentStats` dataclass with `to_dict()`
+- `services.pandoc_export`:
+  - `to_pdf()`, `to_epub()`, `to_docx()` via pandoc subprocess
+  - Mirrors docxology/template rendering approach (no new Python deps)
+- `core.history`:
+  - `TrackHistory` and `TrackVersion` for content revision history
+  - `add_version()`, `get_current()`, `get_version_at()`, `restore_to()`
+- `core.registry`:
+  - `TrackTypeRegistry` for custom track type registration
+  - `register_track_type()`, `get_registry()`
+- `i18n`:
+  - `set_language()`, `gettext()` for internationalization
+  - Falls back to English; reads `MDKV_LANG`/`LANG` env vars
+- `storage.io`:
+  - `save_mdkv_incremental()` for atomic incremental saves
+  - `save_mdkv()` with configurable compression and compresslevel
 - `cli.main`:
   - `init`, `info`, `validate`, track ops (add/remove/rename/update), search, export
   - `import` — import a Markdown file as a new .mdkv

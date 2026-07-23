@@ -21,14 +21,14 @@ from .storage import save_mdkv, load_mdkv, MDKVFormatError
 from .storage.io import save_mdkv_incremental
 
 __license__ = "Apache-2.0"
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 __all__ = [
     "core",
     "services",
     "storage",
     "cli",
-    # surfaced API
+    # surfaced API — core
     "MDKVDocument",
     "Track",
     "allowed_track_types",
@@ -36,7 +36,16 @@ __all__ = [
     "validate_document",
     "validate_track",
     "ValidationIssue",
+    # history
+    "TrackHistory",
+    "TrackVersion",
+    # registry
+    "TrackTypeRegistry",
+    "register_track_type",
+    "get_registry",
+    # services
     "search_document",
+    "search_document_async",
     "SearchMatch",
     "to_markdown",
     "to_html",
@@ -48,7 +57,9 @@ __all__ = [
     "to_pdf",
     "to_epub",
     "to_docx",
+    # storage
     "save_mdkv",
+    "save_mdkv_incremental",
     "load_mdkv",
     "MDKVFormatError",
 ]

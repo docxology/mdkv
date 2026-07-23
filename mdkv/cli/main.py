@@ -395,6 +395,40 @@ def stats_cmd(path: Path) -> None:
     click.echo(json.dumps(stats.to_dict(), indent=2))
 
 
+@main.command("history")
+@click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--id", "track_id", required=True, help="Track ID to show history for")
+@_handle_load_errors
+def history_cmd(path: Path, track_id: str) -> None:
+    """Show revision history for a track (from revision tracks)."""
+    from mdkv.core.history import TrackHistory
+    doc = load_mdkv(path)
+    # Build history from revision tracks that reference this track_id
+    revisions = [t for t in doc.tracks.values() if t.track_type == "revision"]
+    if not revisions:
+        click.echo(f"No revision tracks found for '{track_id}'.")
+        return
+    # Output revision contents as JSON
+    click.echo(json.dumps([
+        {"track_id": t.track_id, "content_preview": t.content[:200]}
+        for t in revisions
+    ], indent=2))
+
+
+@main.command("save-incremental")
+@click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
+@_handle_load_errors
+def save_incremental_cmd(path: Path) -> None:
+    """Save only changed tracks (incremental mode)."""
+    from mdkv.storage.io import save_mdkv_incremental
+    doc = load_mdkv(path)
+    result = save_mdkv_incremental(doc, path)
+    if result:
+        click.echo("Saved (incremental)")
+    else:
+        click.echo("Saved (full fallback)")
+
+
 @main.command("gui")
 @click.option("--path", type=click.Path(dir_okay=False, path_type=Path), required=False)
 @click.option("--host", default="127.0.0.1")

@@ -51,6 +51,13 @@ Export
    :members:
    :show-inheritance:
 
+Pandoc Export
+-------------
+
+.. automodule:: mdkv.services.pandoc_export
+   :members:
+   :show-inheritance:
+
 Diff
 ----
 
@@ -62,6 +69,27 @@ Stats
 -----
 
 .. automodule:: mdkv.services.stats
+   :members:
+   :show-inheritance:
+
+Track History
+-------------
+
+.. automodule:: mdkv.core.history
+   :members:
+   :show-inheritance:
+
+Track Type Registry
+-------------------
+
+.. automodule:: mdkv.core.registry
+   :members:
+   :show-inheritance:
+
+Internationalization
+--------------------
+
+.. automodule:: mdkv.i18n
    :members:
    :show-inheritance:
 

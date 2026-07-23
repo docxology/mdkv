@@ -395,6 +395,29 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         result = diff_documents(doc_a, doc_b)
         return result.to_dict()
 
+    @app.get("/api/diff/view", response_class=HTMLResponse)
+    def diff_view(other_path: str) -> str:
+        """Return an HTML diff view comparing the loaded document with another."""
+        doc_a = _require_doc()
+        p = Path(other_path).expanduser()
+        if not p.exists():
+            raise HTTPException(404, "file not found")
+        try:
+            doc_b = load_mdkv(p)
+        except Exception as exc:
+            raise HTTPException(400, f"failed to load: {exc}")
+        import difflib
+        md_a = to_markdown(doc_a)
+        md_b = to_markdown(doc_b)
+        differ = difflib.HtmlDiff(tabsize=2)
+        return differ.make_table(
+            md_a.splitlines(keepends=True),
+            md_b.splitlines(keepends=True),
+            fromdesc=doc_a.title,
+            todesc=doc_b.title,
+            context=True,
+        )
+
     return app
 
 

@@ -13,12 +13,13 @@
 - Use `datetime.now(timezone.utc)` — never `datetime.utcnow()` (deprecated in 3.12+).
 
 ## Package Structure
-- `mdkv.core`: data model + validation
-- `mdkv.storage`: persist/load `.mdkv` (ZIP + YAML manifest), `MDKVFormatError`
-- `mdkv.services`: search, export, diff, stats utilities
+- `mdkv.core`: data model + validation + history + registry
+- `mdkv.storage`: persist/load `.mdkv` (ZIP + YAML manifest), `MDKVFormatError`, `save_mdkv_incremental`
+- `mdkv.services`: search (sync+async), export, diff, stats, pandoc_export (PDF/EPUB/DOCX)
 - `mdkv.cli`: CLI entrypoints (`python -m mdkv` also works via `__main__.py`)
-- `mdkv.gui`: FastAPI web GUI
+- `mdkv.gui`: FastAPI web GUI (dark/light theme, drag-drop, diff viewer)
 - `mdkv.common`: logging utilities
+- `mdkv.i18n`: internationalization (gettext-based)
 - `mdkv.library`: example definition builder
 - `mdkv.demo`: demo document builder
 

@@ -5,6 +5,25 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-07-23
+
+### Added
+- CLI `history` command to show revision tracks for a track ID
+- CLI `save-incremental` command for atomic incremental saves
+- GUI `GET /api/diff/view?other_path=...` endpoint returning HTML diff via `difflib.HtmlDiff`
+- `__all__` in `mdkv/__init__.py` updated with all v0.8 exports (TrackHistory, TrackVersion,
+  TrackTypeRegistry, register_track_type, get_registry, search_document_async, save_mdkv_incremental)
+- `docs/api.rst` now includes automodule sections for pandoc_export, history, registry, and i18n
+- `docs/architecture.md` updated with all v0.8 subsystem descriptions
+- `.cursorrules` updated with v0.8 package structure (history, registry, i18n, pandoc_export, incremental)
+- 16 new tests in `tests/test_v09_features.py` (CLI history, save-incremental, GUI diff/view,
+  registry coverage, history coverage, incremental save edge cases, public API exports)
+
+### Coverage Improvements
+- `mdkv/core/registry.py`: 87% → 100%
+- `mdkv/core/history.py`: 95% → 98%
+- `mdkv/storage/io.py`: 88% → 94%
+
 ## [0.8.0] - 2025-07-23
 
 ### Added
