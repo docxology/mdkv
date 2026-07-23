@@ -5,6 +5,38 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-07-23
+
+### Added
+- **Track versioning**: `mdkv.core.history` with `TrackHistory` and `TrackVersion` dataclasses
+  for storing content revision history per track_id. Supports `add_version()`, `get_current()`,
+  `get_version_at()`, `restore_to()`, `list_versions()`, `to_dict()`.
+- **Plugin system**: `mdkv.core.registry` with `TrackTypeRegistry`, `register_track_type()`,
+  `get_registry()`. Allows registering custom track types with validators and heuristics.
+  Built-in types cannot be unregistered.
+- **Incremental save**: `save_mdkv_incremental(doc, path)` reads existing track contents,
+  determines what changed, and writes an atomic update. Falls back to full save if file
+  doesn't exist or is corrupt.
+- **Async search**: `search_document_async()` async generator with `limit` and `offset`
+  for pagination. Yields `SearchMatch` results incrementally.
+- **Internationalization**: `mdkv.i18n` module with `set_language()`, `gettext()`, `_()`.
+  Uses Python `gettext` with fallback to English. Reads `MDKV_LANG` or `LANG` env vars.
+- **GUI dark/light theme toggle**: CSS `prefers-color-scheme` support + manual toggle
+  button. Preference stored in `localStorage`.
+- **GUI drag-and-drop track reordering**: HTML5 Drag and Drop on track filter labels.
+  Calls `POST /api/move-track` on reorder.
+- **GUI split-pane diff viewer**: Diff button toggles split-pane view showing
+  `diff_documents()` output.
+- **Performance benchmarks**: `tests/test_benchmarks.py` with save/load/search/export
+  benchmarks on synthetic 5-track and 50-track documents.
+- 30 new tests across `test_v08_features.py` and `test_benchmarks.py`.
+
+### Changed
+- `mdkv.__init__` exports `TrackHistory`, `TrackVersion`, `TrackTypeRegistry`,
+  `register_track_type`, `get_registry`, `search_document_async`, `save_mdkv_incremental`
+- GUI frontend updated with theme toggle, drag-drop, diff viewer UI elements
+- Version bumped to 0.8.0
+
 ## [0.7.0] - 2025-07-23
 
 ### Added

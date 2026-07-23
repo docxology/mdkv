@@ -146,6 +146,7 @@ async function populateTrackFilters() {
         await renderSelectedTracks();
       });
     }
+    makeDraggable();
   } catch (e) {
     // no doc yet
   }
@@ -184,6 +185,100 @@ async function setEditorFromSelection() {
   // Editor always holds combined markdown for all tracks
   const md = await api('/api/render/markdown');
   document.getElementById('left').value = md.markdown;
+}
+
+// Theme toggle
+const btnTheme = document.getElementById('btnTheme');
+function applyTheme(dark) {
+  document.body.classList.toggle('dark', dark);
+  btnTheme.textContent = dark ? '☀' : '🌙';
+  localStorage.setItem('mdkv-theme', dark ? 'dark' : 'light');
+}
+const savedTheme = localStorage.getItem('mdkv-theme') === 'dark' ||
+  (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && !localStorage.getItem('mdkv-theme'));
+applyTheme(savedTheme);
+btnTheme.addEventListener('click', () => applyTheme(!document.body.classList.contains('dark')));
+
+// Diff viewer
+const btnDiff = document.getElementById('btnDiff');
+const diffView = document.getElementById('diffView');
+const panes = document.getElementById('panes');
+btnDiff.addEventListener('click', async () => {
+  if (diffView.classList.contains('active')) {
+    diffView.classList.remove('active');
+    panes.style.display = 'grid';
+    return;
+  }
+  // For now, just show a placeholder — full diff needs a second document path
+  const otherPath = prompt('Path to other .mdkv for diff:');
+  if (!otherPath) return;
+  try {
+    const r = await api('/api/diff', { method: 'POST', body: JSON.stringify({ path: otherPath }) });
+    const left = document.getElementById('diffLeftContent');
+    const right = document.getElementById('diffRightContent');
+    left.innerHTML = '<pre>' + JSON.stringify(r, null, 2) + '</pre>';
+    right.innerHTML = '<p>Diff report shown left.</p>';
+    diffView.classList.add('active');
+    panes.style.display = 'none';
+    setStatus('Diff loaded');
+  } catch (e) {
+    setStatus('Diff failed: ' + e.message);
+  }
+});
+
+// Drag-and-drop track reordering
+let draggedElement = null;
+document.addEventListener('dragstart', (e) => {
+  if (e.target.closest('.track-filters label[data-track-id]')) {
+    draggedElement = e.target.closest('label');
+    draggedElement.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+});
+document.addEventListener('dragend', () => {
+  if (draggedElement) {
+    draggedElement.classList.remove('dragging');
+    draggedElement = null;
+  }
+});
+document.addEventListener('dragover', (e) => {
+  if (draggedElement && e.target.closest('.track-filters label[data-track-id]')) {
+    e.preventDefault();
+    const target = e.target.closest('label');
+    if (target !== draggedElement) {
+      target.classList.add('drag-over');
+    }
+  }
+});
+document.addEventListener('dragleave', (e) => {
+  if (e.target.closest('.track-filters label[data-track-id]')) {
+    e.target.closest('label').classList.remove('drag-over');
+  }
+});
+document.addEventListener('drop', async (e) => {
+  if (draggedElement && e.target.closest('.track-filters label[data-track-id]')) {
+    e.preventDefault();
+    const target = e.target.closest('label');
+    target.classList.remove('drag-over');
+    const draggedId = draggedElement.dataset.trackId;
+    const targetId = target.dataset.trackId;
+    if (draggedId !== targetId) {
+      try {
+        await api('/api/move-track', { method: 'POST', body: JSON.stringify({ track_id: draggedId, after_id: targetId }) });
+        await refresh();
+        setStatus('Track reordered');
+      } catch (err) {
+        setStatus('Reorder failed: ' + err.message);
+      }
+    }
+  }
+});
+
+// Make track filter labels draggable
+function makeDraggable() {
+  document.querySelectorAll('.track-filters label[data-track-id]').forEach(label => {
+    label.draggable = true;
+  });
 }
 
 window.addEventListener('DOMContentLoaded', async () => {

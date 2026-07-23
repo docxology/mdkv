@@ -143,6 +143,20 @@ stats = compute_stats(doc_a)
 print(f"{stats.track_count} tracks, {stats.total_characters} chars, {stats.total_lines} lines")
 print(f"Languages: {stats.languages}")
 print(f"Track types: {stats.tracks_by_type}")
+
+# Access track IDs as a list
+print(f"Track IDs: {doc_a.track_ids}")
+
+# Validate a single track
+from mdkv import validate_track
+test_track = Track("notes", "commentary", None, "tracks/notes.md", "Some notes")
+issues = validate_track(test_track)
+for issue in issues:
+    print(f"{issue.level}: {issue.message}")
+
+# Move a track to a new position
+doc_a.move_track("notes", "primary")  # Move 'notes' after 'primary'
+doc_a.move_track("notes", None)  # Move 'notes' to first position
 ```
 
 ### From YAML definitions

@@ -133,6 +133,59 @@ def save_mdkv(
         zf.writestr(MANIFEST_NAME, yaml.safe_dump(manifest, sort_keys=False))
 
 
+def save_mdkv_incremental(doc: MDKVDocument, output_path: Path) -> bool:
+    """Save only changed tracks to an existing .mdkv file.
+
+    Opens the existing ZIP in append mode, removes changed track files,
+    and writes their new content. Falls back to full ``save_mdkv`` if the
+    file doesn't exist or is corrupt.
+
+    Returns ``True`` if incremental save was used, ``False`` if full save
+    was performed as fallback.
+    """
+    output_path = Path(output_path)
+    if not output_path.exists():
+        save_mdkv(doc, output_path)
+        return False
+    try:
+        # Read existing manifest and track contents
+        with zipfile.ZipFile(output_path, mode="r") as zf_old:
+            if MANIFEST_NAME not in zf_old.namelist():
+                save_mdkv(doc, output_path)
+                return False
+            old_manifest = yaml.safe_load(zf_old.open(MANIFEST_NAME).read().decode("utf-8"))
+            if not isinstance(old_manifest, dict):
+                save_mdkv(doc, output_path)
+                return False
+            old_contents: dict[str, str] = {}
+            for entry in old_manifest.get("tracks", []):
+                path = entry.get("path", "")
+                try:
+                    old_contents[path] = zf_old.open(path).read().decode("utf-8")
+                except KeyError:
+                    pass
+    except (zipfile.BadZipFile, Exception):
+        save_mdkv(doc, output_path)
+        return False
+    # Build new manifest and determine what changed
+    new_manifest = _manifest_from_doc(doc)
+    changed: list[str] = []
+    for track in doc.tracks.values():
+        if old_contents.get(track.path) != track.content:
+            changed.append(track.path)
+    if not changed:
+        # Nothing changed — just update the manifest
+        pass
+    # Write everything to a temp file, then rename (atomic on POSIX)
+    tmp_path = output_path.with_suffix(".mdkv.tmp")
+    with zipfile.ZipFile(tmp_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for track in doc.tracks.values():
+            zf.writestr(track.path, track.content)
+        zf.writestr(MANIFEST_NAME, yaml.safe_dump(new_manifest, sort_keys=False))
+    tmp_path.replace(output_path)
+    return True
+
+
 def load_mdkv(input_path: Path) -> MDKVDocument:
     """Load a ``.mdkv`` document from ``input_path``.
 

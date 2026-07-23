@@ -15,8 +15,10 @@
       <select id="libSelect"></select>
       <button id="btnSave">Save</button>
       <button id="btnValidate">Validate</button>
+      <button id="btnDiff">Diff</button>
+      <button class="theme-toggle" id="btnTheme">🌙</button>
     </div>
-    <div class="panes">
+    <div class="panes" id="panes">
       <textarea id="left" placeholder="MDKV combined markdown (editable)"></textarea>
       <div class="preview">
         <div class="preview-toolbar">
@@ -26,9 +28,11 @@
         <iframe id="right"></iframe>
       </div>
     </div>
+    <div class="diff-view" id="diffView">
+      <div class="diff-pane" id="diffLeft"><h3>Document A</h3><div id="diffLeftContent"></div></div>
+      <div class="diff-pane" id="diffRight"><h3>Document B</h3><div id="diffRightContent"></div></div>
+    </div>
     <div class="status" id="status"></div>
     <script src="/static/main.js"></script>
   </body>
-  </html>
-
-
+</html>

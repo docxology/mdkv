@@ -7,9 +7,10 @@ track type and language.  Each ``SearchMatch`` carries enough context
 to identify the hit without re-reading the document.
 """
 
+import asyncio
 import re
 from dataclasses import dataclass
-from typing import List, Iterable, Optional
+from typing import AsyncIterator, List, Iterable, Optional
 
 from mdkv.core.model import MDKVDocument
 
@@ -83,3 +84,57 @@ def search_document(
             if limit is not None and len(results) >= limit:
                 break
     return results
+
+
+async def search_document_async(
+    doc: MDKVDocument,
+    pattern: str,
+    flags: int = 0,
+    track_types: Optional[Iterable[str]] = None,
+    languages: Optional[Iterable[str]] = None,
+    case_insensitive: bool = False,
+    limit: Optional[int] = None,
+    offset: int = 0,
+) -> AsyncIterator[SearchMatch]:
+    """Async generator that yields ``SearchMatch`` results.
+
+    Supports ``limit`` and ``offset`` for pagination.  Yields matches
+    one at a time, allowing the caller to process them incrementally
+    without waiting for the full result set.
+    """
+    if case_insensitive:
+        flags |= re.IGNORECASE
+    regex = re.compile(pattern, flags)
+    allowed_types = set(track_types) if track_types else None
+    allowed_langs = set(languages) if languages else None
+    yielded = 0
+    skipped = 0
+    for track_id, track in doc.tracks.items():
+        if limit is not None and yielded >= limit:
+            break
+        if allowed_types is not None and track.track_type not in allowed_types:
+            continue
+        if allowed_langs is not None and track.language not in allowed_langs:
+            continue
+        for m in regex.finditer(track.content):
+            start, end = m.span()
+            if skipped < offset:
+                skipped += 1
+                continue
+            window_start = max(0, start - 20)
+            window_end = min(len(track.content), end + 20)
+            extract = track.content[window_start:window_end]
+            yield SearchMatch(
+                track_id=track_id,
+                track_type=track.track_type,
+                language=track.language,
+                start=start,
+                end=end,
+                extract=extract,
+            )
+            yielded += 1
+            if limit is not None and yielded >= limit:
+                break
+            # Yield control to the event loop periodically
+            if yielded % 100 == 0:
+                await asyncio.sleep(0)
