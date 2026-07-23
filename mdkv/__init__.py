@@ -21,7 +21,7 @@ from .storage import save_mdkv, load_mdkv, MDKVFormatError
 from .storage.io import save_mdkv_incremental
 
 __license__ = "Apache-2.0"
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 __all__ = [
     "core",

@@ -5,6 +5,26 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-07-23
+
+### Added
+- 27 GUI server coverage tests in `tests/test_gui_coverage.py` covering:
+  favicon, root page, open (success/corrupt/missing), save (success/no-path/no-doc),
+  render/html, render/markdown, render/track_html (success/missing/no-doc),
+  render/all_html, render/tracks_html (all/empty/subset/invalid-type/no-doc),
+  validate-track, move-track (missing-id/no-doc), document partial update,
+  get_track missing, open missing path
+
+### Coverage Improvements
+- `mdkv/gui/server.py`: 73% → **86%** (37 lines newly covered)
+- Total: 91% → **93%**
+
+### Changed
+- TODO.md rewritten — all original items marked complete, only low-priority
+  items remain (mypy strict audit, Pydantic schema validation, translation files,
+  GUI library endpoint coverage)
+- Version bumped to 0.10.0
+
 ## [0.9.0] - 2025-07-23
 
 ### Added
