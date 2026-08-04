@@ -274,7 +274,10 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             raise HTTPException(422, "track_ids must be a list")
         if len(ids) == 0:
             return MarkdownIt().render("<!-- MDKV: empty selection -->")
-        parts: list[str] = [f"<!-- MDKV: {doc.title} -->"]
+        parts: list[str] = []
+        # Escape the title in the comment to prevent comment-injection (-->)
+        safe_title = doc.title.replace("-->", "")
+        parts.append(f"<!-- MDKV: {safe_title} -->")
         idset = set(str(x) for x in ids)
         for t in doc.tracks.values():
             if t.track_id not in idset:

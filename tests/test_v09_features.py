@@ -26,12 +26,30 @@ def _make_doc(tmp_path: Path) -> Path:
 # === CLI history ===
 
 def test_cli_history_with_revisions(tmp_path: Path):
-    p = _make_doc(tmp_path)
-    r = CliRunner().invoke(main, ["history", str(p), "--id", "primary"])
+    """`--id` must filter; only the matching revision track is returned."""
+    d = Doc(title="T", authors=["A"], created=datetime(2025, 1, 1))
+    d.add_track(Tr("primary", "primary", "en", "tracks/primary.md", "# P"))
+    d.add_track(Tr("rev1", "revision", None, "tracks/rev1.md", "# Revision 1"))
+    d.add_track(Tr("rev2", "revision", None, "tracks/rev2.md", "# Revision 2"))
+    p = tmp_path / "doc.mdkv"
+    sm(d, p)
+    r = CliRunner().invoke(main, ["history", str(p), "--id", "rev1"])
     assert r.exit_code == 0
     data = json.loads(r.output)
-    assert len(data) == 1
-    assert "rev1" in data[0]["track_id"]
+    assert [x["track_id"] for x in data] == ["rev1"]
+
+
+def test_cli_history_filters_by_track_id(tmp_path: Path):
+    """A track with no matching revision track reports none (regression for the
+    prior behaviour that ignored --id and returned every revision)."""
+    d = Doc(title="T", authors=["A"], created=datetime(2025, 1, 1))
+    d.add_track(Tr("primary", "primary", "en", "tracks/primary.md", "# P"))
+    d.add_track(Tr("rev1", "revision", None, "tracks/rev1.md", "# Revision 1"))
+    p = tmp_path / "doc.mdkv"
+    sm(d, p)
+    r = CliRunner().invoke(main, ["history", str(p), "--id", "primary"])
+    assert r.exit_code == 0
+    assert "No revision tracks" in r.output
 
 
 def test_cli_history_no_revisions(tmp_path: Path):

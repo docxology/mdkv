@@ -11,6 +11,7 @@ from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv
 from mdkv.core.model import MDKVDocument as Doc, Track as Tr
 from mdkv.core.errors import ValidationError
 from mdkv.storage import MDKVFormatError
+from mdkv.storage.io import save_mdkv_incremental
 from mdkv.services.export import to_markdown, to_html, export_to_files, _safe_filename
 from mdkv.services.search import search_document
 from mdkv.cli import main
@@ -64,6 +65,34 @@ def test_to_markdown_escapes_comment_injection():
     # The injected part should not appear as unescaped content
     assert "evil-->injected" not in md
     assert "evilinjected" in md  # --> stripped
+
+
+def test_to_markdown_escapes_title_comment_injection():
+    """A title containing '-->' should not break out of the MDKV comment header."""
+    doc = Doc(title="T-->INJECTED", authors=["A"], created=datetime(2025, 1, 1))
+    doc.add_track(Tr("safe", "primary", "en", "tracks/safe.md", "content"))
+    md = to_markdown(doc)
+    assert "T-->INJECTED" not in md
+    assert "TINJECTED" in md  # --> stripped from the title too
+
+
+def test_incremental_save_preserves_unchanged_tracks(tmp_path):
+    """Incremental save must update changed tracks, add new ones, and keep
+    unchanged track content intact."""
+    doc = Doc(title="T", authors=["A"], created=datetime(2025, 1, 1))
+    doc.add_track(Tr("a", "primary", "en", "tracks/a.md", "AAA"))
+    doc.add_track(Tr("b", "commentary", None, "tracks/b.md", "BBB"))
+    p = tmp_path / "d.mdkv"
+    save_mdkv(doc, p)
+    # Change track a, leave b unchanged, add track c
+    doc.update_track_content("a", "CHANGED")
+    doc.add_track(Tr("c", "reference", None, "tracks/c.md", "CCC"))
+    result = save_mdkv_incremental(doc, p)
+    assert result is True
+    reloaded = load_mdkv(p)
+    assert reloaded.tracks["a"].content == "CHANGED"
+    assert reloaded.tracks["b"].content == "BBB"
+    assert reloaded.tracks["c"].content == "CCC"
 
 
 # ============================================================

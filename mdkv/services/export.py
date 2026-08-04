@@ -58,7 +58,9 @@ def to_markdown(
         parts.append("")
 
     include = set(include_track_types) if include_track_types else None
-    parts.append(f"<!-- MDKV: {doc.title} -->")
+    # Escape the title in the comment to prevent comment-injection (-->)
+    safe_title = doc.title.replace("-->", "")
+    parts.append(f"<!-- MDKV: {safe_title} -->")
     for track in doc.tracks.values():
         if include is not None and track.track_type not in include:
             continue

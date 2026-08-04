@@ -27,9 +27,11 @@ metadata values.
 ## HTML Comment Injection Prevention
 
 Track metadata in export headers (`<!-- track:... -->`) is sanitized by
-stripping `-->` sequences from `track_id`, `track_type`, and `language`
-before embedding in HTML comments. This prevents an attacker from breaking
-out of the comment context and injecting arbitrary content.
+stripping `-->` sequences from `track_id`, `track_type`, and `language`, and
+the document title in the top-level `<!-- MDKV: ... -->` header is sanitized
+the same way. This prevents an attacker from breaking out of the comment
+context and injecting arbitrary content via either track metadata or the
+document title.
 
 ## Container Integrity
 

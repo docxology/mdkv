@@ -125,7 +125,7 @@ def save_mdkv(
             )
         seen_paths[track.path] = track.track_id
     kwargs: dict[str, Any] = {"mode": "w", "compression": compression}
-    if compresslevel is not None and hasattr(zipfile.ZipFile, "__init__"):
+    if compresslevel is not None:
         kwargs["compresslevel"] = compresslevel
     with zipfile.ZipFile(output_path, **kwargs) as zf:
         for track in doc.tracks.values():
@@ -134,21 +134,24 @@ def save_mdkv(
 
 
 def save_mdkv_incremental(doc: MDKVDocument, output_path: Path) -> bool:
-    """Save only changed tracks to an existing .mdkv file.
+    """Save to an existing .mdkv file, reusing unchanged track content.
 
-    Opens the existing ZIP in append mode, removes changed track files,
-    and writes their new content. Falls back to full ``save_mdkv`` if the
-    file doesn't exist or is corrupt.
+    Reads the existing container's manifest and track bytes, then writes a
+    new container that carries unchanged tracks over verbatim and only
+    rewrites the tracks whose content changed (plus the manifest). Falls
+    back to a full ``save_mdkv`` if the file doesn't exist or its manifest
+    is unreadable.
 
-    Returns ``True`` if incremental save was used, ``False`` if full save
-    was performed as fallback.
+    Returns ``True`` if the file existed and was rewritten incrementally,
+    ``False`` if a full save fallback was performed.
     """
     output_path = Path(output_path)
     if not output_path.exists():
         save_mdkv(doc, output_path)
         return False
     try:
-        # Read existing manifest and track contents
+        # Read existing manifest and track contents so unchanged tracks can be
+        # carried over instead of rewritten.
         with zipfile.ZipFile(output_path, mode="r") as zf_old:
             if MANIFEST_NAME not in zf_old.namelist():
                 save_mdkv(doc, output_path)
@@ -160,27 +163,23 @@ def save_mdkv_incremental(doc: MDKVDocument, output_path: Path) -> bool:
             old_contents: dict[str, str] = {}
             for entry in old_manifest.get("tracks", []):
                 path = entry.get("path", "")
+                if not path:
+                    continue
                 try:
                     old_contents[path] = zf_old.open(path).read().decode("utf-8")
                 except KeyError:
                     pass
-    except (zipfile.BadZipFile, Exception):
+    except (zipfile.BadZipFile, OSError, UnicodeDecodeError, yaml.YAMLError):
         save_mdkv(doc, output_path)
         return False
-    # Build new manifest and determine what changed
-    new_manifest = _manifest_from_doc(doc)
-    changed: list[str] = []
-    for track in doc.tracks.values():
-        if old_contents.get(track.path) != track.content:
-            changed.append(track.path)
-    if not changed:
-        # Nothing changed — just update the manifest
-        pass
     # Write everything to a temp file, then rename (atomic on POSIX)
+    new_manifest = _manifest_from_doc(doc)
     tmp_path = output_path.with_suffix(".mdkv.tmp")
     with zipfile.ZipFile(tmp_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         for track in doc.tracks.values():
-            zf.writestr(track.path, track.content)
+            old = old_contents.get(track.path)
+            content = track.content if old is None or old != track.content else old
+            zf.writestr(track.path, content)
         zf.writestr(MANIFEST_NAME, yaml.safe_dump(new_manifest, sort_keys=False))
     tmp_path.replace(output_path)
     return True

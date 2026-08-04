@@ -96,6 +96,23 @@ uv run mdkv move-track doc.mdkv --id notes --after-id primary
 uv run mdkv move-track doc.mdkv --id notes   # move to first position
 ```
 
+## History & Incremental Save
+
+```bash
+# show revision history for a specific track (revision tracks whose id matches)
+uv run mdkv history doc.mdkv --id rev1
+
+# save the document to disk, reusing unchanged track content
+uv run mdkv save-incremental doc.mdkv
+```
+
+`history --id <track>` returns only the `revision`-type tracks whose `track_id`
+equals `<track>`; if none match it prints a message and exits 0. Revisions are
+expected to be stored as `revision` tracks. `save-incremental` rewrites the
+container atomically, carrying unchanged track content over instead of
+re-encoding it, and falls back to a full save if the file is missing or
+corrupt.
+
 ## Export
 
 ```bash

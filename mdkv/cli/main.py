@@ -401,10 +401,12 @@ def stats_cmd(path: Path) -> None:
 @_handle_load_errors
 def history_cmd(path: Path, track_id: str) -> None:
     """Show revision history for a track (from revision tracks)."""
-    from mdkv.core.history import TrackHistory
     doc = load_mdkv(path)
-    # Build history from revision tracks that reference this track_id
-    revisions = [t for t in doc.tracks.values() if t.track_type == "revision"]
+    # History for a track is the set of revision tracks whose track_id matches.
+    revisions = [
+        t for t in doc.tracks.values()
+        if t.track_type == "revision" and t.track_id == track_id
+    ]
     if not revisions:
         click.echo(f"No revision tracks found for '{track_id}'.")
         return
