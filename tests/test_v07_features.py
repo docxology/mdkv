@@ -167,11 +167,11 @@ def test_to_pdf_and_epub_and_docx_direct_execution(tmp_path: Path):
     with patch("mdkv.services.pandoc_export._check_pandoc", return_value="/usr/bin/pandoc"), \
          patch("subprocess.run", return_value=subprocess.CompletedProcess([], 1, stdout="out", stderr="err")):
         with pytest.raises(subprocess.CalledProcessError):
-            to_pdf(doc, tmp_path / "t.pdf")
+            to_pdf(doc, tmp_path / "t.pdf", pandoc_args=["--toc"])
         with pytest.raises(subprocess.CalledProcessError):
-            to_epub(doc, tmp_path / "t.epub", cover_image=tmp_path / "cov.png")
+            to_epub(doc, tmp_path / "t.epub", cover_image=tmp_path / "cov.png", pandoc_args=["--toc"])
         with pytest.raises(subprocess.CalledProcessError):
-            to_docx(doc, tmp_path / "t.docx", reference_doc=tmp_path / "ref.docx")
+            to_docx(doc, tmp_path / "t.docx", reference_doc=tmp_path / "ref.docx", pandoc_args=["--toc"])
 
     # Direct pandoc_export success path execution
     with patch("mdkv.services.pandoc_export._check_pandoc", return_value="/usr/bin/pandoc"), \

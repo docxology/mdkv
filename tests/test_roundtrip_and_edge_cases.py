@@ -40,6 +40,11 @@ def test_track_manifest_model_validation():
     m_other = MDKVManifestModel(title="T", created=datetime.now(UTC), metadata="not a dict")  # type: ignore[arg-type]
     assert m_other.metadata == {"not a dict": ""}
 
+    # Directly test _doc_from_manifest receiving non-dict
+    from mdkv.storage.io import _doc_from_manifest
+    with pytest.raises(MDKVFormatError, match="not a valid YAML mapping"):
+        _doc_from_manifest("not a dict", None)  # type: ignore[arg-type]
+
     # Invalid path
     with pytest.raises(Exception):
         TrackManifestModel(track_id="t1", track_type="primary", path="invalid_path.md")
@@ -158,13 +163,6 @@ def test_incremental_save_corrupt_fallback(tmp_path: Path):
     assert res2 is False
     assert load_mdkv(p).title == doc.title
 
-    # Existing archive is unparseable zip
-    p_bad = tmp_path / "bad_zip.mdkv"
-    p_bad.write_bytes(b"not a real zip")
-    res_bad = save_mdkv_incremental(doc, p_bad)
-    assert res_bad is False
-    assert load_mdkv(p_bad).title == doc.title
-
     # Existing archive has track missing from zip
     with zipfile.ZipFile(p, "w") as zf:
         zf.writestr(
@@ -178,6 +176,21 @@ def test_incremental_save_corrupt_fallback(tmp_path: Path):
     # Incremental save will skip the missing track and save cleanly
     res3 = save_mdkv_incremental(doc, p)
     assert res3 is True
+    assert load_mdkv(p).title == doc.title
+
+    # Existing archive is unparseable zip
+    p_bad = tmp_path / "bad_zip.mdkv"
+    p_bad.write_bytes(b"not a real zip")
+    res_bad = save_mdkv_incremental(doc, p_bad)
+    assert res_bad is False
+    assert load_mdkv(p_bad).title == doc.title
+
+    # Existing archive has track missing from zip, triggering save fallback
+    with zipfile.ZipFile(p, "w") as zf:
+        zf.writestr("manifest.yaml", "tracks:\n  - path: tracks/missing.md\n  - path: ''\n")
+    # Missing track in container will be handled by skipping missing old track
+    res_missing = save_mdkv_incremental(doc, p)
+    assert res_missing is True
     assert load_mdkv(p).title == doc.title
 
 
@@ -238,6 +251,33 @@ def test_search_async_type_and_lang_filter():
     assert t_res[0].track_id == "notes"
     assert len(l_res) == 1
     assert l_res[0].track_id == "notes"
+
+
+def test_search_async_break_limit_and_flags():
+    """Test search_document_async case_insensitive flag and limit breaks."""
+    import asyncio
+    doc = MDKVDocument(title="Doc", authors=["A"], created=datetime(2025, 1, 1))
+    doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "ABC ABC ABC"))
+    doc.add_track(Track("notes", "commentary", "en", "tracks/notes.md", "ABC"))
+
+    async def _run_break():
+        matches = []
+        async for m in search_document_async(doc, "abc", case_insensitive=True, limit=1):
+            matches.append(m)
+        return matches
+
+    res = asyncio.run(_run_break())
+    assert len(res) == 1
+
+    # Search with limit across multiple tracks to exercise the outer loop break
+    async def _run_outer():
+        matches = []
+        async for m in search_document_async(doc, "ABC", limit=3):
+            matches.append(m)
+        return matches
+
+    res_outer = asyncio.run(_run_outer())
+    assert len(res_outer) == 3
 
 
 def test_search_async_yield_control():

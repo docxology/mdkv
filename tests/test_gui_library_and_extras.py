@@ -36,10 +36,9 @@ def test_gui_library_build_when_empty(tmp_path: Path):
     """Test /api/library triggers build_all_examples when _built is empty."""
     app = create_app()
     client = TestClient(app)
-    with patch("mdkv.gui.server.build_all_examples") as mock_build:
+    with patch("pathlib.Path.glob", return_value=[]), patch("mdkv.gui.server.build_all_examples") as mock_build:
         resp = client.get("/api/library")
         assert resp.status_code == 200
-        # verify mock_build or response
         assert mock_build is not None
 
 
