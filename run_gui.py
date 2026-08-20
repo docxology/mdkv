@@ -8,8 +8,8 @@ import sys
 import time
 import webbrowser
 from pathlib import Path
-from urllib.request import urlopen
 from urllib.error import URLError
+from urllib.request import urlopen
 
 
 def ensure_module(mod: str, pip_name: str | None = None) -> None:

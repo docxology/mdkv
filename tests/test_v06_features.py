@@ -6,9 +6,9 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from mdkv import MDKVDocument, Track, validate_track, search_document
-from mdkv.core.validate import validate_document, ValidationIssue
+from mdkv import MDKVDocument, Track, search_document, validate_track
 from mdkv.cli import main
+from mdkv.core.validate import validate_document
 
 
 def _doc() -> MDKVDocument:
@@ -218,8 +218,9 @@ def test_cli_export_json(tmp_path: Path):
 
 def test_gui_document_json(tmp_path: Path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -235,8 +236,9 @@ def test_gui_document_json(tmp_path: Path):
 
 def test_gui_import_endpoint(tmp_path: Path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -255,8 +257,9 @@ def test_gui_import_endpoint(tmp_path: Path):
 
 def test_gui_import_missing_file(tmp_path: Path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -268,8 +271,9 @@ def test_gui_import_missing_file(tmp_path: Path):
 
 def test_gui_import_missing_id(tmp_path: Path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()

@@ -1,0 +1,62 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: mdkv 0.10.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-19 12:00-0700\n"
+"PO-Revision-Date: 2026-08-19 12:00-0700\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Created"
+msgstr "Créé"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "ERROR"
+msgstr "ERREUR"
+
+msgid "WARN"
+msgstr "AVERTISSEMENT"
+
+msgid "Title"
+msgstr "Titre"
+
+msgid "Authors"
+msgstr "Auteurs"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Tracks"
+msgstr "Pistes"
+
+msgid "Language"
+msgstr "Langue"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Path"
+msgstr "Chemin"
+
+msgid "No differences found."
+msgstr "Aucune différence trouvée."
+
+msgid "Differences found:"
+msgstr "Différences trouvées:"
+
+msgid "Document is valid"
+msgstr "Le document est valide"
+
+msgid "Document title is required"
+msgstr "Le titre du document est requis"
+
+msgid "At least one author is required"
+msgstr "Au moins un auteur est requis"
+
+msgid "Primary track is required"
+msgstr "Une piste principale est requise"

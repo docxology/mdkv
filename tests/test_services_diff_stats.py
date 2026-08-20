@@ -2,8 +2,8 @@
 from datetime import datetime
 
 from mdkv.core.model import MDKVDocument, Track
-from mdkv.services.diff import diff_documents, DiffResult
-from mdkv.services.stats import compute_stats, DocumentStats
+from mdkv.services.diff import DiffResult, diff_documents
+from mdkv.services.stats import compute_stats
 
 
 def _doc_a() -> MDKVDocument:

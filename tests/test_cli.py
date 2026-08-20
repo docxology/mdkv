@@ -2,12 +2,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from mdkv.cli import main
-from mdkv.model import MDKVDocument, Track
 from mdkv.io import save_mdkv
+from mdkv.model import MDKVDocument, Track
 
 
 def _make_doc(tmp_path: Path) -> Path:

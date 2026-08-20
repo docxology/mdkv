@@ -9,15 +9,14 @@ format.
 """
 
 import zipfile
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
-from mdkv.core.model import MDKVDocument, Track
 from mdkv.core.errors import ValidationError
-
+from mdkv.core.model import MDKVDocument, Track
+from mdkv.storage.schema import MDKVManifestModel
 
 MANIFEST_NAME = "manifest.yaml"
 
@@ -26,7 +25,7 @@ class MDKVFormatError(Exception):
     """Raised when a ``.mdkv`` container is structurally invalid."""
 
 
-def _manifest_from_doc(doc: MDKVDocument) -> Dict[str, Any]:
+def _manifest_from_doc(doc: MDKVDocument) -> dict[str, Any]:
     """Create a manifest dictionary suitable for YAML emission.
 
     The manifest lists metadata and an index of tracks with paths. Track content
@@ -50,45 +49,51 @@ def _manifest_from_doc(doc: MDKVDocument) -> Dict[str, Any]:
     }
 
 
-def _doc_from_manifest(manifest: Dict[str, Any], file_reader: zipfile.ZipFile) -> MDKVDocument:
+def _doc_from_manifest(manifest: dict[str, Any], file_reader: zipfile.ZipFile) -> MDKVDocument:
     """Reconstruct a document from a parsed manifest and the ZIP handle.
 
     Raises ``MDKVFormatError`` if the manifest is missing required keys
     or a referenced track file does not exist in the archive.
     """
-    # Required manifest fields
+    if not isinstance(manifest, dict):
+        raise MDKVFormatError("manifest is not a valid YAML mapping")
+
+    # Required manifest fields check for backward compatibility message match
     for key in ("title", "created"):
-        if key not in manifest:
+        if key not in manifest or manifest[key] is None:
             raise MDKVFormatError(f"manifest missing required key: {key}")
 
+    try:
+        validated_manifest = MDKVManifestModel.model_validate(manifest)
+    except Exception as exc:
+        raise MDKVFormatError(f"manifest schema validation failed: {exc}") from exc
+
     doc = MDKVDocument(
-        title=manifest["title"],
-        authors=list(manifest.get("authors", [])),
-        created=datetime.fromisoformat(manifest["created"]),
-        version=manifest.get("version", "0.1"),
+        title=validated_manifest.title,
+        authors=list(validated_manifest.authors),
+        created=validated_manifest.created,
+        version=validated_manifest.version,
     )
-    doc.metadata.update(manifest.get("metadata", {}))
-    for entry in manifest.get("tracks", []):
-        for key in ("track_id", "track_type", "path"):
-            if key not in entry:
-                raise MDKVFormatError(f"track entry missing required key: {key}")
-        path = entry["path"]
+    doc.metadata.update(validated_manifest.metadata)
+
+    for entry in validated_manifest.tracks:
+        path = entry.path
         # Verify the track file exists in the archive
         try:
             with file_reader.open(path) as f:
                 content = f.read().decode("utf-8")
-        except KeyError:
-            raise MDKVFormatError(f"track file '{path}' not found in container")
+        except KeyError as exc:
+            raise MDKVFormatError(f"track file '{path}' not found in container") from exc
         try:
             track = Track(
-                track_id=entry["track_id"],
-                track_type=entry["track_type"],
-                language=entry.get("language"),
+                track_id=entry.track_id,
+                track_type=entry.track_type,
+                language=entry.language,
                 path=path,
                 content=content,
             )
         except ValueError as exc:
-            raise MDKVFormatError(f"invalid track definition for '{entry.get('track_id', '?')}': {exc}")
+            raise MDKVFormatError(f"invalid track definition for '{entry.track_id}': {exc}") from exc
         doc.add_track(track)
     return doc
 
@@ -169,7 +174,7 @@ def save_mdkv_incremental(doc: MDKVDocument, output_path: Path) -> bool:
                     old_contents[path] = zf_old.open(path).read().decode("utf-8")
                 except KeyError:
                     pass
-    except (zipfile.BadZipFile, OSError, UnicodeDecodeError, yaml.YAMLError):
+    except (zipfile.BadZipFile, OSError, UnicodeDecodeError, yaml.YAMLError, MDKVFormatError):
         save_mdkv(doc, output_path)
         return False
     # Write everything to a temp file, then rename (atomic on POSIX)

@@ -2,21 +2,22 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
 
-from mdkv.storage import load_mdkv, save_mdkv, MDKVFormatError
+from mdkv import __version__
+from mdkv.core.errors import ValidationError
 from mdkv.core.model import MDKVDocument, Track
 from mdkv.core.validate import validate_document
-from mdkv.core.errors import ValidationError
-from mdkv.services.export import to_markdown, to_html, export_to_files
-from mdkv.services.search import search_document
-from mdkv.services.diff import diff_documents
-from mdkv.services.stats import compute_stats
 from mdkv.gui import run as run_gui
-from mdkv import __version__
+from mdkv.i18n import _
+from mdkv.services.diff import diff_documents
+from mdkv.services.export import export_to_files, to_html, to_markdown
+from mdkv.services.search import search_document
+from mdkv.services.stats import compute_stats
+from mdkv.storage import MDKVFormatError, load_mdkv, save_mdkv
 
 
 def _handle_load_errors(fn):
@@ -47,10 +48,10 @@ def main() -> None:
 @click.option("--author", multiple=True, required=True)
 @click.option("--out", type=click.Path(dir_okay=False, path_type=Path), required=True)
 def init(title: str, author: list[str], out: Path) -> None:
-    doc = MDKVDocument(title=title, authors=list(author), created=datetime.now(timezone.utc))
+    doc = MDKVDocument(title=title, authors=list(author), created=datetime.now(UTC))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# New Document\n\nStart here."))
     save_mdkv(doc, out)
-    click.echo(f"Created {out}")
+    click.echo(f"{_('Created')} {out}")
 
 
 @main.command()
@@ -62,13 +63,13 @@ def info(path: Path, fmt: str) -> None:
     """Show document metadata and track index."""
     doc = load_mdkv(path)
     if fmt == "table":
-        click.echo(f"Title:   {doc.title}")
-        click.echo(f"Authors: {', '.join(doc.authors)}")
-        click.echo(f"Version: {doc.version}")
-        click.echo(f"Created: {doc.created.isoformat()}")
-        click.echo(f"Tracks:  {len(doc.tracks)}")
+        click.echo(f"{_('Title')}:   {doc.title}")
+        click.echo(f"{_('Authors')}: {', '.join(doc.authors)}")
+        click.echo(f"{_('Version')}: {doc.version}")
+        click.echo(f"{_('Created')}: {doc.created.isoformat()}")
+        click.echo(f"{_('Tracks')}:  {len(doc.tracks)}")
         click.echo("")
-        click.echo(f"{'ID':<20} {'Type':<15} {'Language':<10} {'Path'}")
+        click.echo(f"{'ID':<20} {_('Type'):<15} {_('Language'):<10} {_('Path')}")
         click.echo(f"{'--':<20} {'----':<15} {'--------':<10} {'----'}")
         for t in doc.tracks.values():
             lang = t.language or "-"
@@ -234,10 +235,10 @@ def search_cmd(path: Path, pattern: str, types: str, languages: str, case_insens
     """Search across tracks for a regex pattern."""
     doc = load_mdkv(path)
     tt = [t.strip() for t in types.split(",") if t.strip()] if types else None
-    ll = [l.strip() for l in languages.split(",") if l.strip()] if languages else None
+    lang_list = [lang.strip() for lang in languages.split(",") if lang.strip()] if languages else None
     try:
         matches = search_document(
-            doc, pattern=pattern, track_types=tt, languages=ll,
+            doc, pattern=pattern, track_types=tt, languages=lang_list,
             case_insensitive=case_insensitive, limit=limit,
         )
     except re.error as e:
@@ -260,7 +261,7 @@ def search_cmd(path: Path, pattern: str, types: str, languages: str, case_insens
 @click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
 @click.option("--json", "as_json", is_flag=True, help="Output validation result as JSON")
 @_handle_load_errors
-def validate(path: Path, as_json: bool) -> None:  # type: ignore[override]
+def validate(path: Path, as_json: bool) -> None:
     """Validate the document and report issues."""
     doc = load_mdkv(path)
     try:
@@ -312,7 +313,7 @@ def export(path: Path, as_html: bool, types: str | None, out_dir: Path | None,
             data["tracks"] = [t for t in data["tracks"] if t["track_type"] in include]
         click.echo(json.dumps(data, indent=2))
     elif fmt in ("pdf", "epub", "docx"):
-        from mdkv.services.pandoc_export import to_pdf, to_epub, to_docx
+        from mdkv.services.pandoc_export import to_docx, to_epub, to_pdf
         out = path.with_suffix(f".{fmt}")
         try:
             if fmt == "pdf":
@@ -357,7 +358,7 @@ def import_cmd(
     doc = MDKVDocument(
         title=title,
         authors=list(author),
-        created=datetime.now(timezone.utc),
+        created=datetime.now(UTC),
     )
     doc.add_track(Track(
         track_id=track_id,
@@ -380,7 +381,7 @@ def diff_cmd(path_a: Path, path_b: Path) -> None:
     doc_b = load_mdkv(path_b)
     result = diff_documents(doc_a, doc_b)
     if not result.has_changes:
-        click.echo("No differences found.")
+        click.echo(_("No differences found."))
     else:
         click.echo(json.dumps(result.to_dict(), indent=2))
 
@@ -444,13 +445,11 @@ def gui_cmd(path: Path | None, host: str, port: int) -> None:
 @click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))
 def completions_cmd(shell: str) -> None:
     """Generate shell completion scripts."""
-    env_var = "_MDKV_COMPLETE"
     click.echo(f"# Add this to your shell config (e.g. ~/.{shell}rc):")
     click.echo(f'# eval "$(_MDKV_COMPLETE={shell}_source mdkv)"')
-    click.echo(f"# Or save this script and source it:")
+    click.echo("# Or save this script and source it:")
     click.echo("")
     # Use click's built-in shell completion
-    import click.shell_completion as cs
     # Click generates completions dynamically; we output the instruction
     click.echo(f'export _MDKV_COMPLETE={shell}_source')
     click.echo(f'eval "$(mdkv --generate-completions {shell} 2>/dev/null || true)"')

@@ -94,6 +94,16 @@ def test_cli_validate_json_with_warnings(tmp_path: Path):
     assert len(data["issues"]) >= 2
 
 
+def test_cli_validate_unhandled_error(tmp_path: Path):
+    """Test CLI validate error output path in non-JSON mode."""
+    p = tmp_path / "bad.mdkv"
+    d = MDKVDocument(title="", authors=[], created=datetime(2025, 1, 1))
+    save_mdkv(d, p)
+    r = CliRunner().invoke(main, ["validate", str(p)])
+    assert r.exit_code != 0
+    assert "ERROR:" in r.output
+
+
 def test_cli_validate_json_error(tmp_path: Path):
     d = MDKVDocument(title="", authors=[], created=datetime(2025, 1, 1))
     p = tmp_path / "bad.mdkv"
@@ -116,8 +126,9 @@ def test_cli_export_metadata_header(tmp_path: Path):
 def test_gui_document_update_version_and_metadata(tmp_path: Path):
     """Test that GUI /api/document POST supports version and metadata updates."""
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -138,8 +149,9 @@ def test_gui_document_update_version_and_metadata(tmp_path: Path):
 def test_gui_stats_uses_shared_service(tmp_path: Path):
     """Verify /api/stats returns correct data from compute_stats."""
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -155,8 +167,9 @@ def test_gui_stats_uses_shared_service(tmp_path: Path):
 def test_gui_diff_uses_shared_service(tmp_path: Path):
     """Verify /api/diff returns correct data from diff_documents."""
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
     from mdkv.storage import save_mdkv
 
     state.path = tmp_path / "a.mdkv"

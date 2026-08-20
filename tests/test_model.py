@@ -1,7 +1,6 @@
-import io
 from datetime import datetime
 
-from mdkv.model import Track, MDKVDocument, allowed_track_types
+from mdkv.model import MDKVDocument, Track, allowed_track_types
 
 
 def test_create_document_and_tracks():

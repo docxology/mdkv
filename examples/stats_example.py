@@ -1,8 +1,8 @@
 """Print statistics about an .mdkv document."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv
+from mdkv import MDKVDocument, Track, load_mdkv, save_mdkv
 
 
 def main() -> None:
@@ -10,7 +10,7 @@ def main() -> None:
     doc = MDKVDocument(
         title="Stats Demo",
         authors=["DAF"],
-        created=datetime.now(timezone.utc),
+        created=datetime.now(UTC),
         version="1.0.0",
     )
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Stats\n\nSome content here.\nWith multiple lines."))

@@ -1,13 +1,13 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
+from mdkv.io import load_mdkv, save_mdkv
 from mdkv.model import MDKVDocument, Track
-from mdkv.io import save_mdkv, load_mdkv
 
 
 def main() -> None:
     path = Path("roundtrip.mdkv")
-    doc = MDKVDocument(title="Roundtrip", authors=["A"], created=datetime.now(timezone.utc))
+    doc = MDKVDocument(title="Roundtrip", authors=["A"], created=datetime.now(UTC))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "Roundtrip"))
     save_mdkv(doc, path)
     loaded = load_mdkv(path)

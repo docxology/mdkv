@@ -1,8 +1,9 @@
 from datetime import datetime
+
 import pytest
 
-from mdkv.model import Track, MDKVDocument
-from mdkv.validate import validate_document, ValidationError
+from mdkv.model import MDKVDocument, Track
+from mdkv.validate import ValidationError, validate_document
 
 
 def test_basic_validation_passes():

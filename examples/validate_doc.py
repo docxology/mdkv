@@ -1,8 +1,8 @@
 from pathlib import Path
 
+from mdkv.errors import ValidationError
 from mdkv.io import load_mdkv
 from mdkv.validate import validate_document
-from mdkv.errors import ValidationError
 
 
 def main() -> None:

@@ -1,11 +1,8 @@
 """Tests for enhanced validation: warnings, path uniqueness, content heuristics."""
 from datetime import datetime
 
-import pytest
-
 from mdkv.core.model import MDKVDocument, Track
-from mdkv.core.validate import validate_document, ValidationIssue
-from mdkv.core.errors import ValidationError
+from mdkv.core.validate import validate_document
 
 
 def _base_doc() -> MDKVDocument:

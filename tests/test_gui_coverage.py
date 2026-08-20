@@ -3,8 +3,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from mdkv.gui.server import create_app, state
 from mdkv.demo import build_multitrack_demo_document
+from mdkv.gui.server import create_app, state
 from mdkv.storage import save_mdkv
 
 
@@ -231,8 +231,9 @@ def test_render_tracks_html_no_doc():
 
 def test_validate_track_with_validation_error(tmp_path: Path):
     """GET /api/validate-track on a track that triggers a ValidationError."""
-    from mdkv.core.model import MDKVDocument, Track
     from datetime import datetime
+
+    from mdkv.core.model import MDKVDocument, Track
     doc = MDKVDocument(title="T", authors=["A"], created=datetime(2025, 1, 1))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "content"))
     state.path = tmp_path / "t.mdkv"

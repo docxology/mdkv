@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 from mdkv.core.model import MDKVDocument, Track
-from mdkv.services.export import to_markdown, to_html, export_to_files
+from mdkv.services.export import export_to_files, to_html, to_markdown
 
 
 def test_export_functions_covering_branches(tmp_path: Path):

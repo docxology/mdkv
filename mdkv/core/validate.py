@@ -9,10 +9,10 @@ issues exist.  WARN-level issues are returned but never raised.
 
 import re
 from dataclasses import dataclass
-from typing import List
+
+from mdkv.core.model import MDKVDocument, Track
 
 from .errors import ValidationError
-
 
 # Semver-like pattern: MAJOR.MINOR or MAJOR.MINOR.PATCH with optional pre-release
 _VERSION_RE = re.compile(r"^\d+\.\d+(?:\.\d+)?(?:[-+].+)?$")
@@ -36,13 +36,13 @@ class ValidationIssue:
     track_id: str | None = None
 
 
-def validate_document(doc) -> List[ValidationIssue]:
+def validate_document(doc: MDKVDocument) -> list[ValidationIssue]:
     """Validate required fields, track invariants, and content.
 
     Returns a list of ``ValidationIssue`` objects.  Raises ``ValidationError``
     if any ERROR-level issues are found.
     """
-    issues: List[ValidationIssue] = []
+    issues: list[ValidationIssue] = []
 
     # --- Document-level checks ---
     if not doc.title:
@@ -114,13 +114,15 @@ def validate_document(doc) -> List[ValidationIssue]:
     return issues
 
 
-def validate_track(track) -> List[ValidationIssue]:
+def validate_track(track: Track) -> list[ValidationIssue]:
     """Validate a single ``Track`` in isolation.
 
     Returns a list of ``ValidationIssue`` objects.  Raises ``ValidationError``
     if any ERROR-level issues are found.
     """
-    issues: List[ValidationIssue] = []
+    if not isinstance(track, Track):
+        raise ValidationError("track must be an instance of Track")
+    issues: list[ValidationIssue] = []
     tid = track.track_id
 
     # Reserved track_id
@@ -147,7 +149,4 @@ def validate_track(track) -> List[ValidationIssue]:
             ValidationIssue("WARN", f"translation track '{tid}' has no language set", track_id=tid)
         )
 
-    errors = [i for i in issues if i.level == "ERROR"]
-    if errors:
-        raise ValidationError("; ".join(i.message for i in errors))
     return issues

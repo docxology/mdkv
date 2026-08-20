@@ -1,18 +1,16 @@
 """Tests for v0.8.0: TrackHistory, plugin registry, incremental save, async search,
 benchmarks, i18n, GUI theme/drag-drop/diff."""
 import asyncio
-import zipfile
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 
-from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv
-from mdkv.core.history import TrackHistory, TrackVersion
-from mdkv.core.registry import TrackTypeRegistry, register_track_type, get_registry
+from mdkv import MDKVDocument, Track, load_mdkv, save_mdkv
+from mdkv.core.history import TrackHistory
+from mdkv.core.registry import TrackTypeRegistry, get_registry, register_track_type
+from mdkv.i18n import _, gettext, set_language
 from mdkv.services.search import search_document_async
 from mdkv.storage.io import save_mdkv_incremental
-from mdkv.i18n import set_language, gettext, _
-
 
 # === TrackHistory ===
 
@@ -20,8 +18,11 @@ def test_track_history_add_and_get():
     h = TrackHistory("primary")
     h.add_version("v1", "primary", "en", datetime(2025, 1, 1))
     h.add_version("v2", "primary", "en", datetime(2025, 1, 2))
-    assert len(h.versions) == 2
-    assert h.get_current().content == "v2"
+    h.add_version("v3", "primary", "en", timestamp=None)
+    assert len(h.versions) == 3
+    curr = h.get_current()
+    assert curr is not None
+    assert curr.content == "v3"
 
 
 def test_track_history_get_version_at():
@@ -113,7 +114,6 @@ def test_global_register_track_type():
 
 def test_incremental_save_new_file(tmp_path):
     """Should fall back to full save if file doesn't exist."""
-    from pathlib import Path
     doc = MDKVDocument(title="T", authors=["A"], created=datetime(2025, 1, 1))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "content"))
     p = tmp_path / "new.mdkv"
@@ -125,7 +125,6 @@ def test_incremental_save_new_file(tmp_path):
 
 def test_incremental_save_existing_file(tmp_path):
     """Should use incremental save when file exists."""
-    from pathlib import Path
     doc = MDKVDocument(title="T", authors=["A"], created=datetime(2025, 1, 1))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "original"))
     p = tmp_path / "existing.mdkv"

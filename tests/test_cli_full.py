@@ -1,6 +1,5 @@
-import json
-from pathlib import Path
 import importlib
+from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -23,7 +22,7 @@ def test_cli_init_export_html_and_validate_error(tmp_path: Path):
     assert r.exit_code == 0 and doc_path.exists()
 
     # export html (covers export html branch)
-    r2 = CliRunner().invoke(main, ["export", str(doc_path), "--html"])  
+    r2 = CliRunner().invoke(main, ["export", str(doc_path), "--html"])
     assert r2.exit_code == 0 and "<h1" in r2.output
     # export markdown default branch
     r2b = CliRunner().invoke(main, ["export", str(doc_path)])

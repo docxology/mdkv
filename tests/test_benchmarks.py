@@ -4,12 +4,18 @@ Tests save/load/search/export on synthetic documents of varying sizes.
 Does not require pytest-benchmark — uses simple time assertions.
 """
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-import pytest
-
-from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv, search_document, to_markdown, compute_stats
+from mdkv import (
+    MDKVDocument,
+    Track,
+    compute_stats,
+    load_mdkv,
+    save_mdkv,
+    search_document,
+    to_markdown,
+)
 
 
 def _make_doc(num_tracks: int, content_size: int = 500) -> MDKVDocument:
@@ -17,7 +23,7 @@ def _make_doc(num_tracks: int, content_size: int = 500) -> MDKVDocument:
     doc = MDKVDocument(
         title="Benchmark Doc",
         authors=["Benchmark"],
-        created=datetime.now(timezone.utc),
+        created=datetime.now(UTC),
     )
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Primary\n\n" + "x" * content_size))
     for i in range(1, num_tracks):

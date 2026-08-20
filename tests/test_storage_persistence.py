@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 from mdkv.core.model import MDKVDocument, Track
-from mdkv.storage import save_mdkv, load_mdkv
+from mdkv.storage import load_mdkv, save_mdkv
 
 
 def test_metadata_persistence_roundtrip(tmp_path: Path):

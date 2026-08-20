@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .core.model import MDKVDocument, Track
 from .storage import save_mdkv
 
+
 def build_multitrack_demo_document(title: str = "MDKV Demo") -> MDKVDocument:
-    doc = MDKVDocument(title=title, authors=["MDKV"], created=datetime.now(timezone.utc))
+    doc = MDKVDocument(title=title, authors=["MDKV"], created=datetime.now(UTC))
 
     primary_md = (
         "# MDKV Multitrack Demo\n\n"

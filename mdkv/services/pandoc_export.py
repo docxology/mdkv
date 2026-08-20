@@ -15,7 +15,6 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Optional
 
 from mdkv.core.model import MDKVDocument
 from mdkv.services.export import to_markdown
@@ -31,7 +30,7 @@ def _check_pandoc() -> str:
     return pandoc
 
 
-def _write_temp_markdown(doc: MDKVDocument, include_track_types: Optional[List[str]],
+def _write_temp_markdown(doc: MDKVDocument, include_track_types: list[str] | None,
                          metadata_header: bool, tmpdir: Path) -> Path:
     """Write the document as combined Markdown to a temp file and return the path."""
     md = to_markdown(doc, include_track_types=include_track_types, metadata_header=metadata_header)
@@ -43,9 +42,9 @@ def _write_temp_markdown(doc: MDKVDocument, include_track_types: Optional[List[s
 def to_pdf(
     doc: MDKVDocument,
     output_path: Path,
-    include_track_types: Optional[List[str]] = None,
+    include_track_types: list[str] | None = None,
     metadata_header: bool = True,
-    pandoc_args: Optional[List[str]] = None,
+    pandoc_args: list[str] | None = None,
 ) -> Path:
     """Render ``doc`` to a PDF file using pandoc.
 
@@ -67,13 +66,13 @@ def to_pdf(
         subprocess.CalledProcessError: pandoc conversion failed.
     """
     pandoc = _check_pandoc()
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmpdir)
-        cmd = [pandoc, str(md_path), "-o", str(output_path), "--standalone"]
+        tmp_dir_path = Path(tmpdir)
+        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmp_dir_path)
+        cmd = [pandoc, str(md_path), "-o", str(out_path), "--standalone"]
         if pandoc_args:
             cmd.extend(pandoc_args)
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
@@ -81,16 +80,16 @@ def to_pdf(
             raise subprocess.CalledProcessError(
                 result.returncode, cmd, result.stdout, result.stderr
             )
-    return output_path
+    return out_path
 
 
 def to_epub(
     doc: MDKVDocument,
     output_path: Path,
-    include_track_types: Optional[List[str]] = None,
+    include_track_types: list[str] | None = None,
     metadata_header: bool = True,
-    cover_image: Optional[Path] = None,
-    pandoc_args: Optional[List[str]] = None,
+    cover_image: Path | None = None,
+    pandoc_args: list[str] | None = None,
 ) -> Path:
     """Render ``doc`` to an EPUB file using pandoc.
 
@@ -112,13 +111,13 @@ def to_epub(
         subprocess.CalledProcessError: pandoc conversion failed.
     """
     pandoc = _check_pandoc()
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmpdir)
-        cmd = [pandoc, str(md_path), "-o", str(output_path), "--standalone"]
+        tmp_dir_path = Path(tmpdir)
+        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmp_dir_path)
+        cmd = [pandoc, str(md_path), "-o", str(out_path), "--standalone"]
         if cover_image is not None:
             cmd.append(f"--epub-cover-image={cover_image}")
         if pandoc_args:
@@ -128,16 +127,16 @@ def to_epub(
             raise subprocess.CalledProcessError(
                 result.returncode, cmd, result.stdout, result.stderr
             )
-    return output_path
+    return out_path
 
 
 def to_docx(
     doc: MDKVDocument,
     output_path: Path,
-    include_track_types: Optional[List[str]] = None,
+    include_track_types: list[str] | None = None,
     metadata_header: bool = True,
-    reference_doc: Optional[Path] = None,
-    pandoc_args: Optional[List[str]] = None,
+    reference_doc: Path | None = None,
+    pandoc_args: list[str] | None = None,
 ) -> Path:
     """Render ``doc`` to a DOCX file using pandoc.
 
@@ -159,13 +158,13 @@ def to_docx(
         subprocess.CalledProcessError: pandoc conversion failed.
     """
     pandoc = _check_pandoc()
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmpdir)
-        cmd = [pandoc, str(md_path), "-o", str(output_path), "--standalone"]
+        tmp_dir_path = Path(tmpdir)
+        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmp_dir_path)
+        cmd = [pandoc, str(md_path), "-o", str(out_path), "--standalone"]
         if reference_doc is not None:
             cmd.append(f"--reference-doc={reference_doc}")
         if pandoc_args:
@@ -175,4 +174,4 @@ def to_docx(
             raise subprocess.CalledProcessError(
                 result.returncode, cmd, result.stdout, result.stderr
             )
-    return output_path
+    return out_path

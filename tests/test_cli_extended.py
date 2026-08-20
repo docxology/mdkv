@@ -31,7 +31,7 @@ def test_cli_metadata_and_search(tmp_path: Path):
     assert r.exit_code == 0
     r2 = CliRunner().invoke(main, ["get-meta", str(p), "author"])
     assert r2.exit_code == 0 and r2.output.strip() == "B"
-    r3 = CliRunner().invoke(main, ["search", str(p), "--pattern", "beta", "--types", "primary"]) 
+    r3 = CliRunner().invoke(main, ["search", str(p), "--pattern", "beta", "--types", "primary"])
     assert r3.exit_code == 0
     data = json.loads(r3.output)
     assert any(m["track_id"] == "p" or m["track_id"] == "primary" for m in data)

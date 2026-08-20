@@ -1,5 +1,5 @@
 """Import a Markdown file as a new .mdkv document, then validate it."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from mdkv import MDKVDocument, Track, save_mdkv, validate_document
@@ -14,7 +14,7 @@ def main() -> None:
     doc = MDKVDocument(
         title="Imported Sample",
         authors=["Import Script"],
-        created=datetime.now(timezone.utc),
+        created=datetime.now(UTC),
     )
     doc.add_track(Track(
         track_id="primary",

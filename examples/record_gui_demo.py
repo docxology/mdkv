@@ -4,9 +4,8 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-
-from urllib.request import urlopen
 from urllib.error import URLError
+from urllib.request import urlopen
 
 
 def wait_for(url: str, timeout_seconds: int = 15) -> bool:

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Add project root to path for autodoc
@@ -11,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 project = "MDKV"
 author = "MDKV Authors"
-current_year = datetime.now(timezone.utc).year
+current_year = datetime.now(UTC).year
 copyright = f"{current_year}, {author}"
 
 extensions = [

@@ -5,9 +5,8 @@ from __future__ import annotations
 Compose multi-track Markdown or single-track HTML renderings for distribution.
 """
 
-from pathlib import Path
-from typing import List
 import re
+from pathlib import Path
 
 from markdown_it import MarkdownIt
 
@@ -24,13 +23,13 @@ def _safe_filename(track_id: str) -> str:
     # Replace any remaining non-alphanumeric characters (except - and _) with _
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", safe)
     if not safe or safe.startswith("."):
-        safe = f"_{safe}" if safe else "unnamed"
+        return f"_{safe}" if safe else "unnamed"
     return safe
 
 
 def to_markdown(
     doc: MDKVDocument,
-    include_track_types: List[str] | None = None,
+    include_track_types: list[str] | None = None,
     metadata_header: bool = False,
 ) -> str:
     """Render ``doc`` to Markdown.
@@ -41,7 +40,7 @@ def to_markdown(
     Each track is prefixed with a lightweight HTML comment header encoding
     metadata for round-trip compatibility.
     """
-    parts: List[str] = []
+    parts: list[str] = []
     if metadata_header:
         import yaml as _yaml
         frontmatter = {
@@ -75,7 +74,7 @@ def to_markdown(
 
 def to_html(
     doc: MDKVDocument,
-    include_track_types: List[str] | None = None,
+    include_track_types: list[str] | None = None,
     metadata_header: bool = False,
 ) -> str:
     """Render HTML from ``doc``.
@@ -88,21 +87,22 @@ def to_html(
     md = MarkdownIt()
     if include_track_types is None:
         include_track_types = ["primary"]
-    return md.render(to_markdown(doc, include_track_types=include_track_types, metadata_header=metadata_header))
+    rendered = md.render(to_markdown(doc, include_track_types=include_track_types, metadata_header=metadata_header))
+    return str(rendered)
 
 
 def export_to_files(
     doc: MDKVDocument,
     output_dir: Path,
-    include_track_types: List[str] | None = None,
-) -> List[Path]:
+    include_track_types: list[str] | None = None,
+) -> list[Path]:
     """Write track contents to individual ``.md`` files in ``output_dir``.
 
     Filenames are derived from ``track_id``.  Returns the list of written paths.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     include = set(include_track_types) if include_track_types else None
-    written: List[Path] = []
+    written: list[Path] = []
     for track in doc.tracks.values():
         if include is not None and track.track_type not in include:
             continue

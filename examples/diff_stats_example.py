@@ -1,20 +1,20 @@
 """Demonstrate diff_documents() and compute_stats() together."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv, diff_documents, compute_stats
+from mdkv import MDKVDocument, Track, compute_stats, diff_documents, load_mdkv, save_mdkv
 
 
 def main() -> None:
     base = Path("v1.mdkv")
     other = Path("v2.mdkv")
 
-    doc_a = MDKVDocument(title="V1", authors=["A"], created=datetime.now(timezone.utc), version="1.0.0")
+    doc_a = MDKVDocument(title="V1", authors=["A"], created=datetime.now(UTC), version="1.0.0")
     doc_a.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# V1\n\nOriginal"))
     doc_a.add_track(Track("notes", "commentary", None, "tracks/notes.md", "Note"))
     save_mdkv(doc_a, base)
 
-    doc_b = MDKVDocument(title="V2", authors=["A"], created=datetime.now(timezone.utc), version="2.0.0")
+    doc_b = MDKVDocument(title="V2", authors=["A"], created=datetime.now(UTC), version="2.0.0")
     doc_b.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# V2\n\nModified"))
     doc_b.add_track(Track("extra", "commentary", None, "tracks/extra.md", "Extra"))
     save_mdkv(doc_b, other)

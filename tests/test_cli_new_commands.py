@@ -59,9 +59,6 @@ def test_cli_import(tmp_path: Path):
 def test_cli_diff_identical(tmp_path: Path):
     p1 = _make_doc(tmp_path)
     p2 = tmp_path / "copy.mdkv"
-    save_mdkv(load_mdkv(p1) if False else MDKVDocument(
-        title="T", authors=["A"], created=datetime(2025, 1, 1)), p2) if False else None
-    # Just copy the file
     import shutil
     shutil.copy2(p1, p2)
     r = CliRunner().invoke(main, ["diff", str(p1), str(p2)])

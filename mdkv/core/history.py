@@ -6,8 +6,8 @@ and revision-track integration.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from datetime import UTC, datetime
+from typing import Any
 
 
 @dataclass
@@ -17,7 +17,7 @@ class TrackVersion:
     timestamp: datetime
     content: str
     track_type: str
-    language: Optional[str]
+    language: str | None
     track_id: str
 
 
@@ -30,13 +30,13 @@ class TrackHistory:
     """
 
     track_id: str
-    versions: List[TrackVersion] = field(default_factory=list)
+    versions: list[TrackVersion] = field(default_factory=list)
 
-    def add_version(self, content: str, track_type: str, language: Optional[str],
-                    timestamp: Optional[datetime] = None) -> None:
+    def add_version(self, content: str, track_type: str, language: str | None,
+                    timestamp: datetime | None = None) -> None:
         """Record a new version of the track content."""
         if timestamp is None:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
         self.versions.append(TrackVersion(
             timestamp=timestamp,
             content=content,
@@ -45,13 +45,13 @@ class TrackHistory:
             track_id=self.track_id,
         ))
 
-    def get_current(self) -> Optional[TrackVersion]:
+    def get_current(self) -> TrackVersion | None:
         """Return the most recent version, or None if empty."""
         if not self.versions:
             return None
         return self.versions[-1]
 
-    def get_version_at(self, timestamp: datetime) -> Optional[TrackVersion]:
+    def get_version_at(self, timestamp: datetime) -> TrackVersion | None:
         """Return the version that was current at the given timestamp."""
         result = None
         for v in self.versions:
@@ -61,11 +61,11 @@ class TrackHistory:
                 break
         return result
 
-    def list_versions(self) -> List[TrackVersion]:
+    def list_versions(self) -> list[TrackVersion]:
         """Return all versions in chronological order."""
         return list(self.versions)
 
-    def restore_to(self, timestamp: datetime) -> Optional[TrackVersion]:
+    def restore_to(self, timestamp: datetime) -> TrackVersion | None:
         """Truncate history to the version at the given timestamp.
 
         Returns the restored version, or None if no version matches.
@@ -78,7 +78,7 @@ class TrackHistory:
         self.versions = self.versions[: idx + 1]
         return target
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict."""
         return {
             "track_id": self.track_id,

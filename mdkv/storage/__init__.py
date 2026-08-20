@@ -1,3 +1,10 @@
-from .io import save_mdkv, load_mdkv, MDKVFormatError
+from .io import MDKVFormatError, load_mdkv, save_mdkv
+from .schema import MDKVManifestModel, TrackManifestModel
 
-__all__ = ["save_mdkv", "load_mdkv", "MDKVFormatError"]
+__all__ = [
+    "MDKVFormatError",
+    "MDKVManifestModel",
+    "TrackManifestModel",
+    "load_mdkv",
+    "save_mdkv",
+]

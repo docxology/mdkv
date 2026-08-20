@@ -7,7 +7,7 @@ tracks (added/removed/modified), and metadata (added/removed/changed).
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 from mdkv.core.model import MDKVDocument
 
@@ -19,15 +19,15 @@ class DiffResult:
     All list fields are empty when the documents are identical.
     """
 
-    title_changed: List[str] = field(default_factory=list)
-    authors_changed: List[Any] = field(default_factory=list)
-    version_changed: List[str] = field(default_factory=list)
-    tracks_added: List[str] = field(default_factory=list)
-    tracks_removed: List[str] = field(default_factory=list)
-    tracks_modified: List[str] = field(default_factory=list)
-    metadata_added: List[str] = field(default_factory=list)
-    metadata_removed: List[str] = field(default_factory=list)
-    metadata_changed: List[Dict[str, str]] = field(default_factory=list)
+    title_changed: list[str] = field(default_factory=list)
+    authors_changed: list[Any] = field(default_factory=list)
+    version_changed: list[str] = field(default_factory=list)
+    tracks_added: list[str] = field(default_factory=list)
+    tracks_removed: list[str] = field(default_factory=list)
+    tracks_modified: list[str] = field(default_factory=list)
+    metadata_added: list[str] = field(default_factory=list)
+    metadata_removed: list[str] = field(default_factory=list)
+    metadata_changed: list[dict[str, str]] = field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -41,7 +41,7 @@ class DiffResult:
             )
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict suitable for JSON."""
         return {
             "title_changed": self.title_changed,

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdkv"
-version = "0.10.0"
+version = "0.11.0"
 description = "MDKV: Multitrack Markdown Container (zip-based) with tracks, metadata, validation, search, and export"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -26,6 +26,9 @@ dev = [
   "sphinx>=7.0.0",
   "myst-parser>=2.0.0",
   "sphinx-autodoc-typehints>=1.25.2",
+  "types-PyYAML>=6.0.12",
+  "mypy>=1.10.0",
+  "ruff>=0.5.0",
 ]
 
 [project.scripts]
@@ -35,6 +38,9 @@ mdkv = "mdkv.cli:main"
 where = ["."]
 include = ["mdkv*"]
 exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+mdkv = ["py.typed", "gui/static/*", "locales/*/LC_MESSAGES/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -53,3 +59,30 @@ exclude_lines = [
   "def __repr__",
   "if __name__ == .__main__.:",
 ]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["fastapi.*", "uvicorn.*", "markdown_it.*", "yaml.*", "click.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["mdkv.cli.main"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501", "E402"]
+

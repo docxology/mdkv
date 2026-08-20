@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from mdkv.io import load_mdkv
 from mdkv.export import to_html
+from mdkv.io import load_mdkv
 
 
 def main() -> None:

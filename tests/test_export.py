@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from mdkv.model import Track, MDKVDocument
-from mdkv.export import to_markdown, to_html
+from mdkv.export import to_html, to_markdown
+from mdkv.model import MDKVDocument, Track
 
 
 def test_export_markdown_combines_tracks():

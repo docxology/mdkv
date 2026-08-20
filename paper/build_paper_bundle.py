@@ -2,23 +2,23 @@
 from __future__ import annotations
 
 import argparse
-import sys
-from datetime import datetime, timezone
 import hashlib
 import re
 import subprocess
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
 from mdkv import (
     MDKVDocument,
     Track,
-    save_mdkv,
-    to_markdown,
-    to_html,
     export_to_files,
+    save_mdkv,
+    to_html,
+    to_markdown,
     validate_document,
 )
 from mdkv.core.errors import (
@@ -26,7 +26,7 @@ from mdkv.core.errors import (
 )
 
 
-def parse_front_matter(markdown_text: str) -> Dict[str, Any]:
+def parse_front_matter(markdown_text: str) -> dict[str, Any]:
     """Parse YAML front matter if present and return it as a dict (else {})."""
     lines = markdown_text.splitlines()
     if len(lines) >= 3 and lines[0].strip() == "---":
@@ -42,7 +42,7 @@ def parse_front_matter(markdown_text: str) -> Dict[str, Any]:
     return {}
 
 
-def split_front_matter_and_body(markdown_text: str) -> tuple[Dict[str, Any], str]:
+def split_front_matter_and_body(markdown_text: str) -> tuple[dict[str, Any], str]:
     """Return (front_matter_dict, body_without_front_matter)."""
     lines = markdown_text.splitlines()
     if len(lines) >= 3 and lines[0].strip() == "---":
@@ -74,7 +74,7 @@ def strip_leading_html_comments(markdown_body: str) -> str:
     return text
 
 
-def ensure_list(value: Any) -> List[str]:
+def ensure_list(value: Any) -> list[str]:
     if value is None:
         return []
     if isinstance(value, list):
@@ -89,9 +89,9 @@ def build_document(markdown_path: Path, language: str | None) -> MDKVDocument:
 
     title = str(fm.get("title") or markdown_path.stem)
     authors = ensure_list(fm.get("author") or fm.get("authors") or "Unknown")
-    created = datetime.now(timezone.utc)
+    created = datetime.now(UTC)
 
-    metadata: Dict[str, str] = {}
+    metadata: dict[str, str] = {}
     for key in ("doi", "orcid", "email", "date"):
         if key in fm and fm[key] is not None:
             metadata[key] = str(fm[key])
@@ -240,7 +240,7 @@ def main() -> int:
 
     # Emit bundle info
     bundle_info = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "source_markdown": str(markdown_path.resolve()),
         "output_mdkv": str(output_mdkv.resolve()),
         "repo_url": args.repo_url,

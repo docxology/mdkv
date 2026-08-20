@@ -14,12 +14,12 @@ Invariants:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .errors import ValidationError
 
 
-def allowed_track_types() -> List[str]:
+def allowed_track_types() -> list[str]:
     """Return the list of supported track type identifiers.
 
     Order is informational only; callers should not rely on ordering.
@@ -48,7 +48,7 @@ class Track:
     """
     track_id: str
     track_type: str
-    language: Optional[str]
+    language: str | None
     path: str
     content: str
 
@@ -80,7 +80,7 @@ class Track:
     def __hash__(self) -> int:
         return hash((self.track_id, self.track_type, self.path))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict suitable for JSON/YAML emission."""
         return {
             "track_id": self.track_id,
@@ -91,7 +91,7 @@ class Track:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Track":
+    def from_dict(cls, data: dict[str, Any]) -> Track:
         """Reconstruct a Track from a plain dict (inverse of ``to_dict``)."""
         return cls(
             track_id=data["track_id"],
@@ -109,11 +109,11 @@ class MDKVDocument:
     Includes metadata and a mapping of `track_id` → `Track`.
     """
     title: str
-    authors: List[str]
+    authors: list[str]
     created: datetime
     version: str = "0.1"
-    tracks: Dict[str, Track] = field(default_factory=dict)
-    metadata: Dict[str, str] = field(default_factory=dict)
+    tracks: dict[str, Track] = field(default_factory=dict)
+    metadata: dict[str, str] = field(default_factory=dict)
 
     def add_track(self, track: Track) -> None:
         """Add a new `track`.
@@ -137,24 +137,24 @@ class MDKVDocument:
             raise KeyError(track_id)
         return self.tracks.pop(track_id)
 
-    def list_languages(self) -> List[str]:
+    def list_languages(self) -> list[str]:
         """Return sorted list of languages present across tracks (excluding None)."""
         langs = {t.language for t in self.tracks.values() if t.language}
         return sorted(langs)
 
     @property
-    def track_ids(self) -> List[str]:
+    def track_ids(self) -> list[str]:
         """Return the list of track IDs in insertion order."""
         return list(self.tracks.keys())
 
     # management helpers
-    def find_tracks_by_type(self, track_type: str) -> List[Track]:
+    def find_tracks_by_type(self, track_type: str) -> list[Track]:
         """Return all tracks with the given `track_type`."""
         return [t for t in self.tracks.values() if t.track_type == track_type]
 
-    def count_tracks_by_type(self) -> Dict[str, int]:
+    def count_tracks_by_type(self) -> dict[str, int]:
         """Return a mapping of ``track_type`` → count across all tracks."""
-        counts: Dict[str, int] = {}
+        counts: dict[str, int] = {}
         for track in self.tracks.values():
             counts[track.track_type] = counts.get(track.track_type, 0) + 1
         return counts
@@ -199,7 +199,7 @@ class MDKVDocument:
             raise KeyError(after_id)
         # Rebuild the dict in the new order
         track = self.tracks.pop(track_id)
-        new_tracks: Dict[str, Track] = {}
+        new_tracks: dict[str, Track] = {}
         if after_id is None:
             new_tracks[track_id] = track
             new_tracks.update(self.tracks)
@@ -208,9 +208,6 @@ class MDKVDocument:
                 new_tracks[tid] = t
                 if tid == after_id:
                     new_tracks[track_id] = track
-            # If after_id was the last track, track_id is already added above
-            if track_id not in new_tracks:
-                new_tracks[track_id] = track
         self.tracks = new_tracks
 
     # metadata helpers
@@ -227,7 +224,7 @@ class MDKVDocument:
         self.metadata.pop(key, None)
 
     # serialization helpers
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict suitable for JSON/YAML emission.
 
         Track content is included inline (unlike the storage manifest which
@@ -243,7 +240,7 @@ class MDKVDocument:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "MDKVDocument":
+    def from_dict(cls, data: dict[str, Any]) -> MDKVDocument:
         """Reconstruct an MDKVDocument from a plain dict (inverse of ``to_dict``).
 
         Raises ``KeyError`` if required keys (title, created) are missing.

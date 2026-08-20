@@ -1,7 +1,6 @@
 """Tests for MDKVDocument and Track serialization, repr, and count methods."""
-from datetime import datetime, timezone
-
 import json
+from datetime import datetime
 
 from mdkv.core.model import MDKVDocument, Track
 

@@ -1,8 +1,9 @@
-import pytest
 from datetime import datetime
 
+import pytest
+
 from mdkv.core.model import MDKVDocument
-from mdkv.core.validate import validate_document, ValidationError
+from mdkv.core.validate import ValidationError, validate_document
 
 
 def test_validate_errors():

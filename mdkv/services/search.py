@@ -9,8 +9,8 @@ to identify the hit without re-reading the document.
 
 import asyncio
 import re
+from collections.abc import AsyncIterator, Iterable
 from dataclasses import dataclass
-from typing import AsyncIterator, List, Iterable, Optional
 
 from mdkv.core.model import MDKVDocument
 
@@ -30,7 +30,7 @@ class SearchMatch:
 
     track_id: str
     track_type: str
-    language: Optional[str]
+    language: str | None
     start: int
     end: int
     extract: str
@@ -40,23 +40,24 @@ def search_document(
     doc: MDKVDocument,
     pattern: str,
     flags: int = 0,
-    track_types: Optional[Iterable[str]] = None,
-    languages: Optional[Iterable[str]] = None,
+    track_types: Iterable[str] | None = None,
+    languages: Iterable[str] | None = None,
     case_insensitive: bool = False,
-    limit: Optional[int] = None,
-) -> List[SearchMatch]:
+    limit: int | None = None,
+) -> list[SearchMatch]:
     """Search ``doc`` for ``pattern``.
 
     - ``track_types``: optional subset filter (e.g. ``["primary", "commentary"]``)
     - ``languages``: optional subset filter (e.g. ``["en", "es"]``)
     - ``case_insensitive``: if ``True``, adds ``re.IGNORECASE`` to flags
     - ``limit``: if provided, return at most this many matches
+
     Returns a list of ``SearchMatch`` with small surrounding extracts.
     """
     if case_insensitive:
         flags |= re.IGNORECASE
     regex = re.compile(pattern, flags)
-    results: List[SearchMatch] = []
+    results: list[SearchMatch] = []
     allowed_types = set(track_types) if track_types else None
     allowed_langs = set(languages) if languages else None
     for track_id, track in doc.tracks.items():
@@ -90,10 +91,10 @@ async def search_document_async(
     doc: MDKVDocument,
     pattern: str,
     flags: int = 0,
-    track_types: Optional[Iterable[str]] = None,
-    languages: Optional[Iterable[str]] = None,
+    track_types: Iterable[str] | None = None,
+    languages: Iterable[str] | None = None,
     case_insensitive: bool = False,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     offset: int = 0,
 ) -> AsyncIterator[SearchMatch]:
     """Async generator that yields ``SearchMatch`` results.

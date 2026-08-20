@@ -1,8 +1,30 @@
+from datetime import UTC, datetime
 from pathlib import Path
 
-from mdkv.library import build_all_examples
-from mdkv.storage import load_mdkv
 from mdkv.core.validate import validate_document
+from mdkv.library import build_all_examples, build_document_from_definition, load_example_definition
+from mdkv.storage import load_mdkv
+
+
+def test_library_build_document_all_created_branches():
+    # 1. string created
+    d1 = build_document_from_definition({"title": "T1", "authors": ["A"], "created": "2025-01-01T00:00:00", "tracks": []})
+    assert d1.created == datetime(2025, 1, 1, 0, 0, 0)
+    # 2. datetime created
+    now = datetime.now(UTC)
+    d2 = build_document_from_definition({"title": "T2", "authors": ["A"], "created": now, "tracks": []})
+    assert d2.created == now
+    # 3. None / missing created
+    d3 = build_document_from_definition({"title": "T3", "authors": ["A"], "tracks": []})
+    assert isinstance(d3.created, datetime)
+
+    # Test load_example_definition invalid yaml non-dict
+    import tempfile
+    with tempfile.NamedTemporaryFile("w+", suffix=".yaml") as f:
+        f.write("- item1\n- item2\n")
+        f.flush()
+        d = load_example_definition(Path(f.name))
+        assert d == {}
 
 
 def test_library_build_and_validate(tmp_path: Path):

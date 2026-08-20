@@ -1,5 +1,5 @@
 """Tests for MDKVFormatError and MDKVFormatError in public API exports."""
-from mdkv import MDKVFormatError, save_mdkv, load_mdkv
+from mdkv import MDKVFormatError
 from mdkv.storage import MDKVFormatError as StorageMDKVFormatError
 
 

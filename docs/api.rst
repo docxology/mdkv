@@ -37,6 +37,13 @@ Storage I/O
    :members:
    :show-inheritance:
 
+Storage Schema
+--------------
+
+.. automodule:: mdkv.storage.schema
+   :members:
+   :show-inheritance:
+
 Search
 ------
 

@@ -1,27 +1,34 @@
 from .core import (
     MDKVDocument,
     Track,
-    allowed_track_types,
     ValidationError,
+    ValidationIssue,
+    allowed_track_types,
     validate_document,
     validate_track,
-    ValidationIssue,
 )
 from .core.history import TrackHistory, TrackVersion
-from .core.registry import TrackTypeRegistry, register_track_type, get_registry
+from .core.registry import TrackTypeRegistry, get_registry, register_track_type
 from .services import (
-    search_document, SearchMatch,
-    to_markdown, to_html, export_to_files,
-    diff_documents, DiffResult,
-    compute_stats, DocumentStats,
-    to_pdf, to_epub, to_docx,
+    DiffResult,
+    DocumentStats,
+    SearchMatch,
+    compute_stats,
+    diff_documents,
+    export_to_files,
+    search_document,
+    to_docx,
+    to_epub,
+    to_html,
+    to_markdown,
+    to_pdf,
 )
 from .services.search import search_document_async
-from .storage import save_mdkv, load_mdkv, MDKVFormatError
+from .storage import MDKVFormatError, MDKVManifestModel, TrackManifestModel, load_mdkv, save_mdkv
 from .storage.io import save_mdkv_incremental
 
 __license__ = "Apache-2.0"
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 __all__ = [
     "core",
@@ -62,4 +69,6 @@ __all__ = [
     "save_mdkv_incremental",
     "load_mdkv",
     "MDKVFormatError",
+    "MDKVManifestModel",
+    "TrackManifestModel",
 ]

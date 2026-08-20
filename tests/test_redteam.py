@@ -7,15 +7,14 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv
-from mdkv.core.model import MDKVDocument as Doc, Track as Tr
+from mdkv import load_mdkv, save_mdkv
+from mdkv.cli import main
 from mdkv.core.errors import ValidationError
+from mdkv.core.model import MDKVDocument as Doc
+from mdkv.core.model import Track as Tr
+from mdkv.services.export import _safe_filename, export_to_files, to_markdown
 from mdkv.storage import MDKVFormatError
 from mdkv.storage.io import save_mdkv_incremental
-from mdkv.services.export import to_markdown, to_html, export_to_files, _safe_filename
-from mdkv.services.search import search_document
-from mdkv.cli import main
-
 
 # ============================================================
 # SECURITY: Path traversal in export_to_files
@@ -25,6 +24,10 @@ def test_safe_filename_strips_path_traversal():
     assert _safe_filename("../../etc/passwd") == "passwd"
     assert _safe_filename("../../../tmp/evil") == "evil"
     assert _safe_filename("normal_id") == "normal_id"
+    assert _safe_filename("") == "unnamed"
+    assert _safe_filename("/") == "unnamed"
+    assert _safe_filename(".hidden") == "_.hidden"
+    assert _safe_filename("..") == "_.."
 
 
 def test_safe_filename_strips_directory_components():
@@ -201,8 +204,9 @@ def test_cli_search_invalid_regex(tmp_path):
 
 def test_gui_upsert_invalid_track_type_on_update(tmp_path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -220,8 +224,9 @@ def test_gui_upsert_invalid_track_type_on_update(tmp_path):
 
 def test_gui_search_invalid_regex(tmp_path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()

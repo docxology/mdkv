@@ -2,27 +2,27 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from mdkv.core.errors import ValidationError
 from mdkv.core.model import MDKVDocument, Track, allowed_track_types
 from mdkv.core.validate import validate_document
-from mdkv.core.errors import ValidationError
+from mdkv.library import build_all_examples
+from mdkv.services.diff import diff_documents
 from mdkv.services.export import to_html, to_markdown
 from mdkv.services.search import search_document
-from mdkv.services.diff import diff_documents
 from mdkv.services.stats import compute_stats
 from mdkv.storage import load_mdkv, save_mdkv
-from mdkv.library import build_all_examples
 
 
 class MDKVState:
     def __init__(self) -> None:
-        self.path: Optional[Path] = None
-        self.doc: Optional[MDKVDocument] = None
+        self.path: Path | None = None
+        self.doc: MDKVDocument | None = None
 
 
 state = MDKVState()
@@ -54,7 +54,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return (static_root / "index.html").read_text(encoding="utf-8")
 
     @app.get("/api/status")
-    def status() -> dict:
+    def status() -> dict[str, Any]:
         return {
             "loaded": state.doc is not None,
             "path": str(state.path) if state.path else None,
@@ -62,7 +62,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         }
 
     @app.get("/api/library")
-    def list_library() -> dict:
+    def list_library() -> dict[str, Any]:
         """Return available example `.mdkv` files under `library/definitions`.
 
         If built files are missing under `library/_built`, they are generated.
@@ -86,7 +86,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         }
 
     @app.post("/api/open")
-    def open_file(payload: dict) -> dict:
+    def open_file(payload: dict[str, Any]) -> dict[str, Any]:
         p = Path(payload.get("path", "")).expanduser()
         if not p.exists():
             raise HTTPException(404, "file not found")
@@ -99,7 +99,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return {"ok": True, "title": doc.title, "tracks": list(doc.tracks)}
 
     @app.post("/api/save")
-    def save() -> dict:
+    def save() -> dict[str, Any]:
         doc = _require_doc()
         if not state.path:
             raise HTTPException(400, "no file path set")
@@ -107,7 +107,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return {"ok": True}
 
     @app.get("/api/document")
-    def get_document() -> dict:
+    def get_document() -> dict[str, Any]:
         doc = _require_doc()
         return {
             "title": doc.title,
@@ -127,7 +127,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         }
 
     @app.get("/api/tracks")
-    def list_tracks() -> list[dict]:
+    def list_tracks() -> list[dict[str, Any]]:
         doc = _require_doc()
         return [
             {
@@ -140,7 +140,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         ]
 
     @app.get("/api/track/{track_id}")
-    def get_track(track_id: str) -> dict:
+    def get_track(track_id: str) -> dict[str, Any]:
         doc = _require_doc()
         t = doc.get_track(track_id)
         if t is None:
@@ -154,7 +154,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         }
 
     @app.post("/api/document")
-    def update_document(payload: dict) -> dict:
+    def update_document(payload: dict[str, Any]) -> dict[str, Any]:
         doc = _require_doc()
         if "title" in payload:
             doc.title = payload["title"]
@@ -168,7 +168,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return {"ok": True}
 
     @app.post("/api/track")
-    def upsert_track(payload: dict) -> dict:
+    def upsert_track(payload: dict[str, Any]) -> dict[str, Any]:
         doc = _require_doc()
         if "id" not in payload or not str(payload["id"]).strip():
             raise HTTPException(422, "missing track id")
@@ -191,12 +191,14 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             if new_type not in allowed_track_types():
                 raise HTTPException(400, f"Unsupported track_type: {new_type}")
             t.track_type = new_type
-            t.language = payload.get("language", t.language)
-            t.content = payload.get("content", t.content)
+            if "language" in payload:
+                t.language = payload.get("language")
+            if "content" in payload:
+                t.content = str(payload.get("content", ""))
         return {"ok": True}
 
     @app.post("/api/move-track")
-    def move_track(payload: dict) -> dict:
+    def move_track(payload: dict[str, Any]) -> dict[str, Any]:
         doc = _require_doc()
         track_id = payload.get("track_id")
         if not track_id:
@@ -209,7 +211,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return {"ok": True, "track_ids": doc.track_ids}
 
     @app.get("/api/validate-track")
-    def validate_single_track(track_id: str) -> dict:
+    def validate_single_track(track_id: str) -> dict[str, Any]:
         doc = _require_doc()
         t = doc.get_track(track_id)
         if t is None:
@@ -228,7 +230,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             return {"ok": False, "error": str(exc)}
 
     @app.delete("/api/track/{track_id}")
-    def delete_track(track_id: str) -> dict:
+    def delete_track(track_id: str) -> dict[str, Any]:
         doc = _require_doc()
         try:
             doc.remove_track(track_id)
@@ -254,26 +256,26 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             raise HTTPException(404, "track not found")
         from markdown_it import MarkdownIt
 
-        return MarkdownIt().render(t.content)
+        return str(MarkdownIt().render(t.content))
 
     @app.get("/api/render/all_html", response_class=HTMLResponse)
     def render_all_html() -> str:
         doc = _require_doc()
         from markdown_it import MarkdownIt
 
-        return MarkdownIt().render(to_markdown(doc))
+        return str(MarkdownIt().render(to_markdown(doc)))
 
     @app.post("/api/render/tracks_html", response_class=HTMLResponse)
-    def render_tracks_html(payload: dict) -> str:
+    def render_tracks_html(payload: dict[str, Any]) -> str:
         doc = _require_doc()
         from markdown_it import MarkdownIt
         ids = payload.get("track_ids")
         if ids is None:
-            return MarkdownIt().render(to_markdown(doc))
+            return str(MarkdownIt().render(to_markdown(doc)))
         if not isinstance(ids, list):
             raise HTTPException(422, "track_ids must be a list")
         if len(ids) == 0:
-            return MarkdownIt().render("<!-- MDKV: empty selection -->")
+            return str(MarkdownIt().render("<!-- MDKV: empty selection -->"))
         parts: list[str] = []
         # Escape the title in the comment to prevent comment-injection (-->)
         safe_title = doc.title.replace("-->", "")
@@ -288,10 +290,10 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
             safe_lang = str(t.language).replace("-->", "") if t.language else "None"
             header = f"\n\n<!-- track:{safe_id} type:{safe_type} lang:{safe_lang} -->\n\n"
             parts.append(header + t.content)
-        return MarkdownIt().render("".join(parts))
+        return str(MarkdownIt().render("".join(parts)))
 
     @app.post("/api/validate")
-    def validate() -> dict:
+    def validate() -> dict[str, Any]:
         doc = _require_doc()
         try:
             issues = validate_document(doc)
@@ -316,13 +318,13 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         languages: str = "",
         case_insensitive: bool = False,
         limit: int = 0,
-    ) -> dict:
+    ) -> dict[str, Any]:
         doc = _require_doc()
         tt = [t.strip() for t in types.split(",") if t.strip()] or None
-        ll = [l.strip() for l in languages.split(",") if l.strip()] or None
+        lang_list = [lang.strip() for lang in languages.split(",") if lang.strip()] or None
         try:
             matches = search_document(
-                doc, pattern=pattern, track_types=tt, languages=ll,
+                doc, pattern=pattern, track_types=tt, languages=lang_list,
                 case_insensitive=case_insensitive,
                 limit=limit if limit > 0 else None,
             )
@@ -343,7 +345,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         }
 
     @app.get("/api/stats")
-    def stats() -> dict:
+    def stats() -> dict[str, Any]:
         doc = _require_doc()
         return compute_stats(doc).to_dict()
 
@@ -354,7 +356,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return JSONResponse(doc.to_dict())
 
     @app.post("/api/import")
-    def import_track(payload: dict) -> dict:
+    def import_track(payload: dict[str, Any]) -> dict[str, Any]:
         """Import a Markdown file into the loaded document as a new track."""
         doc = _require_doc()
         file_path = payload.get("path")
@@ -383,7 +385,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return {"ok": True, "track_id": track_id}
 
     @app.post("/api/diff")
-    def diff(payload: dict) -> dict:
+    def diff(payload: dict[str, Any]) -> dict[str, Any]:
         other_path = payload.get("path")
         if not other_path:
             raise HTTPException(422, "missing 'path' field")
@@ -413,13 +415,14 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         md_a = to_markdown(doc_a)
         md_b = to_markdown(doc_b)
         differ = difflib.HtmlDiff(tabsize=2)
-        return differ.make_table(
+        table = differ.make_table(
             md_a.splitlines(keepends=True),
             md_b.splitlines(keepends=True),
             fromdesc=doc_a.title,
             todesc=doc_b.title,
             context=True,
         )
+        return str(table)
 
     return app
 

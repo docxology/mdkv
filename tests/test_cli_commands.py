@@ -47,7 +47,7 @@ def test_cli_add_rename_update_meta_validate_search(tmp_path: Path):
     r6 = CliRunner().invoke(main, ["validate", str(p)])
     assert r6.exit_code == 0 and r6.output.strip() == "OK"
     # search
-    r7 = CliRunner().invoke(main, ["search", str(p), "--pattern", "P"]) 
+    r7 = CliRunner().invoke(main, ["search", str(p), "--pattern", "P"])
     assert r7.exit_code == 0 and len(json.loads(r7.output)) >= 1
 
 

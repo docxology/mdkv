@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from mdkv.core.model import MDKVDocument, Track
-from mdkv.services.export import to_html, to_markdown, export_to_files
+from mdkv.services.export import export_to_files, to_html
 
 
 def _doc() -> MDKVDocument:

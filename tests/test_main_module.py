@@ -18,6 +18,7 @@ def test_python_m_mdkv_help():
 
 
 def test_python_m_mdkv_version():
+    from mdkv import __version__
     result = subprocess.run(
         [sys.executable, "-m", "mdkv", "--version"],
         capture_output=True,
@@ -25,4 +26,4 @@ def test_python_m_mdkv_version():
         timeout=10,
     )
     assert result.returncode == 0
-    assert "0.10" in result.stdout
+    assert __version__ in result.stdout

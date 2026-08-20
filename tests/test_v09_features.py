@@ -5,13 +5,14 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from mdkv import MDKVDocument, Track, save_mdkv, load_mdkv
+from mdkv import load_mdkv
 from mdkv.cli import main
 from mdkv.core.history import TrackHistory
-from mdkv.core.registry import TrackTypeRegistry, get_registry, register_track_type
-from mdkv.storage.io import save_mdkv_incremental
-from mdkv.core.model import MDKVDocument as Doc, Track as Tr
+from mdkv.core.model import MDKVDocument as Doc
+from mdkv.core.model import Track as Tr
+from mdkv.core.registry import TrackTypeRegistry
 from mdkv.storage import save_mdkv as sm
+from mdkv.storage.io import save_mdkv_incremental
 
 
 def _make_doc(tmp_path: Path) -> Path:
@@ -82,8 +83,9 @@ def test_cli_save_incremental_new(tmp_path: Path):
 
 def test_gui_diff_view(tmp_path: Path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
     from mdkv.storage import save_mdkv as sm
 
     state.path = tmp_path / "a.mdkv"
@@ -103,8 +105,9 @@ def test_gui_diff_view(tmp_path: Path):
 
 def test_gui_diff_view_missing_file(tmp_path: Path):
     from fastapi.testclient import TestClient
-    from mdkv.gui.server import create_app, state
+
     from mdkv.demo import build_multitrack_demo_document
+    from mdkv.gui.server import create_app, state
 
     state.path = tmp_path / "a.mdkv"
     state.doc = build_multitrack_demo_document()
@@ -116,6 +119,7 @@ def test_gui_diff_view_missing_file(tmp_path: Path):
 
 def test_gui_diff_view_no_doc():
     from fastapi.testclient import TestClient
+
     from mdkv.gui.server import create_app, state
 
     state.path = None

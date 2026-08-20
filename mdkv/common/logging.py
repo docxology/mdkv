@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 
 def configure_logging(level: int = logging.INFO) -> None:
@@ -11,7 +10,7 @@ def configure_logging(level: int = logging.INFO) -> None:
     )
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     return logging.getLogger(name if name else "mdkv")
 
 

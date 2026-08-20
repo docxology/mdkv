@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
@@ -10,11 +10,11 @@ from mdkv.model import MDKVDocument, Track
 from mdkv.storage import save_mdkv
 
 
-def build_doc_from_definition(defn: Dict[str, Any]) -> MDKVDocument:
+def build_doc_from_definition(defn: dict[str, Any]) -> MDKVDocument:
     doc = MDKVDocument(
         title=defn["title"],
         authors=list(defn.get("authors", [])),
-        created=datetime.now(timezone.utc),
+        created=datetime.now(UTC),
     )
     for t in defn.get("tracks", []):
         track_id = t["id"]

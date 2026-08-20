@@ -1,7 +1,8 @@
-import pytest
 from datetime import datetime
 
-from mdkv.core.model import Track, MDKVDocument
+import pytest
+
+from mdkv.core.model import MDKVDocument, Track
 
 
 def test_track_validation_errors():

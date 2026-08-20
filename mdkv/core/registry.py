@@ -5,21 +5,21 @@ heuristics via a simple Python API or entry points.
 """
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional, Set
-
+from collections.abc import Callable
+from typing import Any
 
 # Type aliases
-ValidatorFn = Callable[[str], List[str]]  # returns list of warning messages
-HeuristicsFn = Callable[[str], List[str]]  # returns list of warning messages
+ValidatorFn = Callable[[str], list[str]]  # returns list of warning messages
+HeuristicsFn = Callable[[str], list[str]]  # returns list of warning messages
 
 
 class TrackTypeRegistry:
     """Registry for custom and built-in track types."""
 
     def __init__(self) -> None:
-        self._types: Dict[str, dict] = {}
-        self._validators: Dict[str, Optional[ValidatorFn]] = {}
-        self._heuristics: Dict[str, Optional[HeuristicsFn]] = {}
+        self._types: dict[str, dict[str, Any]] = {}
+        self._validators: dict[str, ValidatorFn | None] = {}
+        self._heuristics: dict[str, HeuristicsFn | None] = {}
         # Register built-in types
         for t in [
             "primary", "translation", "commentary", "code",
@@ -30,8 +30,8 @@ class TrackTypeRegistry:
     def register(
         self,
         name: str,
-        validator: Optional[ValidatorFn] = None,
-        heuristics: Optional[HeuristicsFn] = None,
+        validator: ValidatorFn | None = None,
+        heuristics: HeuristicsFn | None = None,
         description: str = "",
     ) -> None:
         """Register a custom track type.
@@ -62,22 +62,22 @@ class TrackTypeRegistry:
         """Check if a track type is registered."""
         return name in self._types
 
-    def all_types(self) -> List[str]:
+    def all_types(self) -> list[str]:
         """Return all registered track type names."""
         return list(self._types.keys())
 
-    def custom_types(self) -> List[str]:
+    def custom_types(self) -> list[str]:
         """Return only custom (non-built-in) track type names."""
         return [name for name, info in self._types.items() if not info.get("builtin")]
 
-    def validate(self, name: str, content: str) -> List[str]:
+    def validate(self, name: str, content: str) -> list[str]:
         """Run the validator for the given track type on the given content."""
         fn = self._validators.get(name)
         if fn is None:
             return []
         return fn(content)
 
-    def check_heuristics(self, name: str, content: str) -> List[str]:
+    def check_heuristics(self, name: str, content: str) -> list[str]:
         """Run content heuristics for the given track type."""
         fn = self._heuristics.get(name)
         if fn is None:
@@ -96,8 +96,8 @@ def get_registry() -> TrackTypeRegistry:
 
 def register_track_type(
     name: str,
-    validator: Optional[ValidatorFn] = None,
-    heuristics: Optional[HeuristicsFn] = None,
+    validator: ValidatorFn | None = None,
+    heuristics: HeuristicsFn | None = None,
     description: str = "",
 ) -> None:
     """Register a custom track type in the global registry."""

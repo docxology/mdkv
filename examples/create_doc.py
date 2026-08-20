@@ -1,13 +1,13 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from mdkv.model import MDKVDocument, Track
 from mdkv.io import save_mdkv
+from mdkv.model import MDKVDocument, Track
 
 
 def main() -> None:
     out = Path("example.mdkv")
-    doc = MDKVDocument(title="Example", authors=["Author"], created=datetime.now(timezone.utc))
+    doc = MDKVDocument(title="Example", authors=["Author"], created=datetime.now(UTC))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Example\n\nHello, see [link](https://example.org)."))
     doc.add_track(Track("translation-fr", "translation", "fr", "tracks/translation-fr.md", "Bonjour"))
     doc.add_track(Track("notes", "commentary", None, "tracks/notes.md", "Note."))

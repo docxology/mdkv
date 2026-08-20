@@ -3,8 +3,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from mdkv.gui.server import create_app, state
 from mdkv.demo import build_multitrack_demo_document
+from mdkv.gui.server import create_app, state
 from mdkv.storage import save_mdkv
 
 

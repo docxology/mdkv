@@ -3,7 +3,7 @@ from __future__ import annotations
 """Statistics utilities for MDKV documents."""
 
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Any
 
 from mdkv.core.model import MDKVDocument
 
@@ -15,13 +15,13 @@ class DocumentStats:
     title: str
     version: str
     track_count: int
-    tracks_by_type: Dict[str, int] = field(default_factory=dict)
-    languages: List[str] = field(default_factory=list)
-    metadata_keys: List[str] = field(default_factory=list)
+    tracks_by_type: dict[str, int] = field(default_factory=dict)
+    languages: list[str] = field(default_factory=list)
+    metadata_keys: list[str] = field(default_factory=list)
     total_characters: int = 0
     total_lines: int = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict suitable for JSON."""
         return {
             "title": self.title,

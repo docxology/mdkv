@@ -100,10 +100,13 @@ MDKV is split into clear layers:
 Re-exported from `mdkv.__init__`:
 - `MDKVDocument`, `Track`, `allowed_track_types`
 - `ValidationError`, `validate_document`, `validate_track`, `ValidationIssue`
-- `search_document`, `SearchMatch`
+- `TrackHistory`, `TrackVersion`, `TrackTypeRegistry`, `register_track_type`, `get_registry`
+- `search_document`, `search_document_async`, `SearchMatch`
 - `to_markdown`, `to_html`, `export_to_files`
 - `diff_documents`, `DiffResult`
 - `compute_stats`, `DocumentStats`
-- `save_mdkv`, `load_mdkv`, `MDKVFormatError`
+- `to_pdf`, `to_epub`, `to_docx`
+- `save_mdkv`, `save_mdkv_incremental`, `load_mdkv`, `MDKVFormatError`
+- `MDKVManifestModel`, `TrackManifestModel`
 
 Type safety: `py.typed` marker present (PEP 561).
