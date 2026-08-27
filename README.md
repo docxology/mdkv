@@ -4,7 +4,7 @@ A modular Python implementation of the MDKV concept in `MKVD_overview.md`.
 
 - Zip-based `.mdkv` container with `manifest.yaml` and `tracks/`.
 - Tracks: primary, translation, commentary, code, reference, media_ref, revision.
-- Services: validation, search, export (Markdown/HTML), diff, stats, CLI.
+- Services: validation, search, export (Markdown/HTML/JSON, PDF/EPUB/DOCX via pandoc), diff, stats, CLI.
 
 ## Why MDKV?
 
@@ -55,8 +55,9 @@ uv run mdkv import README.md --out imported.mdkv --title "Imported" --author "Yo
 | `add-track` | Add a new track (`--content` or `--file`) |
 | `remove-track` | Remove a track by id |
 | `rename-track` | Rename a track |
+| `move-track` | Reorder a track (`--after-id`, omit for first position) |
 | `update-track` | Update track content (`--content` or `--file`) |
-| `export` | Export to Markdown, HTML, or individual files |
+| `export` | Export to Markdown, HTML, JSON, or PDF/EPUB/DOCX (pandoc), or individual files |
 | `export-tracks` | Export filtered tracks as Markdown |
 | `search` | Regex search across tracks (`-i` for case-insensitive) |
 | `validate` | Validate document (`--json` for JSON output) |
@@ -64,6 +65,10 @@ uv run mdkv import README.md --out imported.mdkv --title "Imported" --author "Yo
 | `import` | Import a Markdown file into a new .mdkv |
 | `diff` | Compare two .mdkv documents |
 | `stats` | Show document statistics |
+| `history` | Show revision history for a track (from revision tracks) |
+| `save-incremental` | Save only changed tracks (incremental mode) |
+| `batch validate` / `batch stats` | Run operations across multiple .mdkv files |
+| `completions` | Generate shell completion scripts |
 | `gui` | Launch web GUI |
 | `license` | Show license info |
 
@@ -81,6 +86,9 @@ uv run mdkv export doc.mdkv --out-dir tracks_out/
 
 # Markdown with YAML frontmatter
 uv run mdkv export doc.mdkv --metadata-header
+
+# Other formats via --format (json is built-in; pdf/epub/docx require pandoc)
+uv run mdkv export doc.mdkv --format json
 ```
 
 ### Add/update tracks from files
@@ -215,6 +223,7 @@ See [TODO.md](TODO.md) for planned minor, medium, and major improvements.
 - `mdkv.cli`: CLI entry point (`mdkv` or `python -m mdkv`)
 - `mdkv.gui`: FastAPI web GUI
 - `mdkv.common`: logging utilities
+- `mdkv.i18n`: internationalization (gettext-based)
 - `mdkv.library`: example definition builder
 - `mdkv.demo`: demo document builder
 

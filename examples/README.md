@@ -18,5 +18,5 @@ Run with `uv run python examples/<script>.py`.
 Tip: launch the GUI with a demo document:
 
 ```bash
-python3 run_gui.py --path demo/demo.mdkv
+uv run python run_gui.py --path demo/demo.mdkv
 ```
