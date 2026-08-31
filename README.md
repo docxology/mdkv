@@ -209,6 +209,11 @@ uv run pytest -q --cov=mdkv --cov-report=term-missing
 uv run sphinx-build -b html docs docs/_build/html
 ```
 
+Current version: `grep '^version' pyproject.toml` (single source of truth;
+release history in [CHANGELOG.md](CHANGELOG.md)). Dated status (version, tests,
+coverage): `uv run python scripts_status.py --tests`. Next planned work:
+[TODO.md](TODO.md). Agent orientation notes: [AGENTS.md](AGENTS.md).
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 
 ## Roadmap

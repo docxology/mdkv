@@ -5,6 +5,21 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-08-19
+
+### Added
+- Schema-based manifest validation via Pydantic (`MDKVManifestModel`, `TrackManifestModel` in `mdkv/storage/schema.py`), integrated into `storage.io`
+- i18n translation files and runtime infrastructure: compiled `.po`/`.mo` for Spanish (`es`) and French (`fr`) with CLI integration
+- Comprehensive roundtrip and corruption validation suites (corrupt ZIP / scalar YAML checks, edge-case validations)
+
+### Changed
+- Core engine and storage optimizations: track movement ordering logic, safe filename sanitization, fallback resilience
+- Strict mypy compliance configured in `pyproject.toml` (100% clean across source modules); Ruff lint/format cleanup with zero warnings remaining
+
+### Coverage
+- Test suite expanded to 309 tests; coverage 100% as recorded 2026-08-19, re-measured 2026-08-31 at 99% TOTAL (306 passed, 3 I/O-timeout failures on a slow external drive; re-verify with `uv run python scripts_status.py --tests`)
+
+
 ## [0.10.0] - 2025-07-23
 
 ### Added
