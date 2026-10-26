@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from mdkv.io import load_mdkv
-from mdkv.search import search_document
+from mdkv.services.search import search_document
+from mdkv.storage import load_mdkv
 
 
 def main() -> None:

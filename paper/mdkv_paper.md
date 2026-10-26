@@ -253,7 +253,7 @@ MDKV’s base validator enforces:
 
 The intentionally small rule set preserves extensibility while ensuring minimal integrity guarantees for downstream services.
 
-Implementation note: the reference validator currently checks for the presence of a track with id `primary`; this could be aligned to the type‑level requirement in future releases.
+Implementation note: the reference validator checks for the presence of a track whose `track_type` is `primary` (`mdkv/core/validate.py`), matching the rule above rather than requiring the specific id `primary`.
 
 ### 3.6 Round‑Trip Export Headers
 
@@ -349,7 +349,7 @@ The optional GUI offers a live preview and editing workflow with track selection
 
 ### 4.6 Architecture overview (linked)
 
-- Layers and responsibilities: see [`docs/architecture.md`](https://github.com/docxology/mdkv/blob/main/docs/architecture.md) and the published docs site.
+- Layers and responsibilities: see [`docs/architecture.md`](https://github.com/docxology/mdkv/blob/main/docs/architecture.md) (built locally with Sphinx; there is no hosted docs site).
 - Core model: [`mdkv/core/model.py`](https://github.com/docxology/mdkv/blob/main/mdkv/core/model.py) defines `Track`, `MDKVDocument`, and invariants; re‑exported via [`mdkv/__init__.py`](https://github.com/docxology/mdkv/blob/main/mdkv/__init__.py).
 - Storage: [`mdkv/storage/io.py`](https://github.com/docxology/mdkv/blob/main/mdkv/storage/io.py) implements `save_mdkv` and `load_mdkv` (ZIP + YAML manifest and `tracks/`).
 - Services: export in [`mdkv/services/export.py`](https://github.com/docxology/mdkv/blob/main/mdkv/services/export.py) (`to_markdown`, `to_html`, `export_to_files`); search in [`mdkv/services/search.py`](https://github.com/docxology/mdkv/blob/main/mdkv/services/search.py). Both are re‑exported at the top‑level package for a stable public API.
@@ -507,7 +507,7 @@ For combined exports intended for downstream tools (e.g., pandoc), keep round‑
 
 ## 10. Implementation Notes
 
-- Python 3.9+; dataclasses and type hints; explicit naming.
+- Python 3.11+; dataclasses and type hints; explicit naming.
 - Packaging: public API re‑exports; CLI entry point `mdkv`.
 - Dependencies: YAML, ZIP (std lib), Markdown renderer for HTML export.
 - Tests: cover CLI, services, model invariants, and storage round‑trip.

@@ -26,6 +26,7 @@ make -C docs html   # Sphinx; output under docs/_build/
 ## Run / test the package (from repo root)
 
 ```bash
+uv sync --extra dev   # first time: create .venv with runtime + dev deps
 uv run mdkv --help
 uv run pytest
 ```

@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from mdkv.model import MDKVDocument, Track
+from mdkv.core.model import MDKVDocument, Track
 from mdkv.storage import save_mdkv
 
 

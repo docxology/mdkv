@@ -6,7 +6,7 @@
 - Prefer real data paths in examples; avoid mocks in documented flows.
 
 ## Code Style
-- Python 3.9+; explicit, readable names (no 1–2 char vars).
+- Python 3.11+ (`requires-python` in `pyproject.toml`); explicit, readable names (no 1–2 char vars).
 - Guard clauses over deep nesting; handle errors/edges early.
 - Keep comments minimal; document "why".
 - Public API documented via docstrings; update `docs/api.rst` if surfacing new modules.
@@ -74,8 +74,8 @@
 `remove-track`, `rename-track`, `move-track` (with `--after-id`),
 `update-track` (with `--file`), `export` (with `--format`, `--metadata-header`, `--types`),
 `export-tracks`, `search` (with `-i`, `--limit`), `validate` (with `--json`),
-`set-meta`, `get-meta`, `import`, `diff`, `stats`, `gui`, `license`,
-`batch validate`, `batch stats`, `completions`.
+`set-meta`, `get-meta`, `import`, `diff`, `stats`, `history` (with `--id`),
+`save-incremental`, `gui`, `license`, `batch validate`, `batch stats`, `completions`.
 
 ## Diff & Stats
 - `diff_documents(doc_a, doc_b)` returns `DiffResult` with `has_changes` and `to_dict()`

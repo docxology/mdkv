@@ -22,8 +22,8 @@ MDKV packages related Markdown "tracks" into a single, portable file while prese
 # install uv once per machine (Linux/macOS)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# from repo root
-uv venv
+# from repo root: create .venv and install runtime + dev deps from uv.lock
+uv sync --extra dev
 uv run pytest -q
 uv run mdkv --help
 ```
@@ -209,8 +209,9 @@ uv run pytest -q --cov=mdkv --cov-report=term-missing
 uv run sphinx-build -b html docs docs/_build/html
 ```
 
-Current version: `grep '^version' pyproject.toml` (single source of truth;
-release history in [CHANGELOG.md](CHANGELOG.md)). Dated status (version, tests,
+Current version: `grep '^version' pyproject.toml` (canonical source; mirrored in
+`mdkv/__init__.py`'s `__version__`, which `mdkv --version` reports — keep both in
+sync; release history in [CHANGELOG.md](CHANGELOG.md)). Dated status (version, tests,
 coverage): `uv run python scripts_status.py --tests`. Next planned work:
 [TODO.md](TODO.md). Agent orientation notes: [AGENTS.md](AGENTS.md).
 

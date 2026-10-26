@@ -21,7 +21,7 @@
 - `mdkv/core/` — model, errors, history, registry, validate.
 - `mdkv/services/` — diff, export, pandoc_export, search, stats.
 - `mdkv/storage/` — io, schema (zip container persistence).
-- `mdkv/cli/` — argparse CLI entrypoint (`mdkv.cli`).
+- `mdkv/cli/` — Click-based CLI entrypoint (`mdkv.cli`; also `python -m mdkv`).
 - `mdkv/gui/` — local GUI server (`run_gui.py`) + static assets.
 - `tests/` — pytest suite (cli, gui, export, search, storage, redteam, ...).
 
@@ -35,13 +35,14 @@
 
 ## Undocumented subfolders (fleet note, 2026-08-29)
 
-`mdkv/mdkv/*` subpackages, `mdkv/locales/*`, `demo/`, `tests/`,
-`library/_built/` carry no per-folder AGENTS/README pairs beyond this file;
-`examples/` and `docs/` have READMEs. Verify with the coverage script.
+`mdkv/*` subpackages (`cli`, `core`, `services`, `storage`, `gui`, `common`),
+`mdkv/locales/*`, `demo/`, `tests/`, `library/_built/` carry no per-folder
+AGENTS/README pairs beyond this file; `examples/` and `docs/` have READMEs.
+Verify with `scripts_status.py`.
 
 ## Status pointers (2026-08-31)
 
-- Current version: single source is `version` in `pyproject.toml`; release history lives only in `CHANGELOG.md` (TODO.md may reference it, never restate it).
+- Current version: canonical source is `version` in `pyproject.toml`; `mdkv/__init__.py` mirrors it in `__version__` (used by `mdkv --version`) — bump both together. Release history lives only in `CHANGELOG.md` (TODO.md may reference it, never restate it).
 - Test/coverage status: verify with `uv run pytest -q --cov=mdkv --cov-report=term-missing` from repo root; dated claims live in `TODO.md`.
 - Next actions: `TODO.md` ("Backlog — open items" section).
 

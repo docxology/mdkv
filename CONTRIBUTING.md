@@ -5,9 +5,8 @@ Contributions are welcome! Please follow these guidelines.
 ## Development setup
 
 ```bash
-# Clone and install
-uv venv
-uv run pip install -e ".[dev]"
+# Clone and install (creates .venv with runtime + dev deps from uv.lock)
+uv sync --extra dev
 
 # Run tests
 uv run pytest -q
@@ -21,7 +20,7 @@ uv run sphinx-build -b html docs docs/_build/html
 
 ## Code style
 
-- Python 3.9+ (CI uses 3.14)
+- Python 3.11+ (`requires-python` in `pyproject.toml`; CI uses 3.14)
 - Explicit, readable names (no 1-2 character variables)
 - Guard clauses over deep nesting
 - Use `datetime.now(timezone.utc)` — never `datetime.utcnow()` (deprecated)
@@ -39,9 +38,6 @@ uv run sphinx-build -b html docs docs/_build/html
 - `mdkv.common`: logging utilities
 - `mdkv.library`: example definition builder
 - `mdkv.demo`: demo document builder
-
-Legacy shim files (`mdkv/model.py`, `mdkv/io.py`, etc.) re-export from the
-package modules for backward compatibility.
 
 ## Adding a new CLI command
 

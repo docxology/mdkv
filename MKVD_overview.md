@@ -61,7 +61,7 @@
 ### File Structure Specification
 
 ```
-MDKV File Structure:
+MDKV File Structure (conceptual):
 ├── Header (Magic bytes: "MDKV", version, metadata offset)
 ├── Metadata Section
 │   ├── Document metadata (YAML/JSON)
@@ -473,7 +473,7 @@ The system's modular architecture ensures scalability from individual use to ent
 
 [^26]: https://www.reddit.com/r/AskProgramming/comments/1agoi7b/does_anyone_use_version_control_system_to_write/
 
-[^27]: https://plt.cs.northwestern.edu/release-pkg-build/doc/commonmark@commonmark-doc/index.html
+[^27]: https://spec.commonmark.org/0.31.2/
 
 [^28]: https://commonmark.org
 
@@ -485,7 +485,7 @@ The system's modular architecture ensures scalability from individual use to ent
 
 [^32]: https://www.canva.com/docs/
 
-[^33]: https://www.ask.com/news/document-editing-software-demystified-understanding-key-features-functions
+[^33]: https://en.wikipedia.org/wiki/Word_processor
 
 [^34]: https://workspace.google.com/products/docs/
 
@@ -509,7 +509,7 @@ The system's modular architecture ensures scalability from individual use to ent
 
 [^44]: https://tallyfy.com/publishing-workflow/
 
-[^45]: https://ossisto.com/blog/metadata-management-tools/
+[^45]: https://en.wikipedia.org/wiki/Metadata_management
 
 [^46]: https://www.intelcapital.com/the-growing-importance-of-metadata-management-systems/
 
@@ -593,7 +593,7 @@ The system's modular architecture ensures scalability from individual use to ent
 
 [^86]: https://developer.android.com/develop/ui/compose/resources
 
-[^87]: https://learn.davidsystems.com/audioeditors/8.0/speech-to-text-configuration
+[^87]: https://en.wikipedia.org/wiki/Speech_recognition
 
 [^88]: https://www.geeksforgeeks.org/kotlin/android-jetpack-compose-implement-different-types-of-styles-and-customization-to-text/
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from mdkv.model import MDKVDocument, Track
+from mdkv.core.model import MDKVDocument, Track
 
 
 def _doc():

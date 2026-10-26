@@ -3,8 +3,8 @@
 Uses Python's built-in ``gettext`` module.  Translation files are
 stored in ``mdkv/locales/<lang>/LC_MESSAGES/mdkv.po`` (compiled to ``.mo``).
 
-Currently only English is shipped.  The infrastructure is in place for
-future translations.
+Spanish (``es``) and French (``fr``) catalogs are shipped; any language without
+a catalog falls back to English via ``NullTranslations``.
 """
 from __future__ import annotations
 

@@ -5,8 +5,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from mdkv.cli import main
-from mdkv.io import save_mdkv
-from mdkv.model import MDKVDocument, Track
+from mdkv.core.model import MDKVDocument, Track
+from mdkv.storage import save_mdkv
 
 
 def _make_doc(tmp_path: Path) -> Path:

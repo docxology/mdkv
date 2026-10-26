@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from mdkv.model import MDKVDocument, Track
-from mdkv.search import search_document
+from mdkv.core.model import MDKVDocument, Track
+from mdkv.services.search import search_document
 
 
 def test_search_across_tracks():

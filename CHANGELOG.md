@@ -5,6 +5,35 @@ All notable changes to MDKV are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- Legacy flat re-export shims `mdkv/model.py`, `mdkv/io.py`, `mdkv/search.py`,
+  `mdkv/validate.py`, `mdkv/errors.py`, `mdkv/export.py`, plus `mdkv/cli.py`
+  (unreachable: shadowed by the `mdkv/cli/` package). In-repo callers now import
+  the canonical modules (`mdkv.core.model`, `mdkv.core.validate`, `mdkv.core.errors`,
+  `mdkv.storage`, `mdkv.services.search`, `mdkv.services.export`).
+
+### Changed
+- Minimum Python is now 3.11 (`requires-python`), matching the code's use of
+  `datetime.UTC` (3.11+) and the existing ruff/mypy targets; the previous `>=3.9`
+  claim was unreachable in practice.
+- `pydantic>=2.9` is now a declared runtime dependency: `mdkv/storage/schema.py`
+  imports it unconditionally, so it was previously satisfied only transitively.
+- `uv.lock` refreshed to current compatible versions (uvicorn 0.54, fastapi,
+  pydantic 2.14, starlette 1.10, pytest 9, ruff, mypy, sphinx, …).
+- CI: `actions/checkout@v7` and `actions/setup-python@v7`; the install step is now
+  `uv sync --extra dev` — the previous `uv venv` + `uv run pip install -e ".[dev]"`
+  resolved to an interpreter outside the project venv (and fails outright under PEP 668).
+
+### Fixed
+- Docs: quickstart/development steps now run `uv sync --extra dev` before
+  `uv run pytest` (which alone cannot see the dev extras); corrected the Python
+  floor claims, the stale coverage claim in `TODO.md`, the `docs/manuscript`
+  publication status, the paper's validator note and nonexistent docs-site link,
+  four dead reference URLs in `MKVD_overview.md`, and outdated CLI/layout notes
+  in `AGENTS.md`.
+
 ## [0.11.0] - 2026-08-19
 
 ### Added

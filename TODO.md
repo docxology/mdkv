@@ -39,5 +39,5 @@ implemented and verified:
 - [x] **i18n translation files & runtime infrastructure**: Created and compiled `.po`/`.mo` translation files for Spanish (`es`) and French (`fr`) with UTF-8 headers and CLI integration.
 - [x] **Core engine & storage optimizations**: Streamlined track movement ordering logic, safe filename sanitization, and fallback resilience.
 - [x] **Comprehensive roundtrip & corruption validation suites**: Added exhaustive roundtrip tests, corrupt ZIP / scalar YAML checks, and edge-case validations.
-- [x] **Coverage expansion to 100%**: Increased test suite to 309 tests with 100% statement coverage across every module in `mdkv`.
+- [x] **Coverage expansion**: Increased test suite to 309 tests; 100% statement coverage as measured 2026-08-19, re-measured 2026-08-31 at 99% TOTAL (see header).
 

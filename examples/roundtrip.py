@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from mdkv.io import load_mdkv, save_mdkv
-from mdkv.model import MDKVDocument, Track
+from mdkv.core.model import MDKVDocument, Track
+from mdkv.storage import load_mdkv, save_mdkv
 
 
 def main() -> None:
