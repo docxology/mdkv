@@ -12,10 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH || true
-          echo "$HOME/.local/bin" >> $GITHUB_PATH || true
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
