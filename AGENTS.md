@@ -13,8 +13,7 @@
   Concept overview: `MKVD_overview.md`.
 - No mock framework in tests; run `uv run pytest -q` from the repo root.
   GUI: `uv run python run_gui.py`.
-- LOCAL-ONLY tree under `projects/ongoing/` — never commit. Parent standard:
-  `/Volumes/external_drive/Git/template/projects/ongoing/AGENTS.md`.
+- Repository-wide policy for template projects is maintained in the template repository, not restated here.
 
 ## Layout map
 
