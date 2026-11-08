@@ -8,7 +8,8 @@ def main() -> None:
     path = Path("example.mdkv")
     doc = load_mdkv(path)
     html = to_html(doc)
-    Path("example.html").write_text(html, encoding="utf-8")
+    with Path("example.html").open("x", encoding="utf-8") as output:
+        output.write(html)
     print("Wrote example.html")
 
 

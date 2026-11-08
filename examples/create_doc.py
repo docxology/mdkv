@@ -7,6 +7,8 @@ from mdkv.storage import save_mdkv
 
 def main() -> None:
     out = Path("example.mdkv")
+    if out.exists():
+        raise FileExistsError(f"Refusing to overwrite {out}")
     doc = MDKVDocument(title="Example", authors=["Author"], created=datetime.now(UTC))
     doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Example\n\nHello, see [link](https://example.org)."))
     doc.add_track(Track("translation-fr", "translation", "fr", "tracks/translation-fr.md", "Bonjour"))

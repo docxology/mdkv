@@ -22,6 +22,8 @@ class DiffResult:
     title_changed: list[str] = field(default_factory=list)
     authors_changed: list[Any] = field(default_factory=list)
     version_changed: list[str] = field(default_factory=list)
+    created_changed: list[str] = field(default_factory=list)
+    track_order_changed: list[list[str]] = field(default_factory=list)
     tracks_added: list[str] = field(default_factory=list)
     tracks_removed: list[str] = field(default_factory=list)
     tracks_modified: list[str] = field(default_factory=list)
@@ -35,7 +37,8 @@ class DiffResult:
         return any(
             len(getattr(self, f)) > 0
             for f in (
-                "title_changed", "authors_changed", "version_changed",
+                "title_changed", "authors_changed", "version_changed", "created_changed",
+                "track_order_changed",
                 "tracks_added", "tracks_removed", "tracks_modified",
                 "metadata_added", "metadata_removed", "metadata_changed",
             )
@@ -47,6 +50,8 @@ class DiffResult:
             "title_changed": self.title_changed,
             "authors_changed": self.authors_changed,
             "version_changed": self.version_changed,
+            "created_changed": self.created_changed,
+            "track_order_changed": self.track_order_changed,
             "tracks_added": self.tracks_added,
             "tracks_removed": self.tracks_removed,
             "tracks_modified": self.tracks_modified,
@@ -71,6 +76,10 @@ def diff_documents(doc_a: MDKVDocument, doc_b: MDKVDocument) -> DiffResult:
         result.authors_changed = [doc_a.authors, doc_b.authors]
     if doc_a.version != doc_b.version:
         result.version_changed = [doc_a.version, doc_b.version]
+    if doc_a.created != doc_b.created:
+        result.created_changed = [doc_a.created.isoformat(), doc_b.created.isoformat()]
+    if doc_a.track_ids != doc_b.track_ids:
+        result.track_order_changed = [doc_a.track_ids, doc_b.track_ids]
 
     # Tracks
     ids_a = set(doc_a.tracks)

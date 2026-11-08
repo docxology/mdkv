@@ -1,7 +1,11 @@
-let primaryId = null;
+let editorTrackId = null;
+let editorRevision = 0;
+let editorDirty = false;
+let liveTimer = null;
+let operations = Promise.resolve();
+let editorLocked = false;
+let renderSequence = 0;
 let selectedTrackIds = new Set();
-// 'all' means render all tracks regardless of selectedTrackIds
-// 'custom' means render exactly selectedTrackIds (can be empty → render nothing)
 let selectionMode = 'all';
 
 async function api(path, opts) {
@@ -10,184 +14,180 @@ async function api(path, opts) {
   return r.headers.get('content-type')?.includes('application/json') ? r.json() : r.text();
 }
 
-async function refresh() {
-  try {
-    const doc = await api('/api/document');
-    const p = doc.tracks.find(t => t.type === 'primary');
-    primaryId = p ? p.id : (doc.tracks[0]?.id || null);
-  } catch (e) {
-    // no document loaded yet
-  }
-  try {
-    await populateLibrarySelect();
-  } catch {}
-  // Always load the combined markdown (all tracks) into the editor
-  try {
-    const md = await api('/api/render/markdown');
-    document.getElementById('left').value = md.markdown;
-  } catch {}
-  try {
-    await populateTrackFilters();
-    await renderSelectedTracks();
-  } catch {}
+function setStatus(message) {
+  document.getElementById('status').textContent = message;
 }
 
-async function loadPath(p) {
-  await api('/api/open', { method: 'POST', body: JSON.stringify({ path: p }) });
-  await refresh();
-  setStatus('Loaded ' + p);
+function enqueue(action) {
+  const result = operations.then(action);
+  operations = result.catch(() => {});
+  return result;
+}
+
+function editorSnapshot() {
+  return { id: editorTrackId, content: document.getElementById('left').value, revision: editorRevision, dirty: editorDirty };
+}
+
+async function persistEditor(snapshot) {
+  if (!snapshot.id || !snapshot.dirty) return;
+  await api('/api/track', {
+    method: 'PUT', body: JSON.stringify({ id: snapshot.id, content: snapshot.content })
+  });
+  if (editorTrackId === snapshot.id && editorRevision === snapshot.revision) editorDirty = false;
+}
+
+async function editorAction(action) {
+  if (editorLocked) return;
+  editorLocked = true;
+  clearTimeout(liveTimer);
+  const snapshot = editorSnapshot();
+  const controls = ['left', 'editorTrack', 'btnOpen', 'libSelect', 'btnSave'];
+  for (const id of controls) document.getElementById(id).disabled = true;
+  try {
+    await enqueue(async () => {
+      // Flush before changing the track/document or saving the container.
+      await persistEditor(snapshot);
+      await action();
+    });
+  } catch (error) {
+    document.getElementById('editorTrack').value = editorTrackId || '';
+    setStatus(error.message);
+  } finally {
+    editorLocked = false;
+    for (const id of controls) document.getElementById(id).disabled = false;
+    document.getElementById('left').disabled = !editorTrackId;
+  }
+}
+
+function liveUpdate() {
+  editorRevision += 1;
+  editorDirty = true;
+  clearTimeout(liveTimer);
+  const snapshot = editorSnapshot();
+  liveTimer = setTimeout(() => {
+    enqueue(async () => {
+      await persistEditor(snapshot);
+      await renderSelectedTracks();
+      setStatus('Live updated');
+    }).catch(error => setStatus('Update failed: ' + error.message));
+  }, 300);
+}
+
+async function selectEditorTrack(id) {
+  const track = id ? await api('/api/track?track_id=' + encodeURIComponent(id)) : null;
+  editorTrackId = track ? track.id : null;
+  editorRevision += 1;
+  editorDirty = false;
+  document.getElementById('editorTrack').value = editorTrackId || '';
+  document.getElementById('left').value = track ? track.content : '';
+  document.getElementById('left').disabled = editorLocked || !track;
+}
+
+async function refresh(preferredId = editorTrackId) {
+  const doc = await api('/api/document');
+  const select = document.getElementById('editorTrack');
+  select.replaceChildren();
+  for (const track of doc.tracks) {
+    const option = document.createElement('option');
+    option.value = track.id;
+    option.textContent = track.id + ' — ' + track.type + (track.language ? ' (' + track.language + ')' : '');
+    select.appendChild(option);
+  }
+  const selected = doc.tracks.find(track => track.id === preferredId) || doc.tracks.find(track => track.type === 'primary') || doc.tracks[0];
+  await selectEditorTrack(selected?.id || null);
+  await populateTrackFilters();
+  await renderSelectedTracks();
+}
+
+async function loadPath(path) {
+  await editorAction(async () => {
+    await api('/api/open', { method: 'POST', body: JSON.stringify({ path }) });
+    // Once open succeeds, stale editor contents must never target the new document.
+    renderSequence += 1;
+    await selectEditorTrack(null);
+    document.getElementById('editorTrack').replaceChildren();
+    selectionMode = 'all';
+    selectedTrackIds.clear();
+    await refresh(null);
+    setStatus('Loaded ' + path);
+  });
 }
 
 async function save() {
-  const content = document.getElementById('left').value;
-  // Always treat the left pane as the full combined markdown.
-  const sections = parseCombinedTracks(content);
-  for (const s of sections) {
-    await api('/api/track', { method: 'POST', body: JSON.stringify({ id: s.id, content: s.content }) });
-  }
-  await api('/api/save', { method: 'POST' });
-  setStatus('Saved');
+  await editorAction(async () => {
+    const status = await api('/api/status');
+    const options = { method: 'POST' };
+    if (!status.path) {
+      const path = prompt('Save as local .mdkv path:');
+      if (!path) {
+        setStatus('Save cancelled');
+        return;
+      }
+      options.body = JSON.stringify({ path });
+    }
+    await api('/api/save', options);
+    await renderSelectedTracks();
+    setStatus('Saved');
+  });
 }
 
 async function validate() {
-  const r = await api('/api/validate', { method: 'POST' });
-  setStatus(r.ok ? 'Validation OK' : 'Validation failed: ' + r.error);
+  await editorAction(async () => {
+    const result = await api('/api/validate', { method: 'POST' });
+    setStatus(result.ok ? 'Validation OK' : 'Validation failed: ' + result.error);
+  });
 }
-
-function setStatus(msg) {
-  document.getElementById('status').textContent = msg;
-}
-
-function debounce(fn, ms) {
-  let t = null;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), ms);
-  };
-}
-
-const liveUpdate = debounce(async () => {
-  try {
-    const combined = document.getElementById('left').value;
-    const sections = parseCombinedTracks(combined);
-    // push all sections so edits to any track are persisted
-    for (const s of sections) {
-      await api('/api/track', { method: 'POST', body: JSON.stringify({ id: s.id, content: s.content }) });
-    }
-    await renderSelectedTracks();
-    setStatus('Live updated');
-  } catch (e) {
-    // ignore during typing
-  }
-}, 300);
 
 async function populateTrackFilters() {
-  try {
-    const container = document.getElementById('trackFilters');
-    const tracks = await api('/api/tracks');
-    container.innerHTML = '';
-    // Add an "All" checkbox for quick toggle
-    const allWrapper = document.createElement('label');
-    const allCb = document.createElement('input');
-    allCb.type = 'checkbox';
-    allCb.id = 'track_all';
-    allCb.checked = selectionMode === 'all';
-    allWrapper.appendChild(allCb);
-    allWrapper.appendChild(document.createTextNode('All'));
-    container.appendChild(allWrapper);
-
-    const updateAllChecked = () => {
-      allCb.checked = selectionMode === 'all';
-    };
-
-    allCb.addEventListener('change', async () => {
-      if (allCb.checked) {
-        selectionMode = 'all';
-        selectedTrackIds.clear();
-        // ensure all individual boxes are checked visually
-        for (const input of container.querySelectorAll('input[type="checkbox"][data-track-id]')) {
-          input.checked = true;
-        }
-        updateAllChecked();
-        await renderSelectedTracks();
-      } else {
-        // switching off All puts us in custom mode, keep current individual checks
-        selectionMode = 'custom';
-        // recompute selectedTrackIds from current boxes
-        selectedTrackIds = new Set(
-          Array.from(container.querySelectorAll('input[type="checkbox"][data-track-id]:checked'))
-            .map(cb => cb.dataset.trackId)
-        );
-        updateAllChecked();
-        await renderSelectedTracks();
-      }
-    });
-
-    for (const t of tracks) {
-      const label = document.createElement('label');
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = t.id;
-      cb.dataset.trackId = t.id;
-      cb.checked = selectionMode === 'all' ? true : selectedTrackIds.has(t.id);
-      label.appendChild(cb);
-      const txt = t.type === 'primary' && t.language ? 'English (primary)' : `${t.type}${t.language ? ' (' + t.language + ')' : ''}`;
-      label.appendChild(document.createTextNode(' ' + txt));
-      container.appendChild(label);
-      cb.addEventListener('change', async () => {
-        // any manual change implies custom mode
-        selectionMode = 'custom';
-        if (cb.checked) {
-          selectedTrackIds.add(t.id);
-        } else {
-          selectedTrackIds.delete(t.id);
-        }
-        updateAllChecked();
-        await renderSelectedTracks();
-      });
+  const container = document.getElementById('trackFilters');
+  const tracks = await api('/api/tracks');
+  container.replaceChildren();
+  const allWrapper = document.createElement('label');
+  const allCb = document.createElement('input');
+  allCb.type = 'checkbox';
+  allCb.id = 'track_all';
+  allCb.checked = selectionMode === 'all';
+  allWrapper.append(allCb, document.createTextNode('All'));
+  container.appendChild(allWrapper);
+  allCb.addEventListener('change', () => {
+    selectionMode = allCb.checked ? 'all' : 'custom';
+    selectedTrackIds = new Set();
+    for (const input of container.querySelectorAll('input[data-track-id]')) {
+      input.checked = allCb.checked;
+      if (input.checked) selectedTrackIds.add(input.dataset.trackId);
     }
-    makeDraggable();
-  } catch (e) {
-    // no doc yet
+    renderSelectedTracks().catch(error => setStatus(error.message));
+  });
+  for (const track of tracks) {
+    const label = document.createElement('label');
+    label.dataset.trackId = track.id;
+    label.draggable = true;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = track.id;
+    cb.dataset.trackId = track.id;
+    cb.checked = selectionMode === 'all' || selectedTrackIds.has(track.id);
+    label.append(cb, document.createTextNode(' ' + track.id + ' — ' + track.type + (track.language ? ' (' + track.language + ')' : '')));
+    container.appendChild(label);
+    cb.addEventListener('change', () => {
+      if (selectionMode === 'all') selectedTrackIds = new Set(tracks.map(item => item.id));
+      selectionMode = 'custom';
+      if (cb.checked) selectedTrackIds.add(track.id);
+      else selectedTrackIds.delete(track.id);
+      allCb.checked = false;
+      renderSelectedTracks().catch(error => setStatus(error.message));
+    });
   }
 }
 
 async function renderSelectedTracks() {
-  if (selectionMode === 'all') {
-    const html = await api('/api/render/all_html');
-    document.getElementById('right').srcdoc = html;
-    return;
-  }
-  const ids = [...selectedTrackIds];
-  const html = await api('/api/render/tracks_html', { method: 'POST', body: JSON.stringify({ track_ids: ids }) });
-  document.getElementById('right').srcdoc = html;
+  const sequence = ++renderSequence;
+  const html = selectionMode === 'all'
+    ? await api('/api/render/all_html')
+    : await api('/api/render/tracks_html', { method: 'POST', body: JSON.stringify({ track_ids: [...selectedTrackIds] }) });
+  if (sequence === renderSequence) document.getElementById('right').srcdoc = html;
 }
 
-function parseCombinedTracks(text) {
-  const re = /<!--\s*track:([^\s]+)\s+type:[^>]*?-->/g;
-  const matches = [];
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    matches.push({ index: m.index, id: m[1], headerLen: m[0].length });
-  }
-  const sections = [];
-  for (let i = 0; i < matches.length; i++) {
-    const start = matches[i].index + matches[i].headerLen;
-    const end = i + 1 < matches.length ? matches[i + 1].index : text.length;
-    let content = text.slice(start, end);
-    content = content.replace(/^\s+/, '');
-    sections.push({ id: matches[i].id, content });
-  }
-  return sections;
-}
-
-async function setEditorFromSelection() {
-  // Editor always holds combined markdown for all tracks
-  const md = await api('/api/render/markdown');
-  document.getElementById('left').value = md.markdown;
-}
-
-// Theme toggle
 const btnTheme = document.getElementById('btnTheme');
 function applyTheme(dark) {
   document.body.classList.toggle('dark', dark);
@@ -199,127 +199,109 @@ const savedTheme = localStorage.getItem('mdkv-theme') === 'dark' ||
 applyTheme(savedTheme);
 btnTheme.addEventListener('click', () => applyTheme(!document.body.classList.contains('dark')));
 
-// Diff viewer
-const btnDiff = document.getElementById('btnDiff');
 const diffView = document.getElementById('diffView');
 const panes = document.getElementById('panes');
-btnDiff.addEventListener('click', async () => {
+document.getElementById('btnDiff').addEventListener('click', async () => {
   if (diffView.classList.contains('active')) {
     diffView.classList.remove('active');
     panes.style.display = 'grid';
     return;
   }
-  // For now, just show a placeholder — full diff needs a second document path
-  const otherPath = prompt('Path to other .mdkv for diff:');
-  if (!otherPath) return;
-  try {
-    const r = await api('/api/diff', { method: 'POST', body: JSON.stringify({ path: otherPath }) });
-    const left = document.getElementById('diffLeftContent');
-    const right = document.getElementById('diffRightContent');
-    left.innerHTML = '<pre>' + JSON.stringify(r, null, 2) + '</pre>';
-    right.innerHTML = '<p>Diff report shown left.</p>';
+  const path = prompt('Path to other .mdkv for diff:');
+  if (!path) return;
+  await editorAction(async () => {
+    const report = await api('/api/diff', { method: 'POST', body: JSON.stringify({ path }) });
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(report, null, 2);
+    document.getElementById('diffLeftContent').replaceChildren(pre);
+    document.getElementById('diffRightContent').textContent = 'Diff report shown left.';
     diffView.classList.add('active');
     panes.style.display = 'none';
     setStatus('Diff loaded');
-  } catch (e) {
-    setStatus('Diff failed: ' + e.message);
-  }
+  });
 });
 
-// Drag-and-drop track reordering
 let draggedElement = null;
-document.addEventListener('dragstart', (e) => {
-  if (e.target.closest('.track-filters label[data-track-id]')) {
-    draggedElement = e.target.closest('label');
-    draggedElement.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
+document.addEventListener('dragstart', event => {
+  const label = event.target.closest('.track-filters label[data-track-id]');
+  if (!label || editorLocked) {
+    event.preventDefault();
+    return;
   }
+  draggedElement = label;
+  label.classList.add('dragging');
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', label.dataset.trackId);
 });
 document.addEventListener('dragend', () => {
-  if (draggedElement) {
-    draggedElement.classList.remove('dragging');
-    draggedElement = null;
+  if (draggedElement) draggedElement.classList.remove('dragging');
+  draggedElement = null;
+  document.querySelectorAll('.drag-over').forEach(label => label.classList.remove('drag-over'));
+});
+document.addEventListener('dragover', event => {
+  const target = event.target.closest('.track-filters label[data-track-id]');
+  if (draggedElement && target && target !== draggedElement) {
+    event.preventDefault();
+    target.classList.add('drag-over');
   }
 });
-document.addEventListener('dragover', (e) => {
-  if (draggedElement && e.target.closest('.track-filters label[data-track-id]')) {
-    e.preventDefault();
-    const target = e.target.closest('label');
-    if (target !== draggedElement) {
-      target.classList.add('drag-over');
-    }
-  }
+document.addEventListener('dragleave', event => {
+  event.target.closest('.track-filters label[data-track-id]')?.classList.remove('drag-over');
 });
-document.addEventListener('dragleave', (e) => {
-  if (e.target.closest('.track-filters label[data-track-id]')) {
-    e.target.closest('label').classList.remove('drag-over');
-  }
-});
-document.addEventListener('drop', async (e) => {
-  if (draggedElement && e.target.closest('.track-filters label[data-track-id]')) {
-    e.preventDefault();
-    const target = e.target.closest('label');
-    target.classList.remove('drag-over');
-    const draggedId = draggedElement.dataset.trackId;
-    const targetId = target.dataset.trackId;
-    if (draggedId !== targetId) {
-      try {
-        await api('/api/move-track', { method: 'POST', body: JSON.stringify({ track_id: draggedId, after_id: targetId }) });
-        await refresh();
-        setStatus('Track reordered');
-      } catch (err) {
-        setStatus('Reorder failed: ' + err.message);
-      }
-    }
-  }
+document.addEventListener('drop', async event => {
+  const target = event.target.closest('.track-filters label[data-track-id]');
+  if (!draggedElement || !target) return;
+  event.preventDefault();
+  target.classList.remove('drag-over');
+  const trackId = draggedElement.dataset.trackId;
+  const afterId = target.dataset.trackId;
+  if (trackId === afterId) return;
+  await editorAction(async () => {
+    await api('/api/move-track', { method: 'POST', body: JSON.stringify({ track_id: trackId, after_id: afterId }) });
+    await refresh();
+    setStatus('Track reordered');
+  });
 });
 
-// Make track filter labels draggable
-function makeDraggable() {
-  document.querySelectorAll('.track-filters label[data-track-id]').forEach(label => {
-    label.draggable = true;
-  });
+async function populateLibrarySelect() {
+  const result = await api('/api/library');
+  const select = document.getElementById('libSelect');
+  select.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Select from library…';
+  select.appendChild(placeholder);
+  for (const file of result.files) {
+    const option = document.createElement('option');
+    option.value = file.path;
+    option.textContent = file.name;
+    select.appendChild(option);
+  }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  document.getElementById('btnOpen').addEventListener('click', async () => {
-    const p = document.getElementById('openPath').value;
-    if (p) await loadPath(p);
+  document.getElementById('btnOpen').addEventListener('click', () => {
+    const path = document.getElementById('openPath').value;
+    if (path) loadPath(path);
   });
-  const libSelect = document.getElementById('libSelect');
-  libSelect.addEventListener('change', async () => {
-    const p = libSelect.value;
-    if (p) await loadPath(p);
+  document.getElementById('libSelect').addEventListener('change', event => {
+    if (event.target.value) loadPath(event.target.value);
+  });
+  document.getElementById('editorTrack').addEventListener('change', event => {
+    const id = event.target.value;
+    editorAction(async () => selectEditorTrack(id));
   });
   document.getElementById('btnSave').addEventListener('click', save);
   document.getElementById('btnValidate').addEventListener('click', validate);
   document.getElementById('left').addEventListener('input', liveUpdate);
-  await populateTrackFilters();
-  await renderSelectedTracks();
-  // initial populate if a document is preloaded
-  refresh();
-});
-
-async function populateLibrarySelect() {
+  await editorAction(async () => {
+    const status = await api('/api/status');
+    if (status.loaded) await refresh(null);
+    else setStatus('Open a document to edit a track.');
+  });
   try {
-    const r = await api('/api/library');
-    const select = document.getElementById('libSelect');
-    const existing = select.value;
-    select.innerHTML = '';
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select from library…';
-    select.appendChild(placeholder);
-    for (const f of r.files) {
-      const opt = document.createElement('option');
-      opt.value = f.path;
-      opt.textContent = f.name;
-      select.appendChild(opt);
-    }
-    if (existing) select.value = existing;
-  } catch (e) {
-    // ignore if server lacks examples
+    await populateLibrarySelect();
+  } catch (error) {
+    setStatus('Library unavailable: ' + error.message);
   }
-}
-
-
+});

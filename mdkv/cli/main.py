@@ -21,19 +21,16 @@ from mdkv.storage import MDKVFormatError, load_mdkv, save_mdkv
 
 
 def _handle_load_errors(fn):
-    """Decorator that catches FileNotFoundError and MDKVFormatError from load_mdkv."""
+    """Report expected container, input, validation and filesystem failures cleanly."""
     import functools
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
-        except FileNotFoundError as e:
+        except (OSError, MDKVFormatError, ValidationError, ValueError, KeyError, TimeoutError) as e:
             click.echo(f"ERROR: {e}", err=True)
-            raise SystemExit(1)
-        except MDKVFormatError as e:
-            click.echo(f"ERROR: {e}", err=True)
-            raise SystemExit(1)
+            raise SystemExit(1) from e
     return wrapper
 
 
@@ -243,7 +240,10 @@ def search_cmd(path: Path, pattern: str, types: str, languages: str, case_insens
         )
     except re.error as e:
         click.echo(f"ERROR: invalid regex pattern: {e}", err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from e
+    except TimeoutError as e:
+        click.echo(f"ERROR: search failed: {e}", err=True)
+        raise SystemExit(1) from e
     click.echo(json.dumps([
         {
             "track_id": m.track_id,
@@ -422,20 +422,18 @@ def history_cmd(path: Path, track_id: str) -> None:
 @click.argument("path", type=click.Path(dir_okay=False, path_type=Path))
 @_handle_load_errors
 def save_incremental_cmd(path: Path) -> None:
-    """Save only changed tracks (incremental mode)."""
+    """Atomically rewrite the complete container after loading its current model."""
     from mdkv.storage.io import save_mdkv_incremental
     doc = load_mdkv(path)
-    result = save_mdkv_incremental(doc, path)
-    if result:
-        click.echo("Saved (incremental)")
-    else:
-        click.echo("Saved (full fallback)")
+    save_mdkv_incremental(doc, path)
+    click.echo("Saved")
 
 
 @main.command("gui")
 @click.option("--path", type=click.Path(dir_okay=False, path_type=Path), required=False)
-@click.option("--host", default="127.0.0.1")
+@click.option("--host", default="127.0.0.1", type=click.Choice(["127.0.0.1", "localhost", "::1"], case_sensitive=False))
 @click.option("--port", default=8000)
+@_handle_load_errors
 def gui_cmd(path: Path | None, host: str, port: int) -> None:
     """Launch local MDKV GUI web app."""
     run_gui(host=host, port=port, path=str(path) if path else None)
@@ -445,14 +443,12 @@ def gui_cmd(path: Path | None, host: str, port: int) -> None:
 @click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))
 def completions_cmd(shell: str) -> None:
     """Generate shell completion scripts."""
-    click.echo(f"# Add this to your shell config (e.g. ~/.{shell}rc):")
-    click.echo(f'# eval "$(_MDKV_COMPLETE={shell}_source mdkv)"')
-    click.echo("# Or save this script and source it:")
-    click.echo("")
-    # Use click's built-in shell completion
-    # Click generates completions dynamically; we output the instruction
-    click.echo(f'export _MDKV_COMPLETE={shell}_source')
-    click.echo(f'eval "$(mdkv --generate-completions {shell} 2>/dev/null || true)"')
+    from click.shell_completion import get_completion_class
+
+    completion_class = get_completion_class(shell)
+    if completion_class is None:
+        raise click.ClickException(f"unsupported completion shell: {shell}")
+    click.echo(completion_class(main, {}, "mdkv", "_MDKV_COMPLETE").source())
 
 
 @main.group("batch")
@@ -480,6 +476,8 @@ def batch_validate(paths: tuple[Path, ...], as_json: bool) -> None:
         for r in results:
             status = "OK" if r["ok"] else "FAIL"
             click.echo(f"{status}  {r['path']}")
+    if any(not result["ok"] for result in results):
+        raise SystemExit(1)
 
 
 @batch_group.command("stats")
@@ -496,6 +494,8 @@ def batch_stats(paths: tuple[Path, ...]) -> None:
         except Exception as e:
             results.append({"path": str(p), "error": str(e)})
     click.echo(json.dumps(results, indent=2))
+    if any("error" in result for result in results):
+        raise SystemExit(1)
 
 
 @main.command("license")

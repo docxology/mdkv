@@ -17,6 +17,7 @@ from datetime import datetime
 from typing import Any
 
 from .errors import ValidationError
+from .registry import get_registry
 
 
 def allowed_track_types() -> list[str]:
@@ -24,15 +25,27 @@ def allowed_track_types() -> list[str]:
 
     Order is informational only; callers should not rely on ordering.
     """
-    return [
-        "primary",
-        "translation",
-        "commentary",
-        "code",
-        "reference",
-        "media_ref",
-        "revision",
-    ]
+    return get_registry().all_types()
+
+
+def validate_track_id(track_id: str) -> str:
+    """Require a nonempty textual identifier without control characters."""
+    if not isinstance(track_id, str) or not track_id.strip():
+        raise ValueError("track_id must not be empty")
+    if any(ord(char) < 32 or ord(char) == 127 for char in track_id):
+        raise ValueError("track_id must not contain control characters")
+    return track_id
+
+
+def validate_track_path(path: str) -> str:
+    """Require a safe relative file path below ``tracks/``; never normalize it."""
+    if not isinstance(path, str) or not path.startswith("tracks/"):
+        raise ValueError("track path must be under 'tracks/' directory")
+    if "\\" in path or "\x00" in path or any(
+        part in {"", ".", ".."} for part in path.split("/")
+    ):
+        raise ValueError("track path must be a safe relative path under 'tracks/'")
+    return path
 
 
 @dataclass
@@ -43,7 +56,7 @@ class Track:
     - `track_id`: unique identifier within the document
     - `track_type`: one of `allowed_track_types()`
     - `language`: ISO 639-1/BCP-47 code or None for non-linguistic tracks
-    - `path`: path inside the container (must start with `tracks/`)
+    - `path`: safe relative file path below `tracks/`
     - `content`: UTF-8 Markdown text
     """
     track_id: str
@@ -53,12 +66,14 @@ class Track:
     content: str
 
     def __post_init__(self) -> None:
-        if self.track_type not in allowed_track_types():
+        if not isinstance(self.track_type, str) or not get_registry().is_registered(self.track_type):
             raise ValueError(f"Unsupported track_type: {self.track_type}")
-        if not self.track_id:
-            raise ValueError("track_id must not be empty")
-        if not self.path.startswith("tracks/"):
-            raise ValueError("track path must be under 'tracks/' directory")
+        validate_track_id(self.track_id)
+        validate_track_path(self.path)
+        if self.language is not None and not isinstance(self.language, str):
+            raise ValueError("track language must be a string or None")
+        if not isinstance(self.content, str):
+            raise ValueError("track content must be a string")
 
     def __repr__(self) -> str:
         return (
@@ -107,6 +122,8 @@ class MDKVDocument:
     """In-memory representation of a `.mdkv` document.
 
     Includes metadata and a mapping of `track_id` → `Track`.
+    ``TrackHistory`` is a separate in-memory API: document mutations and
+    container saves do not automatically record or persist revision history.
     """
     title: str
     authors: list[str]
@@ -172,19 +189,27 @@ class MDKVDocument:
     def rename_track(self, old_id: str, new_id: str) -> None:
         """Rename `old_id` to `new_id` and adjust its path if it targets a `.md` file.
 
-        Raises `ValueError` if `new_id` exists or `KeyError` if `old_id` missing.
+        Preserves insertion order. Invalid IDs or colliding paths raise
+        ``ValueError`` before changing the document; missing IDs raise ``KeyError``.
         """
-        if new_id in self.tracks:
-            raise ValueError(f"track id exists: {new_id}")
+        validate_track_id(new_id)
         track = self.get_track(old_id)
         if track is None:
             raise KeyError(old_id)
-        # update mapping and track path
-        self.tracks.pop(old_id)
+        if old_id == new_id:
+            return
+        if new_id in self.tracks:
+            raise ValueError(f"track id exists: {new_id}")
+        new_path = f"tracks/{new_id}.md" if track.path.endswith(".md") else track.path
+        validate_track_path(new_path)
+        if any(t is not track and t.path == new_path for t in self.tracks.values()):
+            raise ValueError(f"track path exists: {new_path}")
+        renamed_tracks = {
+            new_id if tid == old_id else tid: value for tid, value in self.tracks.items()
+        }
         track.track_id = new_id
-        if track.path.startswith("tracks/") and track.path.endswith(".md"):
-            track.path = f"tracks/{new_id}.md"
-        self.tracks[new_id] = track
+        track.path = new_path
+        self.tracks = renamed_tracks
 
     def move_track(self, track_id: str, after_id: str | None) -> None:
         """Reorder ``track_id`` to appear immediately after ``after_id`` in the track ordering.
@@ -197,6 +222,8 @@ class MDKVDocument:
             raise KeyError(track_id)
         if after_id is not None and after_id not in self.tracks:
             raise KeyError(after_id)
+        if track_id == after_id:
+            return
         # Rebuild the dict in the new order
         track = self.tracks.pop(track_id)
         new_tracks: dict[str, Track] = {}

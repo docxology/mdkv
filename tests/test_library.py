@@ -27,6 +27,13 @@ def test_library_build_document_all_created_branches():
         assert d == {}
 
 
+def test_committed_examples_match_current_definitions(tmp_path: Path):
+    built = build_all_examples(Path("library/definitions"), tmp_path / "built")
+    for path in built:
+        committed = Path("library/_built") / path.name
+        assert load_mdkv(path).to_dict() == load_mdkv(committed).to_dict(), path.name
+
+
 def test_library_build_and_validate(tmp_path: Path):
     defs = Path("library/definitions")
     out = tmp_path / "built"

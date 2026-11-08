@@ -1,177 +1,109 @@
 from __future__ import annotations
 
-"""Pandoc-based export services for MDKV documents.
+"""Optional native conversion through Pandoc.
 
-Renders documents to PDF, EPUB, and DOCX formats using ``pandoc`` as a
-subprocess.  This mirrors the approach used by the docxology/template
-infrastructure's rendering module — pandoc is the single conversion engine,
-no Python PDF/EPUB libraries are introduced.
-
-If ``pandoc`` is not installed, a clear ``FileNotFoundError`` is raised
-with installation instructions.
+The default reader disables raw TeX/HTML, custom document metadata cannot become
+converter configuration, and Pandoc uses its sandbox. PDF engines remain external
+programs, not a security sandbox: convert only trusted documents to PDF. Extra
+arguments, cover images and reference documents are trusted caller capabilities.
 """
 
 import shutil
 import subprocess
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 
 from mdkv.core.model import MDKVDocument
-from mdkv.services.export import to_markdown
+from mdkv.services.export import _frontmatter
 
 
 def _check_pandoc() -> str:
-    """Return the path to pandoc or raise FileNotFoundError."""
+    """Return the installed Pandoc executable or raise FileNotFoundError."""
     pandoc = shutil.which("pandoc")
     if pandoc is None:
-        raise FileNotFoundError(
-            "pandoc is not installed. Install it from https://pandoc.org/installing.html"
-        )
+        raise FileNotFoundError("pandoc is not installed. Install it from https://pandoc.org/installing.html")
     return pandoc
 
 
-def _write_temp_markdown(doc: MDKVDocument, include_track_types: list[str] | None,
-                         metadata_header: bool, tmpdir: Path) -> Path:
-    """Write the document as combined Markdown to a temp file and return the path."""
-    md = to_markdown(doc, include_track_types=include_track_types, metadata_header=metadata_header)
+def _write_temp_markdown(
+    doc: MDKVDocument, include_track_types: list[str] | None,
+    metadata_header: bool, tmpdir: Path,
+) -> Path:
+    include = set(include_track_types) if include_track_types is not None else None
+    body = "\n\n".join(track.content for track in doc.tracks.values()
+                       if include is None or track.track_type in include)
+    if metadata_header:
+        # Freeform fields such as header-includes are converter instructions.
+        safe_doc = replace(doc, metadata={key: value for key, value in doc.metadata.items()
+                                        if key in {"date", "lang"}})
+        body = _frontmatter(safe_doc) + body
     md_path = tmpdir / "document.md"
-    md_path.write_text(md, encoding="utf-8")
+    md_path.write_text(body, encoding="utf-8")
     return md_path
 
 
-def to_pdf(
-    doc: MDKVDocument,
-    output_path: Path,
-    include_track_types: list[str] | None = None,
-    metadata_header: bool = True,
-    pandoc_args: list[str] | None = None,
+def _convert(
+    doc: MDKVDocument, output_path: Path, include_track_types: list[str] | None,
+    metadata_header: bool, pandoc_args: list[str] | None, resource_args: list[str],
 ) -> Path:
-    """Render ``doc`` to a PDF file using pandoc.
-
-    Requires ``pandoc`` and a LaTeX engine (e.g. ``pdflatex`` or ``xelatex``)
-    to be installed.
-
-    Args:
-        doc: Document to render.
-        output_path: Target .pdf path; parent created if missing.
-        include_track_types: Optional track type filter.
-        metadata_header: Include YAML frontmatter (recommended for PDF title/author).
-        pandoc_args: Extra arguments passed to pandoc (e.g. ``["--pdf-engine=xelatex"]``).
-
-    Returns:
-        Path to the generated PDF file.
-
-    Raises:
-        FileNotFoundError: pandoc not installed.
-        subprocess.CalledProcessError: pandoc conversion failed.
-    """
     pandoc = _check_pandoc()
     out_path = Path(output_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_dir_path = Path(tmpdir)
-        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmp_dir_path)
-        cmd = [pandoc, str(md_path), "-o", str(out_path), "--standalone"]
+    with tempfile.TemporaryDirectory(prefix=".mdkv-pandoc-", dir=out_path.parent) as temporary:
+        tmpdir = Path(temporary).resolve()
+        source = _write_temp_markdown(doc, include_track_types, metadata_header, tmpdir)
+        rendered = tmpdir / ("rendered" + out_path.suffix)
+        cmd = [
+            pandoc, str(source), "-o", str(rendered), "--standalone", "--sandbox",
+            "--from=markdown-raw_tex-raw_html-raw_attribute", *resource_args,
+        ]
+        if out_path.suffix.lower() == ".pdf":
+            cmd.append("--pdf-engine-opt=-no-shell-escape")
         if pandoc_args:
             cmd.extend(pandoc_args)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(
-                result.returncode, cmd, result.stdout, result.stderr
-            )
+        subprocess.run(cmd, cwd=tmpdir, stdin=subprocess.DEVNULL, capture_output=True,
+                       text=True, timeout=120, check=True)
+        rendered.replace(out_path)
     return out_path
+
+
+def to_pdf(
+    doc: MDKVDocument, output_path: Path, include_track_types: list[str] | None = None,
+    metadata_header: bool = True, pandoc_args: list[str] | None = None,
+) -> Path:
+    """Convert a trusted document to PDF using installed Pandoc and a TeX engine.
+
+    Raw TeX/HTML and converter-configuration metadata are disabled by default;
+    Pandoc's sandbox does not isolate the PDF engine. Extra arguments are trusted.
+    Failure preserves any existing destination. Errors propagate as
+    ``FileNotFoundError``, ``CalledProcessError`` or ``TimeoutExpired``.
+    """
+    return _convert(doc, output_path, include_track_types, metadata_header, pandoc_args, [])
 
 
 def to_epub(
-    doc: MDKVDocument,
-    output_path: Path,
-    include_track_types: list[str] | None = None,
-    metadata_header: bool = True,
-    cover_image: Path | None = None,
+    doc: MDKVDocument, output_path: Path, include_track_types: list[str] | None = None,
+    metadata_header: bool = True, cover_image: Path | None = None,
     pandoc_args: list[str] | None = None,
 ) -> Path:
-    """Render ``doc`` to an EPUB file using pandoc.
+    """Convert to EPUB with sandboxed Pandoc; explicit resources/args are trusted.
 
-    Requires ``pandoc`` to be installed.
-
-    Args:
-        doc: Document to render.
-        output_path: Target .epub path; parent created if missing.
-        include_track_types: Optional track type filter.
-        metadata_header: Include YAML frontmatter (recommended for EPUB metadata).
-        cover_image: Optional path to a cover image.
-        pandoc_args: Extra arguments passed to pandoc.
-
-    Returns:
-        Path to the generated EPUB file.
-
-    Raises:
-        FileNotFoundError: pandoc not installed.
-        subprocess.CalledProcessError: pandoc conversion failed.
+    Failed conversion preserves any existing output. External resources may be
+    unavailable under the sandbox; stage and authorize them explicitly.
     """
-    pandoc = _check_pandoc()
-    out_path = Path(output_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_dir_path = Path(tmpdir)
-        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmp_dir_path)
-        cmd = [pandoc, str(md_path), "-o", str(out_path), "--standalone"]
-        if cover_image is not None:
-            cmd.append(f"--epub-cover-image={cover_image}")
-        if pandoc_args:
-            cmd.extend(pandoc_args)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(
-                result.returncode, cmd, result.stdout, result.stderr
-            )
-    return out_path
+    resources = [f"--epub-cover-image={Path(cover_image).resolve()}"] if cover_image else []
+    return _convert(doc, output_path, include_track_types, metadata_header, pandoc_args, resources)
 
 
 def to_docx(
-    doc: MDKVDocument,
-    output_path: Path,
-    include_track_types: list[str] | None = None,
-    metadata_header: bool = True,
-    reference_doc: Path | None = None,
+    doc: MDKVDocument, output_path: Path, include_track_types: list[str] | None = None,
+    metadata_header: bool = True, reference_doc: Path | None = None,
     pandoc_args: list[str] | None = None,
 ) -> Path:
-    """Render ``doc`` to a DOCX file using pandoc.
+    """Convert to DOCX with sandboxed Pandoc and optional trusted reference document.
 
-    Requires ``pandoc`` to be installed.
-
-    Args:
-        doc: Document to render.
-        output_path: Target .docx path; parent created if missing.
-        include_track_types: Optional track type filter.
-        metadata_header: Include YAML frontmatter (recommended for DOCX metadata).
-        reference_doc: Optional .docx template for styling.
-        pandoc_args: Extra arguments passed to pandoc.
-
-    Returns:
-        Path to the generated DOCX file.
-
-    Raises:
-        FileNotFoundError: pandoc not installed.
-        subprocess.CalledProcessError: pandoc conversion failed.
+    Failed conversion preserves any existing output.
     """
-    pandoc = _check_pandoc()
-    out_path = Path(output_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_dir_path = Path(tmpdir)
-        md_path = _write_temp_markdown(doc, include_track_types, metadata_header, tmp_dir_path)
-        cmd = [pandoc, str(md_path), "-o", str(out_path), "--standalone"]
-        if reference_doc is not None:
-            cmd.append(f"--reference-doc={reference_doc}")
-        if pandoc_args:
-            cmd.extend(pandoc_args)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(
-                result.returncode, cmd, result.stdout, result.stderr
-            )
-    return out_path
+    resources = [f"--reference-doc={Path(reference_doc).resolve()}"] if reference_doc else []
+    return _convert(doc, output_path, include_track_types, metadata_header, pandoc_args, resources)

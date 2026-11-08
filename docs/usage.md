@@ -1,13 +1,13 @@
-# Usage
+# Usage: Installation, CLI, Python API and GUI
 
 ## Install and run with uv
 
 ```bash
-uv venv
+uv sync --locked --extra dev
 uv run mdkv --help
 
 # or use python -m
-python -m mdkv --help
+uv run python -m mdkv --help
 ```
 
 ## Create a document
@@ -173,7 +173,7 @@ build_all_examples(Path('library/definitions'), Path('library/_built'))
 ## Logging & workflows
 
 - Configure logging with `mdkv.common.configure_logging()`.
-- See `examples/logged_workflow.py` for an end-to-end script that logs steps and writes outputs to `workflow_out/`.
+- See `examples/logged_workflow.py` for a logged workflow using a fresh `workflow_out-*` directory.
 
 ## GUI
 
@@ -182,14 +182,23 @@ Launch the local web GUI (two-pane editor/preview):
 ```bash
 uv run mdkv gui --path doc.mdkv
 # or with the convenience launcher
-python3 run_gui.py --path doc.mdkv
+uv run python run_gui.py --path doc.mdkv
 ```
+
+Bindings are limited to `127.0.0.1`, `localhost` or `::1`. File-selection APIs
+run with the local user's access; this is not an authenticated multi-user server.
 
 In the GUI preview toolbar, use checkboxes to toggle which tracks are shown:
 - All: renders all tracks.
 - Custom: uncheck All and select any combination of tracks; the preview updates live. Selecting none shows an empty preview.
 
-The editor pane always holds the full combined Markdown (round-trippable).
+The editor selects one canonical track through the editor dropdown, independently
+of preview selection. Leading/trailing whitespace and literal header examples
+remain track content; no combined-Markdown parser participates in saving.
+Unchanged saves preserve stored line endings; edited textareas normalize them.
+Switches and saves flush pending edits before changing tracks/documents.
+The preview keeps a light paper canvas in either application theme, so the
+isolated document's default black text remains readable.
 
 ### GUI REST API
 
@@ -201,6 +210,9 @@ The GUI server exposes additional endpoints beyond the CRUD operations:
 - `POST /api/validate` — returns warnings alongside errors
 - `POST /api/document` — update title, authors, version, and metadata
 - `POST /api/track` — create or update a track (validates track_type)
-- `DELETE /api/track/{track_id}` — remove a track (returns 404 if not found)
+- `GET /api/track?track_id=...` / `DELETE /api/track?track_id=...` — literal identifier, including dot/slash/Unicode IDs
+- `PUT /api/track` with `{"id":"...","content":"..."}` — update an existing canonical track; body text never creates tracks
+- `GET /api/library` — read-only canonical examples (`library:<name>` handles)
+- `POST /api/save` — save to the current local path, or explicit `{"path":"new.mdkv"}` for Save As
 
 To record a short demo (optional): see `examples/record_gui_demo.py`. If you have `ffmpeg` and ImageMagick, you can convert the recorded `.webm` to `.gif` for embedding.

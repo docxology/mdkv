@@ -1,14 +1,15 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdkv"
-version = "0.11.0"
+version = "0.12.0"
 description = "MDKV: Multitrack Markdown Container (zip-based) with tracks, metadata, validation, search, and export"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "MDKV Authors" }]
 dependencies = [
   "click>=8.1.3",
@@ -26,7 +27,6 @@ dev = [
   "httpx>=0.28.0",
   "sphinx>=7.0.0",
   "myst-parser>=2.0.0",
-  "sphinx-autodoc-typehints>=1.25.2",
   "types-PyYAML>=6.0.12",
   "mypy>=1.10.0",
   "ruff>=0.5.0",
@@ -35,20 +35,21 @@ dev = [
 [project.scripts]
 mdkv = "mdkv.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["mdkv*"]
-exclude = ["tests*"]
+[tool.setuptools]
+include-package-data = false
+packages = [
+  "mdkv", "mdkv.cli", "mdkv.common", "mdkv.core", "mdkv.gui",
+  "mdkv.services", "mdkv.storage", "mdkv.resources",
+]
+package-dir = { "mdkv.resources" = "library" }
 
 [tool.setuptools.package-data]
 mdkv = ["py.typed", "gui/static/*", "locales/*/LC_MESSAGES/*"]
+"mdkv.resources" = ["definitions/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 minversion = "7.0"
-filterwarnings = [
-  "ignore::DeprecationWarning:fastapi.testclient",
-]
 
 [tool.coverage.run]
 source = ["mdkv"]

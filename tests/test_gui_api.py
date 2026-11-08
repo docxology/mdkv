@@ -12,7 +12,7 @@ def test_gui_api_endpoints(tmp_path: Path):
     state.doc = build_multitrack_demo_document()
 
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
 
     # document
     r = c.get("/api/document")
@@ -24,7 +24,7 @@ def test_gui_api_endpoints(tmp_path: Path):
 
     # one track
     tid = r2.json()[0]["id"]
-    r3 = c.get(f"/api/track/{tid}")
+    r3 = c.get("/api/track", params={"track_id": tid})
     assert r3.status_code == 200
 
     # render single and all

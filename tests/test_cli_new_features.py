@@ -133,7 +133,7 @@ def test_gui_document_update_version_and_metadata(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/document", json={
         "version": "2.0.0",
         "metadata": {"project": "test", "status": "draft"},
@@ -156,7 +156,7 @@ def test_gui_stats_uses_shared_service(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/stats")
     assert r.status_code == 200
     data = r.json()
@@ -177,7 +177,7 @@ def test_gui_diff_uses_shared_service(tmp_path: Path):
     other = tmp_path / "b.mdkv"
     save_mdkv(build_multitrack_demo_document(), other)
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/diff", json={"path": str(other)})
     assert r.status_code == 200
     data = r.json()

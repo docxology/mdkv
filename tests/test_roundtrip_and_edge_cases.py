@@ -5,7 +5,6 @@ from __future__ import annotations
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 import yaml
@@ -173,9 +172,9 @@ def test_incremental_save_corrupt_fallback(tmp_path: Path):
                 "tracks": [{"track_id": "missing_file", "track_type": "primary", "path": "tracks/missing.md"}],
             }),
         )
-    # Incremental save will skip the missing track and save cleanly
+    # An invalid existing container is replaced through the full-save fallback.
     res3 = save_mdkv_incremental(doc, p)
-    assert res3 is True
+    assert res3 is False
     assert load_mdkv(p).title == doc.title
 
     # Existing archive is unparseable zip
@@ -188,9 +187,9 @@ def test_incremental_save_corrupt_fallback(tmp_path: Path):
     # Existing archive has track missing from zip, triggering save fallback
     with zipfile.ZipFile(p, "w") as zf:
         zf.writestr("manifest.yaml", "tracks:\n  - path: tracks/missing.md\n  - path: ''\n")
-    # Missing track in container will be handled by skipping missing old track
+    # Structurally unreadable old manifests also use the full-save fallback.
     res_missing = save_mdkv_incremental(doc, p)
-    assert res_missing is True
+    assert res_missing is False
     assert load_mdkv(p).title == doc.title
 
 
@@ -205,11 +204,6 @@ def test_validate_track_errors_direct():
     with pytest.raises(ValidationError, match="shares path"):
         validate_document(doc)
 
-    # Empty content error condition if forced
-    t_bad = Track("t_bad", "primary", "en", "tracks/t_bad.md", "content")
-    with patch.object(t_bad, "track_id", ""):
-        # validate_track checking invalid track_id
-        pass
     # Non-Track instance passed to validate_track
     with pytest.raises(ValidationError, match="must be an instance of Track"):
         validate_track("not a track")  # type: ignore[arg-type]

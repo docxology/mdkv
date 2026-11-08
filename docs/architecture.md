@@ -1,112 +1,50 @@
-# Architecture
+# Architecture: Layers, Boundaries and Guarantees
 
-MDKV is split into clear layers:
+MDKV separates an in-memory model from ZIP persistence and presentation services.
 
-- `mdkv.core`: domain model and validation
-- `mdkv.storage`: read/write `.mdkv` containers
-- `mdkv.services`: search and export utilities
-- `mdkv.cli`: user-facing command line interface
-- `mdkv.gui`: FastAPI web GUI with REST API
-- `mdkv.common`: logging utilities
-- `mdkv.library`: example definition builder
-- `mdkv.demo`: demo document builder
+- `core.model`: mutable `Track` and `MDKVDocument`, identity/path invariants,
+  ordered track mutations and JSON projection. Self-move is a no-op; rename
+  validates the proposed identity/path before preserving the original position.
+- `core.registry`: one process-local authority for built-in and explicitly
+  registered custom types. Construction, validation, GUI and storage use it.
+  Loading a type name never imports executable plugins.
+- `core.validate`: structural revalidation plus editorial requirements (title,
+  authors, primary track), content warnings and registered callbacks. A loadable
+  incomplete document is not necessarily editorially valid.
+- `core.history`: standalone chronological `TrackHistory`/`TrackVersion` utilities,
+  not automatic persisted undo. A history uses consistent naive or aware dates;
+  mixed conventions are refused before mutation.
+- `storage.schema`: Pydantic manifest schema with safe legacy scalar adapters.
+- `storage.io`: bounded unambiguous YAML/ZIP reads and one validated atomic writer.
+  `save_mdkv_incremental` performs a full rewrite; its boolean reports whether the
+  previous destination was valid, not how many bytes were reused.
+- `services.search`: exact stdlib `re` in a short-lived supervised interpreter,
+  with separate startup/matching deadlines, bounded result pages and child reaping.
+  Async callers do not run matching on the event-loop thread.
+- `services.export`: deterministic text composition for fixed fields/order/runtime,
+  inert HTML with table support, and collision-checked per-file exports.
+- `services.diff`: modeled field comparison, including creation time and track
+  order (`created_changed`, `track_order_changed` in JSON); archive bytes and
+  unknown fields are not compared.
+- `services.stats`: textual counts, track types and languages; not scientific
+  performance measurements.
+- `services.pandoc_export`: optional installed Pandoc PDF/EPUB/DOCX conversion of
+  Markdown body plus allowlisted frontmatter, with restricted defaults, subprocess
+  deadlines and atomic output publication. Informational MDKV track comments are
+  not composed into native output. Relative figure links need an explicit Pandoc
+  `--resource-path` from the caller.
+- `cli`: Click orchestration. Expected input/I/O failures produce clean nonzero
+  exits. Batch commands finish reporting all peers, then exit nonzero on failure.
+- `gui`: loopback FastAPI application and static single-track editor/preview.
+  One process-global document is shared across clients. Browser operations are
+  serialized, with exact canonical track IDs rather than parsed display comments.
+- `library`: authored YAML definition loading and generation. Setuptools maps
+  `mdkv.resources` to canonical `library/`, so installed examples need no checkout
+  or site-packages writes. `_built/` is regenerated through `build_all_examples`.
+- `common`, `i18n`: logging and packaged gettext catalogs.
 
-## Package responsibilities
-
-- `core.model`:
-  - `Track`, `MDKVDocument`, helper methods, allowed track types
-  - `Track.to_dict()` / `Track.from_dict()` for JSON serialization
-  - `MDKVDocument.to_dict()` / `MDKVDocument.from_dict()` for JSON serialization
-  - `MDKVDocument.count_tracks_by_type()` for statistics
-  - `MDKVDocument.track_ids` property — ordered list of track IDs
-  - `MDKVDocument.move_track()` — reorder tracks within document
-  - `Track.__eq__()` / `Track.__hash__()` — equality and hashing (path-based)
-  - `__repr__` on both classes for debugging
-- `core.validate`:
-  - `validate_track()` — validate a single Track in isolation
-  - ERROR-level: required metadata, primary track, path uniqueness
-  - WARN-level: empty content, code without fences, translation without language, bad version, multiple primaries, reserved track_id
-  - Reserved track_ids: `all`, `none`, `null`, `true`, `false`, `""` (empty string)
-  - `ValidationIssue` carries `track_id` for track-level issues
-- `core.errors`:
-  - `ValidationError` exception
-- `storage.io`:
-  - ZIP packaging, YAML manifest read/write
-  - `MDKVFormatError` for corrupt containers, missing manifests, missing track files
-  - `FileNotFoundError` for missing files
-- `services.search`:
-  - Regex search with track type/language filters
-  - `case_insensitive` convenience flag
-  - `limit` parameter to cap results
-  - `SearchMatch` includes `track_type` and `language`
-- `services.export`:
-  - `to_markdown()` with optional `include_track_types` and `metadata_header`
-  - `to_html()` with optional `include_track_types` and `metadata_header`
-  - `export_to_files()` returns list of written paths
-  - `_safe_filename()` prevents path traversal in file export
-- `services.diff`:
-  - `diff_documents()` compares two documents
-  - `DiffResult` dataclass with `has_changes` and `to_dict()`
-  - Detects content, type, language, and path changes
-- `services.stats`:
-  - `compute_stats()` aggregates document statistics
-  - `DocumentStats` dataclass with `to_dict()`
-- `services.pandoc_export`:
-  - `to_pdf()`, `to_epub()`, `to_docx()` via pandoc subprocess
-  - Mirrors docxology/template rendering approach (no new Python deps)
-- `core.history`:
-  - `TrackHistory` and `TrackVersion` for content revision history
-  - `add_version()`, `get_current()`, `get_version_at()`, `restore_to()`
-- `core.registry`:
-  - `TrackTypeRegistry` for custom track type registration
-  - `register_track_type()`, `get_registry()`
-- `i18n`:
-  - `set_language()`, `gettext()` for internationalization
-  - Falls back to English; reads `MDKV_LANG`/`LANG` env vars
-- `storage.io`:
-  - `save_mdkv_incremental()` for atomic incremental saves
-  - `save_mdkv()` with configurable compression and compresslevel
-- `cli.main`:
-  - `init`, `info`, `validate`, track ops (add/remove/rename/update), search, export
-  - `import` — import a Markdown file as a new .mdkv
-  - `diff` — compare two .mdkv documents
-  - `stats` — document statistics
-  - `gui` — launch web GUI
-- `gui.server`:
-  - FastAPI app with CRUD endpoints for documents and tracks
-  - `/api/search`, `/api/stats`, `/api/diff` REST endpoints
-  - `/api/render/*` for HTML/Markdown rendering
-  - `/api/library` for example documents
-  - `/api/validate` returns warnings alongside errors
-
-## Data flow
-
-1. CLI/API creates an `MDKVDocument`, adds tracks
-2. `storage.save_mdkv()` writes a ZIP with manifest and `tracks/`
-3. `storage.load_mdkv()` reconstructs the document
-4. `services.search/export` operate on the in-memory document
-5. `MDKVDocument.to_dict()` / `from_dict()` for JSON serialization
-
-## Extension points
-
-- Additional track types with domain-specific meaning
-- Alternate exporters (PDF/EPUB) built on `to_markdown()`
-- Richer validation rules in `core.validate`
-- Additional CLI commands wrapping service-layer functions
-- Additional GUI API endpoints for new operations
-
-## Public API
-
-Re-exported from `mdkv.__init__`:
-- `MDKVDocument`, `Track`, `allowed_track_types`
-- `ValidationError`, `validate_document`, `validate_track`, `ValidationIssue`
-- `TrackHistory`, `TrackVersion`, `TrackTypeRegistry`, `register_track_type`, `get_registry`
-- `search_document`, `search_document_async`, `SearchMatch`
-- `to_markdown`, `to_html`, `export_to_files`
-- `diff_documents`, `DiffResult`
-- `compute_stats`, `DocumentStats`
-- `to_pdf`, `to_epub`, `to_docx`
-- `save_mdkv`, `save_mdkv_incremental`, `load_mdkv`, `MDKVFormatError`
-- `MDKVManifestModel`, `TrackManifestModel`
-
-Type safety: `py.typed` marker present (PEP 561).
+The package root re-exports the public API documented in [API](api.rst).
+[Format](format.md) defines storage versus editorial validity; [security](security.md)
+defines limits and trust boundaries. The methods manuscript and its owning bundle
+builder live in `paper/`, independently of Sphinx. Artifact checksums attest exact
+outputs; ZIP/generation timestamps are not byte-reproducible build guarantees.

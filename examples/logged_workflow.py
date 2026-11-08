@@ -1,5 +1,8 @@
+import json
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import mkdtemp
 
 from mdkv.common import configure_logging, get_logger
 from mdkv.core.model import MDKVDocument, Track
@@ -13,8 +16,7 @@ def main() -> None:
     configure_logging()
     log = get_logger(__name__)
 
-    workdir = Path("workflow_out")
-    workdir.mkdir(exist_ok=True)
+    workdir = Path(mkdtemp(prefix="workflow_out-", dir="."))
 
     # create
     doc = MDKVDocument(title="Workflow", authors=["User"], created=datetime.now(UTC))
@@ -41,7 +43,7 @@ def main() -> None:
     # search
     matches = search_document(doc, pattern="world|note")
     (workdir / "search.json").write_text(
-        "\n".join(f"{m.track_id} {m.extract}" for m in matches), encoding="utf-8"
+        json.dumps([asdict(m) for m in matches], indent=2), encoding="utf-8"
     )
     log.info("Saved search results (%d matches)", len(matches))
 

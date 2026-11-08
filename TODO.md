@@ -1,8 +1,8 @@
 # MDKV — Upcoming Improvements TODO
 
-Last updated: 2026-08-31 (agent-ergonomics pass; previously 2026-08-19)
-Current version: 0.11.0 (verify: `grep '^version' pyproject.toml`)
-Tests: 306 passed / 3 failed (timeout-flaky on slow external-drive I/O), 99% coverage, as of 2026-08-31 (verify: `uv run python scripts_status.py --tests`; CI on ubuntu/3.14 runs `uv run pytest -q --cov=mdkv`)
+Last updated: 2026-11-08 (release integration)
+Current source version: 0.12.0; publication state belongs to the release receipt.
+Fresh post-audit baseline: 571 passed, 95.07% coverage on Python 3.15.2, and 571 passed on Python 3.11.18. Historical 2026-08-31 report: 306 passed / 3 failed; the old I/O-timeout explanation was reported, not independently established.
 
 ## Backlog — open items
 
@@ -12,7 +12,7 @@ release history: `CHANGELOG.md` (its single canonical home).
 
 ### Minor
 - [x] CHANGELOG `[0.11.0]` entry added (2026-08-31); coverage claim re-measured 2026-08-31: 306 passed / 3 timeout-flaky failed (slow external drive), 99% TOTAL coverage — CHANGELOG + this file updated together.
-- [ ] Re-run full suite on a fast disk / CI to confirm the 3 failures (test_benchmarks save/load, test_main_module subprocess help/version) are pure local-I/O timeouts, not regressions. Files: `tests/test_benchmarks.py`, `tests/test_main_module.py`.
+- [x] Fresh baseline on 2026-11-07: all 309 pre-audit tests passed under pinned Python 3.15.2. This resolves current reproduction status, not the historical failures' cause.
 
 ### Medium
 - [x] Dated status surface now exists: `scripts_status.py` prints date/version (+ tests/coverage with `--tests`); `README.md` Development section points to it and to this file.
@@ -20,10 +20,10 @@ release history: `CHANGELOG.md` (its single canonical home).
 ### Major
 - [x] `scripts_status.py` added (2026-08-31): executable status truth (date, version from pyproject.toml; test count + coverage with `--tests`). README Development section references it.
 
-## All items completed
+## Historical completed work
 
-All minor, medium, and major improvements scoped for this phase have been
-implemented and verified:
+The following dated reports describe earlier work, not current acceptance or
+proof that the new candidate has been merged/tagged/published:
 
 ### Completed Minor Improvements
 - [x] **GUI /api/library coverage & edge cases**: Full test coverage of `/api/library` (pre-built vs fresh build) and GUI error paths in `gui/server.py` (100% GUI coverage).

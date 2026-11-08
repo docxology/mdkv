@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-import importlib
+import importlib.util
 import subprocess
 import sys
 import time
@@ -12,84 +12,64 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 
-def ensure_module(mod: str, pip_name: str | None = None) -> None:
-    try:
-        importlib.import_module(mod)
-        return
-    except ImportError:
-        pass
-    # prefer uv, fallback to pip
-    installer = None
-    try:
-        subprocess.run(["uv", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        installer = ["uv", "add"]
-    except Exception:
-        installer = [sys.executable, "-m", "pip", "install"]
-    pkg = pip_name or mod
-    subprocess.check_call([*installer, pkg])
-
-
 def wait_for(url: str, timeout_seconds: int = 10) -> bool:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
         try:
-            with urlopen(url) as r:  # noqa: S310
-                if r.status < 500:
+            with urlopen(url, timeout=0.5) as response:  # noqa: S310
+                if response.status < 500:
                     return True
-        except URLError:
+        except (URLError, OSError):
             time.sleep(0.2)
     return False
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Launch MDKV GUI in your browser")
-    parser.add_argument("--path", type=str, help="Optional path to .mdkv to open", default=None)
-    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser = argparse.ArgumentParser(description="Launch MDKV GUI using installed dependencies")
+    parser.add_argument("--path", type=Path, required=True, help="Existing .mdkv fixture to open (saving modifies this file)")
+    parser.add_argument("--host", choices=("127.0.0.1", "localhost", "::1"), default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--no-browser", action="store_true", help="Run without opening a browser")
     args = parser.parse_args()
+    if not 1 <= args.port <= 65535:
+        parser.error("--port must be between 1 and 65535")
+    path = args.path.expanduser().resolve()
+    if not path.is_file():
+        parser.error("--path must name an existing .mdkv file")
+    missing = [name for name in ("fastapi", "uvicorn", "markdown_it") if importlib.util.find_spec(name) is None]
+    if missing:
+        parser.error("missing installed GUI dependencies: " + ", ".join(missing) + "; run uv sync --extra dev first")
+    # Arguments remain data: no generated Python or shell interpolation.
+    command = [sys.executable, "-m", "mdkv", "gui", "--host", args.host,
+               "--port", str(args.port), "--path", str(path)]
+    proc = subprocess.Popen(command)  # noqa: S603
+    import signal
 
-    # ensure deps
-    ensure_module("fastapi")
-    ensure_module("uvicorn")
-    # used by HTML rendering endpoints
-    ensure_module("markdown_it", pip_name="markdown-it-py")
+    def stop_server(signum, frame):
+        raise KeyboardInterrupt
 
-    # import after ensuring install
-    # import ensures package is available; actual server is started via -c command
-    import mdkv.gui as _gui  # noqa: F401
-    from mdkv.demo import write_demo_mdkv
-
-    # start server in a background process using current interpreter
-    # inherit environment
-    open_path = args.path
-    if not open_path:
-        demo_dir = Path("demo")
-        demo_dir.mkdir(exist_ok=True)
-        demo_file = demo_dir / "demo.mdkv"
-        write_demo_mdkv(demo_file)
-        open_path = str(demo_file)
-    server_cmd = [
-        sys.executable,
-        "-c",
-        (
-            "from mdkv.gui import run;"
-            f"run(host='{args.host}', port={args.port}, path={repr(open_path)})"
-        ),
-    ]
-    proc = subprocess.Popen(server_cmd)  # noqa: S603
-
-    # when binding to 0.0.0.0/::, open the loopback address in browser
-    browse_host = "127.0.0.1" if args.host in {"0.0.0.0", "::"} else args.host
-    url = f"http://{browse_host}:{args.port}/"
-    if wait_for(url, timeout_seconds=15):
-        webbrowser.open(url)
-    else:
-        print(f"MDKV GUI server not responding at {url}")
-
-    proc.wait()
+    signal.signal(signal.SIGTERM, stop_server)
+    try:
+        if not args.no_browser:
+            host = f"[{args.host}]" if ":" in args.host else args.host
+            url = f"http://{host}:{args.port}/"
+            if wait_for(url, timeout_seconds=15):
+                webbrowser.open(url)
+            else:
+                print(f"MDKV GUI server not responding at {url}", file=sys.stderr)
+        returncode = proc.wait()
+    except KeyboardInterrupt:
+        returncode = 130
+    finally:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+    raise SystemExit(returncode)
 
 
 if __name__ == "__main__":
     main()
-
-

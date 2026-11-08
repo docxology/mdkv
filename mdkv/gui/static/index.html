@@ -13,26 +13,28 @@
       <button id="btnOpen">Open</button>
       <label for="libSelect">Library:</label>
       <select id="libSelect"></select>
+      <label for="editorTrack">Edit track:</label>
+      <select id="editorTrack" aria-label="Editor track"></select>
       <button id="btnSave">Save</button>
       <button id="btnValidate">Validate</button>
       <button id="btnDiff">Diff</button>
       <button class="theme-toggle" id="btnTheme">🌙</button>
     </div>
     <div class="panes" id="panes">
-      <textarea id="left" placeholder="MDKV combined markdown (editable)"></textarea>
+      <textarea id="left" aria-label="Selected track Markdown" placeholder="Select a track to edit its exact Markdown content" disabled></textarea>
       <div class="preview">
         <div class="preview-toolbar">
-            <label>Tracks:</label>
-            <div id="trackFilters" class="track-filters"></div>
+          <label>Preview tracks:</label>
+          <div id="trackFilters" class="track-filters"></div>
         </div>
-        <iframe id="right"></iframe>
+        <iframe id="right" title="Markdown preview" sandbox="" referrerpolicy="no-referrer"></iframe>
       </div>
     </div>
     <div class="diff-view" id="diffView">
       <div class="diff-pane" id="diffLeft"><h3>Document A</h3><div id="diffLeftContent"></div></div>
       <div class="diff-pane" id="diffRight"><h3>Document B</h3><div id="diffRightContent"></div></div>
     </div>
-    <div class="status" id="status"></div>
+    <div class="status" id="status" role="status"></div>
     <script src="/static/main.js"></script>
   </body>
 </html>
