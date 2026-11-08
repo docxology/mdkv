@@ -18,13 +18,12 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosectionlabel",
-    "sphinx_autodoc_typehints",
 ]
 
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 templates_path = ["_templates"]
-exclude_patterns: list[str] = []
+exclude_patterns = ["_build", "README.md", "AGENTS.md"]
 
 html_theme = "alabaster"
 html_static_path = ["_static"]
@@ -36,3 +35,8 @@ autodoc_default_options = {
 }
 
 autosectionlabel_prefix_document = True
+
+# Native annotations are complete. Sphinx's legacy type-comment enrichment
+# mutates inherited Pydantic annotations and breaks later FastAPI imports.
+autodoc_use_type_comments = False
+autodoc_typehints = "description"

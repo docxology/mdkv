@@ -1,6 +1,6 @@
-- Matroska (MKV) overview: [Wikipedia](https://en.wikipedia.org/wiki/Matroska)
-- CommonMark specification: [commonmark.org](https://commonmark.org)
-- YAML 1.2 specification: [yaml.org/spec](https://yaml.org/spec/)
+- Lhomme, S.; Bunkus, M.; Rice, D. (2024). [Matroska Media Container Format Specification, RFC 9559](https://www.rfc-editor.org/rfc/rfc9559).
+- MacFarlane, J. (2024). [CommonMark Specification 0.31.2](https://spec.commonmark.org/0.31.2/).
+- YAML Language Development Team (2021). [YAML 1.2.2 specification](https://yaml.org/spec/1.2.2/).
 - ZIP Appnote (PKWARE): [PKWARE Appnote](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
 - markdown‑it‑py project: [executablebooks/markdown-it-py](https://github.com/executablebooks/markdown-it-py)
 - Astral uv project: [astral-sh/uv](https://github.com/astral-sh/uv)

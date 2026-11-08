@@ -15,12 +15,17 @@ uv run pytest -q
 uv run pytest -q --cov=mdkv --cov-report=term-missing
 
 # Build docs
-uv run sphinx-build -b html docs docs/_build/html
+uv run sphinx-build -W --keep-going -b html docs docs/_build/html
 ```
+
+Quality/release checks also run `uv run ruff check mdkv`, `uv run mypy mdkv`,
+`uv build --out-dir docs/_build/dist`, and an installed-wheel resource smoke
+outside the checkout. Native Pandoc/TeX conversion and actual GUI/browser proof
+are separate checks, not established by mocked orchestration tests.
 
 ## Code style
 
-- Python 3.11+ (`requires-python` in `pyproject.toml`; CI uses 3.14)
+- Python 3.11+ (`requires-python`); `.python-version` selects current CI/runtime (3.15), with a 3.11 compatibility job.
 - Explicit, readable names (no 1-2 character variables)
 - Guard clauses over deep nesting
 - Use `datetime.now(timezone.utc)` — never `datetime.utcnow()` (deprecated)
@@ -32,7 +37,7 @@ uv run sphinx-build -b html docs docs/_build/html
 
 - `mdkv.core`: data model + validation (no external deps)
 - `mdkv.storage`: ZIP container persistence (`MDKVFormatError`)
-- `mdkv.services`: search, export, diff, stats (no I/O, operate on in-memory docs)
+- `mdkv.services`: in-memory transforms, supervised search, and explicit export I/O
 - `mdkv.cli`: Click-based CLI entry point (`mdkv` or `python -m mdkv`)
 - `mdkv.gui`: FastAPI web GUI with REST API
 - `mdkv.common`: logging utilities

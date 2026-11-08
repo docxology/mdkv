@@ -1,6 +1,8 @@
-# MDKV concept
+# MDKV Concept: One Container, Parallel Tracks
 
 MDKV is a multitrack Markdown container. A single `.mdkv` file (a ZIP) holds a manifest plus one or more Markdown tracks:
+
+![One canonical Markdown source is packaged as an MDKV container with parallel tracks; deterministic exports compose reader, reviewer and archive views under explicit reader, search, write, GUI and converter bounds.](../paper/figures/mdkv-graphical-abstract.png)
 
 ```text
 doc.mdkv

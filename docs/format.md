@@ -1,4 +1,4 @@
-# MDKV format
+# MDKV Format: ZIP Envelope, Manifest and Track Files
 
 A `.mdkv` file is a ZIP archive with two key elements:
 
@@ -21,7 +21,7 @@ Track object fields:
 - `track_id`: string (required, unique)
 - `track_type`: one of `primary`, `translation`, `commentary`, `code`, `reference`, `media_ref`, `revision`
 - `language`: string or null (optional). BCP-47/ISO-639 suggested for linguistic tracks
-- `path`: string (required). Must start with `tracks/` and typically end with `.md`
+- `path`: safe relative POSIX file path below `tracks/`; no empty/dot/parent/backslash/NUL components
 
 ### Example manifest
 
@@ -58,8 +58,8 @@ Each file contains the UTF-8 Markdown for that track.
 
 - `title` and `authors` must be present
 - At least one track of `track_type: primary` must exist
-- Track `path` must begin with `tracks/`
-- `track_type` must be one of the supported values
+- Track `path` must satisfy the relative `tracks/` path contract
+- `track_type` must be built-in or explicitly registered in the current process
 - Track paths must be unique (no two tracks share the same file path)
 
 ### WARN-level (informational, do not block)
@@ -86,7 +86,10 @@ the Python API and the GUI (`GET /api/validate-track?track_id=...`).
 
 ## Round-trip export headers
 
-When exporting to a single Markdown stream, tracks are prefixed with lightweight HTML comments carrying track metadata. These hints enable reconstructing which text came from which track during round-trip workflows:
+Combined Markdown prefixes tracks with informational metadata comments. These
+hints do not distinguish literal header-looking content and are not a reversible
+interchange grammar. Use ZIP or JSON for lossless modeled-field/text roundtrips;
+unknown fields/members, YAML presentation and ZIP attributes are not preserved.
 
 ```markdown
 <!-- track:primary type:primary lang:en -->
@@ -110,3 +113,15 @@ version: 0.1
 created: 2025-01-01T00:00:00
 ---
 ```
+
+## Structural loading versus editorial validity
+
+Storage can load incomplete documents; call `validate_document` to enforce
+nonempty title/authors and a primary track. Language tags are recommendations,
+not BCP-47 syntax validation. Safe legacy scalar authors/metadata are normalized;
+nested metadata values, duplicate keys/IDs/paths/members and YAML anchors/aliases
+are rejected. See [security](security.md) for exact resource budgets.
+
+Both save APIs revalidate mutable fields and atomically replace complete outputs.
+`save_mdkv_incremental` is a full rewrite, not compressed-member reuse. Successful
+roundtrips preserve supported model data and exact track text, not archive bytes.

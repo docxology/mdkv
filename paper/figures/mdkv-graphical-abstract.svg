@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" role="img" aria-labelledby="title desc">
+  <title id="title">MDKV graphical abstract</title>
+  <desc id="desc">One Markdown source becomes a ZIP/YAML container with parallel tracks, then deterministic reader, reviewer and archive views.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#2563eb"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-opacity=".14"/></filter>
+  </defs>
+  <rect x="0" y="0" width="1000" height="430" fill="#ffffff"/>
+  <g font-family="Inter, Helvetica, Arial, sans-serif" fill="#172033">
+    <text x="40" y="46" font-size="26" font-weight="700">MDKV: one document, many accountable views</text>
+    <text x="40" y="74" font-size="15" fill="#4b5563">A portable ZIP/YAML/Markdown container keeps canonical text and its layers separate.</text>
+
+    <rect x="40" y="112" width="220" height="208" rx="14" fill="#f8fafc" stroke="#cbd5e1" filter="url(#shadow)"/>
+    <text x="62" y="146" font-size="15" font-weight="700">1. Author once</text>
+    <text x="62" y="174" font-size="13" fill="#475569">Markdown remains canonical.</text>
+    <text x="62" y="194" font-size="13" fill="#475569">No annotations overload</text>
+    <text x="62" y="214" font-size="13" fill="#475569">the primary narrative.</text>
+    <rect x="62" y="238" width="176" height="38" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+    <text x="76" y="262" font-size="13" fill="#3730a3">primary.md</text>
+
+    <line x1="270" y1="216" x2="330" y2="216" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <rect x="340" y="104" width="300" height="224" rx="14" fill="#ffffff" stroke="#93c5fd" stroke-width="2" filter="url(#shadow)"/>
+    <text x="362" y="138" font-size="15" font-weight="700">2. Package the layers</text>
+    <text x="362" y="162" font-size="12.5" fill="#475569">manifest.yaml + tracks/ inside one .mdkv ZIP</text>
+    <g font-size="12">
+      <rect x="362" y="178" width="118" height="28" rx="14" fill="#dbeafe"/><text x="378" y="197">primary</text>
+      <rect x="490" y="178" width="118" height="28" rx="14" fill="#dcfce7"/><text x="506" y="197">translation</text>
+      <rect x="362" y="216" width="118" height="28" rx="14" fill="#fef3c7"/><text x="378" y="235">commentary</text>
+      <rect x="490" y="216" width="118" height="28" rx="14" fill="#fae8ff"/><text x="506" y="235">code</text>
+      <rect x="362" y="254" width="118" height="28" rx="14" fill="#ffedd5"/><text x="378" y="273">reference</text>
+      <rect x="490" y="254" width="118" height="28" rx="14" fill="#e0e7ff"/><text x="506" y="273">media_ref</text>
+      <rect x="362" y="292" width="118" height="28" rx="14" fill="#f1f5f9"/><text x="378" y="311">revision</text>
+    </g>
+
+    <line x1="650" y1="216" x2="710" y2="216" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <rect x="720" y="112" width="240" height="208" rx="14" fill="#f8fafc" stroke="#cbd5e1" filter="url(#shadow)"/>
+    <text x="742" y="146" font-size="15" font-weight="700">3. Compose a view</text>
+    <text x="742" y="174" font-size="13" fill="#475569">Same source; explicit audience.</text>
+    <g font-size="12.5">
+      <rect x="742" y="190" width="196" height="30" rx="8" fill="#ffffff" stroke="#e2e8f0"/><text x="756" y="210">Reader: primary + refs</text>
+      <rect x="742" y="230" width="196" height="30" rx="8" fill="#ffffff" stroke="#e2e8f0"/><text x="756" y="250">Reviewer: + commentary</text>
+      <rect x="742" y="270" width="196" height="30" rx="8" fill="#ffffff" stroke="#e2e8f0"/><text x="756" y="290">Archive: all tracks</text>
+    </g>
+    <text x="742" y="318" font-size="11.5" fill="#64748b">Text-stable exports; ZIP bytes vary.</text>
+
+    <rect x="40" y="354" width="920" height="50" rx="12" fill="#0f172a"/>
+    <text x="60" y="384" font-size="13.5" fill="#e2e8f0">Bounded ZIP/YAML reader · exact stdlib regex · atomic writes · loopback-only GUI · optional Pandoc conversion</text>
+  </g>
+</svg>

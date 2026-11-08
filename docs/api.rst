@@ -41,7 +41,7 @@ Storage Schema
 --------------
 
 .. automodule:: mdkv.storage.schema
-   :members:
+   :members: MDKVManifestModel, TrackManifestModel
    :show-inheritance:
 
 Search

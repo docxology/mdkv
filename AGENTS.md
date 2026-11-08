@@ -11,8 +11,8 @@
 - MDKV format: zip-based `.mdkv` container with `manifest.yaml` and `tracks/`;
   track types primary/translation/commentary/code/reference/media_ref/revision.
   Concept overview: `MKVD_overview.md`.
-- No mock framework in tests; run `uv run pytest -q` from the repo root.
-  GUI: `uv run python run_gui.py`.
+- Prefer real behavioral fixtures; older orchestration tests include mocks. Run `uv run pytest -q` from the repo root.
+  GUI: `uv run python run_gui.py --path <owned-fixture.mdkv>`.
 - Repository-wide policy for template projects is maintained in the template repository, not restated here.
 
 ## Layout map
@@ -47,8 +47,8 @@ Verify with `scripts_status.py`.
 
 ## Gotchas (local env, 2026-08-31)
 
-- On this host (macOS, external drive), `uv run pytest` on the default Python 3.14 fails: `pydantic-core` 2.33.2 has no 3.14 wheel here and its source build fails. Workaround: `uv sync -p 3.12 && uv run -p 3.12 pytest -q`. CI pins 3.14 on ubuntu where the wheel exists, so this is a local-env note, not a repo defect.
+- Historical report (2026-08-31): Python 3.14/pydantic-core 2.33.2 failed locally; a Python 3.12 workaround was used then. This is not current advice: `.python-version` now selects 3.15 and the refreshed lock was installed successfully on 3.15.2 during the 2026-11-07 audit. Do not change the pin to revive an old workaround.
 
 ## Round 2 additions (2026-08-31)
 
-- `scripts_status.py` (repo root): executable status truth — `uv run python scripts_status.py` prints date + version; `--tests` also runs the suite and prints test count + coverage. README and TODO.md reference it instead of undated prose claims.
+- `scripts_status.py` prints source date/version; `--tests` streams the actual pytest result and propagates its exit status. Explicit trailing pytest arguments allow bounded owned-fixture checks.

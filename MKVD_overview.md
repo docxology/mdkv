@@ -1,10 +1,16 @@
+> Historical, non-normative design exploration. This document includes unimplemented
+> proposals and references not comprehensively reverified by the 0.12.0 audit.
+> The implemented format is ZIP/YAML, not MKV/video or a code-execution engine.
+> Use [docs/format.md](docs/format.md) and [docs/security.md](docs/security.md) for
+> current contracts; enterprise/scalability claims here are not measured results.
+
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
-# MDKV: Multitrack Markdown Container Format \& Software Package
+# MDKV: Historical Multitrack Design Exploration (Non-Normative)
 
 ## Executive Summary
 
-**MDKV (Markdown + MKV)** represents a revolutionary approach to document management that combines the human-readable simplicity of Markdown with the multitrack container capabilities of Matroska Video (MKV). This comprehensive analysis outlines a complete software package for creating, editing, viewing, and managing MDKV files—specialized "multitrack" composable plaintext documents that can contain multiple synchronized content streams, metadata layers, and cross-referenced information tracks.
+**MDKV (Markdown + MKV)** is a proposed approach that borrows the multitrack intuition of Matroska Video (MKV) while keeping Markdown and ZIP as the implemented substrate. This historical analysis explores a possible software package for creating, editing, viewing, and managing MDKV files. The current implementation is documented in `docs/`; unimplemented features below are design possibilities, not shipped capabilities or measured results.
 
 ## Format Foundation Analysis
 

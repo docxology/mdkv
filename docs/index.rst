@@ -1,5 +1,5 @@
-MDKV Documentation
-==================
+MDKV Documentation: Concept, Format, Architecture and Operations
+================================================================
 
 .. toctree::
    :maxdepth: 2
@@ -13,6 +13,7 @@ MDKV Documentation
    api
    security
    license
+   manuscript/MANUSCRIPT_STATUS
 
 .. note::
    MDKV is designed for modular, multi-track Markdown documents packaged as a

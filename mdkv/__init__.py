@@ -28,7 +28,7 @@ from .storage import MDKVFormatError, MDKVManifestModel, TrackManifestModel, loa
 from .storage.io import save_mdkv_incremental
 
 __license__ = "Apache-2.0"
-__version__ = "0.11.0"
+__version__ = "0.12.0"
 
 __all__ = [
     "core",

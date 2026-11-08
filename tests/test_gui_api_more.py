@@ -8,7 +8,7 @@ from mdkv.gui.server import create_app, state
 
 def test_open_save_update_delete_and_errors(tmp_path: Path):
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
 
     # open error for missing file
     r_missing = c.post("/api/open", json={"path": str(tmp_path / "missing.mdkv")})
@@ -30,7 +30,7 @@ def test_open_save_update_delete_and_errors(tmp_path: Path):
     assert r_upsert.status_code == 200
 
     # delete track
-    r_delete = c.delete("/api/track/scratch")
+    r_delete = c.delete("/api/track", params={"track_id": "scratch"})
     assert r_delete.status_code == 200
 
     # error branches when no doc is loaded
@@ -40,7 +40,7 @@ def test_open_save_update_delete_and_errors(tmp_path: Path):
     assert c.get("/api/document").status_code == 400
     assert c.post("/api/document", json={}).status_code == 400
     assert c.post("/api/track", json={"id": "x"}).status_code == 400
-    assert c.delete("/api/track/x").status_code == 400
+    assert c.delete("/api/track", params={"track_id": "x"}).status_code == 400
     assert c.get("/api/render/html").status_code == 400
     assert c.get("/api/render/markdown").status_code == 400
     assert c.get("/api/render/track_html", params={"track_id": "x"}).status_code == 400

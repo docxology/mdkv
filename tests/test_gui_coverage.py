@@ -11,7 +11,7 @@ from mdkv.storage import save_mdkv
 def _setup(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
-    return create_app(), TestClient(create_app())
+    return create_app(), TestClient(create_app(), base_url="http://localhost")
 
 
 def test_favicon():
@@ -19,7 +19,7 @@ def test_favicon():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/favicon.ico")
     assert r.status_code == 200
     assert "svg" in r.headers.get("content-type", "")
@@ -30,7 +30,7 @@ def test_root_page():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/")
     assert r.status_code == 200
     assert "<html" in r.text.lower() or "MDKV" in r.text
@@ -44,7 +44,7 @@ def test_open_file_success(tmp_path: Path):
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/open", json={"path": str(p)})
     assert r.status_code == 200
     assert r.json()["title"] == "MDKV Demo"
@@ -57,7 +57,7 @@ def test_open_file_corrupt(tmp_path: Path):
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/open", json={"path": str(bad)})
     assert r.status_code == 400
 
@@ -67,7 +67,7 @@ def test_save_success(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/save")
     assert r.status_code == 200
     assert r.json()["ok"] is True
@@ -78,7 +78,7 @@ def test_save_no_path(tmp_path: Path):
     state.path = None
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/save")
     assert r.status_code == 400
 
@@ -88,7 +88,7 @@ def test_render_html(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/html")
     assert r.status_code == 200
     assert "<" in r.text  # HTML output
@@ -99,7 +99,7 @@ def test_render_markdown(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/markdown")
     assert r.status_code == 200
     assert "markdown" in r.json()
@@ -110,7 +110,7 @@ def test_render_track_html(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/track_html", params={"track_id": "primary"})
     assert r.status_code == 200
     assert "<" in r.text
@@ -121,7 +121,7 @@ def test_render_track_html_missing(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/track_html", params={"track_id": "nonexistent"})
     assert r.status_code == 404
 
@@ -131,7 +131,7 @@ def test_render_all_html(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/all_html")
     assert r.status_code == 200
     assert "<" in r.text
@@ -142,7 +142,7 @@ def test_render_tracks_html_all(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/render/tracks_html", json={})
     assert r.status_code == 200
     assert "<" in r.text
@@ -153,7 +153,7 @@ def test_render_tracks_html_empty_list(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/render/tracks_html", json={"track_ids": []})
     assert r.status_code == 200
 
@@ -163,7 +163,7 @@ def test_render_tracks_html_subset(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/render/tracks_html", json={"track_ids": ["primary", "annotations"]})
     assert r.status_code == 200
     assert "<" in r.text
@@ -174,7 +174,7 @@ def test_render_tracks_html_invalid_ids_type(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/render/tracks_html", json={"track_ids": "not-a-list"})
     assert r.status_code == 422
 
@@ -184,7 +184,7 @@ def test_render_track_html_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/track_html", params={"track_id": "x"})
     assert r.status_code == 400
 
@@ -194,7 +194,7 @@ def test_render_html_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/html")
     assert r.status_code == 400
 
@@ -204,7 +204,7 @@ def test_render_all_html_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/all_html")
     assert r.status_code == 400
 
@@ -214,7 +214,7 @@ def test_render_markdown_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/render/markdown")
     assert r.status_code == 400
 
@@ -224,7 +224,7 @@ def test_render_tracks_html_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/render/tracks_html", json={})
     assert r.status_code == 400
 
@@ -239,7 +239,7 @@ def test_validate_track_with_validation_error(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = doc
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/validate-track", params={"track_id": "primary"})
     assert r.status_code == 200
 
@@ -249,7 +249,7 @@ def test_move_track_missing_track_id(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/move-track", json={})
     assert r.status_code == 422
 
@@ -259,7 +259,7 @@ def test_move_track_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/move-track", json={"track_id": "x"})
     assert r.status_code == 400
 
@@ -269,7 +269,7 @@ def test_open_file_missing_path():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/open", json={"path": "/nonexistent/file.mdkv"})
     assert r.status_code == 404
 
@@ -279,7 +279,7 @@ def test_save_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/save")
     assert r.status_code == 400
 
@@ -289,17 +289,17 @@ def test_document_post_partial_update(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/document", json={"title": "New Title Only"})
     assert r.status_code == 200
     assert state.doc.title == "New Title Only"
 
 
 def test_get_track_missing(tmp_path: Path):
-    """GET /api/track/{id} with nonexistent track returns 404."""
+    """GET a nonexistent track by literal query identifier returns 404."""
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
-    r = c.get("/api/track/nonexistent")
+    c = TestClient(app, base_url="http://localhost")
+    r = c.get("/api/track", params={"track_id": "nonexistent"})
     assert r.status_code == 404

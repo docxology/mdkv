@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
+import platform
+import os
 import re
 import subprocess
 import sys
@@ -25,39 +28,21 @@ from mdkv.core.errors import (
     ValidationError,
 )
 
-
-def parse_front_matter(markdown_text: str) -> dict[str, Any]:
-    """Parse YAML front matter if present and return it as a dict (else {})."""
-    lines = markdown_text.splitlines()
-    if len(lines) >= 3 and lines[0].strip() == "---":
-        # find closing '---'
-        for idx in range(1, len(lines)):
-            if lines[idx].strip() == "---":
-                fm_text = "\n".join(lines[1:idx])
-                try:
-                    data = yaml.safe_load(fm_text) or {}
-                    return data if isinstance(data, dict) else {}
-                except Exception:
-                    return {}
-    return {}
-
-
 def split_front_matter_and_body(markdown_text: str) -> tuple[dict[str, Any], str]:
-    """Return (front_matter_dict, body_without_front_matter)."""
-    lines = markdown_text.splitlines()
-    if len(lines) >= 3 and lines[0].strip() == "---":
-        for idx in range(1, len(lines)):
-            if lines[idx].strip() == "---":
-                fm_text = "\n".join(lines[1:idx])
-                try:
-                    data = yaml.safe_load(fm_text) or {}
-                    if not isinstance(data, dict):
-                        data = {}
-                except Exception:
-                    data = {}
-                body = "\n".join(lines[idx + 1 :])
-                return data, body
-    return {}, markdown_text
+    """Parse explicit YAML frontmatter without silently discarding bad metadata."""
+    lines = markdown_text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return {}, markdown_text
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            try:
+                data = yaml.safe_load("".join(lines[1:idx]))
+            except yaml.YAMLError as exc:
+                raise ValueError(f"invalid manuscript frontmatter: {exc}") from exc
+            if not isinstance(data, dict):
+                raise ValueError("manuscript frontmatter must be a mapping")
+            return data, "".join(lines[idx + 1:])
+    raise ValueError("manuscript frontmatter has no closing delimiter")
 
 
 def strip_leading_html_comments(markdown_body: str) -> str:
@@ -65,21 +50,22 @@ def strip_leading_html_comments(markdown_body: str) -> str:
 
     This is resilient to multiple consecutive comments and arbitrary whitespace.
     """
-    text = markdown_body.lstrip()
-    while text.startswith("<!--"):
-        end = text.find("-->")
+    text = markdown_body
+    while text.lstrip().startswith("<!--"):
+        start = text.index("<!--")
+        end = text.find("-->", start)
         if end == -1:
             break
-        text = text[end + 3 :].lstrip()
+        text = text[end + 3:]
     return text
 
 
 def ensure_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [str(v) for v in value]
-    return [str(value)]
+    if isinstance(value, str) and value.strip():
+        return [value]
+    if isinstance(value, list) and value and all(isinstance(v, str) and v.strip() for v in value):
+        return list(value)
+    raise ValueError("manuscript must declare a nonempty author or authors list")
 
 
 def build_document(markdown_path: Path, language: str | None) -> MDKVDocument:
@@ -87,9 +73,19 @@ def build_document(markdown_path: Path, language: str | None) -> MDKVDocument:
     fm, body = split_front_matter_and_body(text)
     body = strip_leading_html_comments(body)
 
-    title = str(fm.get("title") or markdown_path.stem)
-    authors = ensure_list(fm.get("author") or fm.get("authors") or "Unknown")
-    created = datetime.now(UTC)
+    title = fm.get("title")
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError("manuscript must declare its title in frontmatter")
+    authors = ensure_list(fm.get("author") or fm.get("authors"))
+    created_value = fm.get("created")
+    if isinstance(created_value, datetime):
+        created = created_value
+    elif isinstance(created_value, str):
+        created = datetime.fromisoformat(created_value)
+    else:
+        raise ValueError("manuscript must declare an ISO-8601 created timestamp")
+    if created.tzinfo is None:
+        raise ValueError("manuscript created timestamp must include a timezone")
 
     metadata: dict[str, str] = {}
     for key in ("doi", "orcid", "email", "date"):
@@ -108,7 +104,7 @@ def build_document(markdown_path: Path, language: str | None) -> MDKVDocument:
         title=title,
         authors=authors,
         created=created,
-        version="0.1",
+        version=str(fm.get("version", "0.1")),
     )
     doc.metadata.update(metadata)
     doc.add_track(track)
@@ -161,16 +157,20 @@ def _run_git(args: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
             cwd=str(cwd) if cwd else None,
             check=False,
             capture_output=True,
+            stdin=subprocess.DEVNULL,
+            timeout=60,
             text=True,
         )
         return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
-    except FileNotFoundError:
-        return 127, "", "git not found"
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        return 127, "", str(exc)
 
 
 def clone_repo(repo_url: str, dest_dir: Path, depth: int = 1) -> str | None:
     if dest_dir.exists() and any(dest_dir.iterdir()):
-        # assume already cloned
+        code, observed_url, _ = _run_git(["remote", "get-url", "origin"], cwd=dest_dir)
+        if code != 0 or observed_url.removesuffix(".git").rstrip("/") != repo_url.removesuffix(".git").rstrip("/"):
+            raise ValueError("existing clone origin does not match the requested repository")
         code, out, _ = _run_git(["rev-parse", "HEAD"], cwd=dest_dir)
         return out if code == 0 else None
     dest_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -206,15 +206,20 @@ def main() -> int:
         print(f"Markdown source not found: {markdown_path}", file=sys.stderr)
         return 1
 
-    doc = build_document(markdown_path, args.lang)
+    try:
+        doc = build_document(markdown_path, args.lang)
+    except (ValueError, OSError) as exc:
+        print(f"Manuscript metadata failed: {exc}", file=sys.stderr)
+        return 1
 
-    # Optionally clone repo and record commit hash
+    # Capture source custody before clone/bundle generation dirties the tree.
+    builder_root = Path(__file__).resolve().parents[1]
+    local_commit = get_local_repo_commit(builder_root)
+    status_code, status_output, _ = _run_git(["status", "--porcelain"], cwd=builder_root)
+    builder_dirty = bool(status_output) if status_code == 0 else None
     cloned_commit: str | None = None
-    local_commit: str | None = None
     if not args.no_clone:
         cloned_commit = clone_repo(args.repo_url, Path(args.clone_dir))
-    # local commit (builder repo), if any
-    local_commit = get_local_repo_commit(Path(__file__).resolve().parents[1])
 
     if cloned_commit:
         doc.metadata["cloned_repo_url"] = args.repo_url
@@ -229,23 +234,60 @@ def main() -> int:
         print(f"Validation failed: {e}", file=sys.stderr)
         return 1
 
+    expected_tracks = {f"{track.track_id}.md" for track in doc.tracks.values()}
+    stale_tracks = {p.name for p in (bundle_dir / "tracks").glob("*.md")} - expected_tracks
+    if stale_tracks:
+        print(f"Unexpected prior track artifacts (preserved): {sorted(stale_tracks)}", file=sys.stderr)
+        return 1
+
+    figure_source = Path(__file__).with_name("figures")
+    figure_files = sorted(
+        path.relative_to(figure_source)
+        for path in figure_source.rglob("*") if path.is_file()
+    ) if figure_source.is_dir() else []
+    stale_figures = {
+        path.relative_to(bundle_dir / "figures")
+        for path in (bundle_dir / "figures").rglob("*") if path.is_file()
+    } - set(figure_files)
+    if stale_figures:
+        print(f"Unexpected prior figure artifacts (preserved): {sorted(map(str, stale_figures))}", file=sys.stderr)
+        return 1
+
     # Save .mdkv
     save_mdkv(doc, output_mdkv)
 
     # Exports
     bundle_dir.mkdir(parents=True, exist_ok=True)
-    (bundle_dir / "paper.md").write_text(to_markdown(doc), encoding="utf-8")
+    (bundle_dir / "paper.md").write_text(
+        to_markdown(doc, include_track_types=["primary"], metadata_header=True), encoding="utf-8"
+    )
     (bundle_dir / "paper.html").write_text(to_html(doc), encoding="utf-8")
+    for relative in figure_files:
+        destination = bundle_dir / "figures" / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes((figure_source / relative).read_bytes())
     export_to_files(doc, bundle_dir / "tracks")
 
     # Emit bundle info
     bundle_info = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "source_markdown": str(markdown_path.resolve()),
-        "output_mdkv": str(output_mdkv.resolve()),
+        "source_markdown": markdown_path.name,
+        "source_sha256": hashlib.sha256(markdown_path.read_bytes()).hexdigest(),
+        "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "output_mdkv": output_mdkv.name,
         "repo_url": args.repo_url,
         "cloned_commit": cloned_commit,
         "builder_commit": local_commit,
+        "checksum_root": "parent of bundle directory",
+        "builder_dirty": builder_dirty,
+        "python": platform.python_version(),
+        "mdkv_version": importlib.metadata.version("mdkv"),
+        "markdown_it_version": importlib.metadata.version("markdown-it-py"),
+        "pyyaml_version": importlib.metadata.version("pyyaml"),
+        "uv_lock_sha256": hashlib.sha256(
+            Path(__file__).resolve().parents[1].joinpath("uv.lock").read_bytes()
+        ).hexdigest(),
+        "reproducibility": "text composition for fixed inputs/runtime; ZIP and generation timestamps vary",
     }
     (bundle_dir / "BUNDLE_INFO.yaml").write_text(yaml.safe_dump(bundle_info, sort_keys=False), encoding="utf-8")
 
@@ -257,18 +299,20 @@ def main() -> int:
                 h.update(chunk)
         return h.hexdigest()
 
+    artifacts = [
+        output_mdkv, bundle_dir / "paper.md", bundle_dir / "paper.html",
+        bundle_dir / "BUNDLE_INFO.yaml",
+        *(bundle_dir / "tracks" / name for name in sorted(expected_tracks)),
+        *(bundle_dir / "figures" / name for name in figure_files),
+    ]
     checksums = {
-        "paper.mdkv": _sha256_file(output_mdkv),
-        "_bundle/paper.md": _sha256_file(bundle_dir / "paper.md"),
-        "_bundle/paper.html": _sha256_file(bundle_dir / "paper.html"),
+        os.path.relpath(path.resolve(), bundle_dir.resolve().parent): _sha256_file(path)
+        for path in artifacts
     }
-    tracks_dir = bundle_dir / "tracks"
-    for tfile in sorted(tracks_dir.glob("*.md")):
-        checksums[f"_bundle/tracks/{tfile.name}"] = _sha256_file(tfile)
     (bundle_dir / "CHECKSUMS.yaml").write_text(yaml.safe_dump(checksums, sort_keys=True), encoding="utf-8")
 
     print(f"Wrote: {output_mdkv}")
-    print(f"Bundle: {bundle_dir}/ (paper.md, paper.html, tracks/, BUNDLE_INFO.yaml, src_repo/)")
+    print(f"Bundle: {bundle_dir}/ (paper.md, paper.html, tracks/, figures/, BUNDLE_INFO.yaml, CHECKSUMS.yaml; no PDF)")
     return 0
 
 

@@ -225,7 +225,7 @@ def test_gui_document_json(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/document/json")
     assert r.status_code == 200
     data = r.json()
@@ -246,7 +246,7 @@ def test_gui_import_endpoint(tmp_path: Path):
     md_file = tmp_path / "import.md"
     md_file.write_text("# Imported content", encoding="utf-8")
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/import", json={"path": str(md_file), "id": "imported", "type": "commentary"})
     assert r.status_code == 200
     assert r.json()["track_id"] == "imported"
@@ -264,7 +264,7 @@ def test_gui_import_missing_file(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/import", json={"path": str(tmp_path / "missing.md"), "id": "x"})
     assert r.status_code == 404
 
@@ -280,6 +280,6 @@ def test_gui_import_missing_id(tmp_path: Path):
     md_file = tmp_path / "import.md"
     md_file.write_text("content", encoding="utf-8")
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/import", json={"path": str(md_file)})
     assert r.status_code == 422

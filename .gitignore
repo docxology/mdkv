@@ -9,3 +9,6 @@ docs/_build/
 !library/_built/*.mdkv
 !paper/*.mdkv
 !gui_test.mdkv
+/build/
+/.ruff_cache/
+/.mypy_cache/

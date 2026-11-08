@@ -1,38 +1,37 @@
 """Diff two .mdkv documents and print the changes."""
 from datetime import UTC
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from mdkv import MDKVDocument, Track, load_mdkv, save_mdkv
 
 
 def main() -> None:
-    from datetime import datetime
-    # create two documents
-    base = Path("v1.mdkv")
-    other = Path("v2.mdkv")
+    with TemporaryDirectory(prefix="mdkv-example-") as workdir:
+        from datetime import datetime
+        # create two documents
+        base = Path(workdir) / "v1.mdkv"
+        other = Path(workdir) / "v2.mdkv"
 
-    doc_a = MDKVDocument(title="Version 1", authors=["A"], created=datetime.now(UTC))
-    doc_a.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# V1\n\nOriginal content"))
-    save_mdkv(doc_a, base)
+        doc_a = MDKVDocument(title="Version 1", authors=["A"], created=datetime.now(UTC))
+        doc_a.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# V1\n\nOriginal content"))
+        save_mdkv(doc_a, base)
 
-    doc_b = MDKVDocument(title="Version 2", authors=["A"], created=datetime.now(UTC))
-    doc_b.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# V2\n\nModified content"))
-    doc_b.add_track(Track("notes", "commentary", None, "tracks/notes.md", "# Notes"))
-    save_mdkv(doc_b, other)
+        doc_b = MDKVDocument(title="Version 2", authors=["A"], created=datetime.now(UTC))
+        doc_b.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# V2\n\nModified content"))
+        doc_b.add_track(Track("notes", "commentary", None, "tracks/notes.md", "# Notes"))
+        save_mdkv(doc_b, other)
 
-    # load and diff
-    a = load_mdkv(base)
-    b = load_mdkv(other)
+        # load and diff
+        a = load_mdkv(base)
+        b = load_mdkv(other)
 
-    print(f"Diff: {base} vs {other}")
-    print(f"  title:    {'CHANGED' if a.title != b.title else 'same'}  ({a.title!r} → {b.title!r})")
-    print(f"  tracks:   added={sorted(set(b.tracks) - set(a.tracks))}, removed={sorted(set(a.tracks) - set(b.tracks))}")
-    for tid in sorted(set(a.tracks) & set(b.tracks)):
-        if a.tracks[tid].content != b.tracks[tid].content:
-            print(f"  modified: {tid}")
-
-    base.unlink()
-    other.unlink()
+        print(f"Diff: {base} vs {other}")
+        print(f"  title:    {'CHANGED' if a.title != b.title else 'same'}  ({a.title!r} → {b.title!r})")
+        print(f"  tracks:   added={sorted(set(b.tracks) - set(a.tracks))}, removed={sorted(set(a.tracks) - set(b.tracks))}")
+        for tid in sorted(set(a.tracks) & set(b.tracks)):
+            if a.tracks[tid].content != b.tracks[tid].content:
+                print(f"  modified: {tid}")
 
 
 if __name__ == "__main__":

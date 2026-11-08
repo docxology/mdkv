@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-08
+
+### Added
+- Bounded, duplicate-rejecting ZIP/YAML input policy and deterministic integrity regressions.
+- A real regex matching deadline; canonical single-track GUI editing; installed read-only library resources and explicit Save As.
+- Creation-time/track-order diff fields; real shell completion scripts; failure-preserving native conversion and status reporting.
+- Python 3.11 compatibility and stronger locked lint/type/docs/package CI gates.
+- Source distributions include the manuscript builder and status-script prerequisites used by their tests.
+- A canonical graphical abstract (SVG and PNG) is published in the paper bundle and Sphinx concept guide; bundles copy and checksum figure assets.
+
+### Fixed
+- Failed full saves destroying existing containers; incremental duplicate paths; self-move deletion; unsafe rename transitions.
+- Raw HTML and independent diff injection sinks; foreign browser-origin/Host access; malformed mutation errors.
+- Export filename collisions/symlink leaves, malformed YAML frontmatter and metadata attribution overrides.
+- Custom track registry integration, chronological history queries, empty filters, batch failure exit codes and example output custody.
+- Manuscript attribution/provenance/spec claims and scientific teaching examples: correct Bayes update, evidence bound and explicitly heuristic policy score.
+- Dark-theme preview contrast; pre-generation bundle custody with unavailable Git status kept unknown.
+- A ZIP64 locator immediately before the ordinary EOCD is rejected before `zipfile` can select a different central directory and allocate ZipInfo objects.
+- Native Pandoc exports compose document body plus optional frontmatter only; informational track-attribution comments no longer become visible PDF/EPUB/DOCX text.
+- Canonical YAML examples carry fixed synthetic timestamps and provenance metadata, so rebuilding `library/_built/` no longer changes modeled `created` values.
+
+### Compatibility
+- The bounded ZIP profile supports stored/deflate only and rejects ZIP64, multidisk and prepended/trailing data before parsing members.
+- Unsafe/ambiguous or over-budget containers now fail explicitly. Raw HTML is escaped.
+- Incremental save is documented as a full atomic rewrite. Combined Markdown is a presentation export, not lossless GUI interchange.
+- Library API paths are `library:<name>` handles; callers Save As explicitly. PDF engines remain trusted external tools.
+- Track text uses query IDs for GET/DELETE and body IDs for PUT; path-ID routes are removed, preserving literal dot/slash/Unicode identifiers.
+- Search keeps stdlib `re` semantics in reaped workers, with five-second startup and one-second compilation/matching budgets and at most 10,000 returned results.
+- GUI launchers accept loopback bindings only. Origin/Host controls do not authenticate native clients.
+- Main integration is validated by the recorded gates; tag and GitHub release publication remain separate authorized steps.
+
 ### Removed
 - Legacy flat re-export shims `mdkv/model.py`, `mdkv/io.py`, `mdkv/search.py`,
   `mdkv/validate.py`, `mdkv/errors.py`, `mdkv/export.py`, plus `mdkv/cli.py`
@@ -151,7 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Track.__eq__` and `Track.__hash__` for proper equality comparison and set membership
 - `MDKVDocument.track_ids` property returning track IDs in insertion order
 - `MDKVDocument.move_track(track_id, after_id)` for reordering tracks within a document
-- `search_document(limit=)` parameter to cap matches (prevents DoS via catastrophic backtracking)
+- `search_document(limit=)` parameter to cap returned matches (historical correction: result count does not prevent catastrophic backtracking)
 - `validate_track(track)` function for single-track validation (in addition to document-level)
 - Reserved track_id validation: warns on `all`, `none`, `null`, `true`, `false`, `""` (case-insensitive)
 - CLI `info --format table` for human-readable table output (default: `json`)

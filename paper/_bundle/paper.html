@@ -1,5 +1,3 @@
-<!-- MDKV: mdkv_paper -->
-<!-- track:primary type:primary lang:en -->
 <h1>MDKV: A Multitrack Markdown Container for Structured, Portable Documents</h1>
 <p><strong>Daniel Ari Friedman</strong><br />
 <a href="https://orcid.org/0000-0001-6232-9096">ORCID: 0000-0001-6232-9096</a><br />
@@ -8,21 +6,23 @@ August 10, 2025<br />
 <a href="https://doi.org/10.5281/zenodo.16790555">DOI: 10.5281/zenodo.16790555</a></p>
 <h2>Abstract</h2>
 <p>Digital knowledge work increasingly demands documents that are simultaneously multilingual, multi‑audience, and multi‑channel. Traditional single‑file Markdown struggles when the same canonical content must coexist with translations, commentary, references, code exemplars, and revision notes – each with distinct lifecycles and audiences. This paper introduces MDKV, a simple but rigorous multitrack Markdown container that packages a document’s canonical content and auxiliary tracks into a single, portable <code>.mdkv</code> file. An <code>.mdkv</code> is a ZIP archive with a YAML <code>manifest.yaml</code> and a <code>tracks/</code> directory of UTF‑8 Markdown files. MDKV provides a principled data model, validation, search, and export services, a CLI, and a small GUI for selective preview and live editing. We formalize the MDKV model, present its software architecture, explain round‑trip export semantics, and evaluate design trade‑offs against adjacent technologies. The MDKV initial specification is open source under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache‑2.0</a> license and maintained at the project repository (<code>https://github.com/docxology/mdkv</code>). We also situate MDKV with respect to Matroska (MKV) as background on containerization: although the two are orthogonal in domain (text vs. multimedia), they share conceptual lineage in extensible container design. We conclude with use cases, implications for governance and reproducibility, and future work such as richer validation rules and alternative exporters. This paper is itself a Markdown file that renders into a valid MDKV. The built artifact is available at <a href="https://github.com/docxology/mdkv/blob/main/paper/paper.mdkv">paper/paper.mdkv</a>; combined exports are under <a href="https://github.com/docxology/mdkv/tree/main/paper/_bundle">paper/_bundle</a>.</p>
+<h2>Graphical Abstract: One Canonical Source, Accountable Views</h2>
+<p><img src="figures/mdkv-graphical-abstract.png" alt="One Markdown source is packaged into a ZIP/YAML MDKV container with parallel primary, translation, commentary, code, reference, media_ref and revision tracks; deterministic exports compose reader, reviewer and archive views, while bounds cover the reader, search, writes, GUI and optional converters." /></p>
+<p><em>Figure 1. The MDKV workflow: author once, package the layers explicitly, and compose a view for each accountable audience. The graphic is descriptive, not a measured performance result.</em></p>
 <h2>1. Introduction</h2>
 <p>Authoring, collaboration, and publishing workflows routinely require: (i) a single canonical text; (ii) multiple translations; (iii) audience‑specific commentary and references; (iv) code listings synchronized with the text; and (v) review and revision notes. Maintaining such layers in separate files and folders creates cognitive load and increases the risk of divergence. The central question is how to preserve a document’s conceptual unity while keeping its layers decoupled for editing, governance, and rendering.</p>
 <p>MDKV addresses this need with a multitrack container for Markdown. Rather than overloading a single source with embedded annotations and language variants, MDKV separates concerns into tracks—<code>primary</code> (canonical), <code>translation</code>, <code>commentary</code>, <code>code</code>, <code>reference</code>, <code>media_ref</code>, and <code>revision</code>—and composes views at export time. The container format is intentionally modest: plain Markdown and YAML wrapped in ZIP, optimized for transparency, diff‑friendliness, and longevity.</p>
 <p>Design motivations and lineage. MDKV applies general container principles (clear manifest, independent tracks, robust round‑trip) from adjacent domains to plaintext authoring. It favors human‑inspectable, durable primitives over custom binary formats, enabling simple tooling and long‑term readability. The initial public release standardizes a minimal spec and a reference implementation with CLI and GUI.</p>
 <p>Contributions. (i) A precise model and container format with minimal but sufficient validation; (ii) a modular architecture separating model, storage, and services, surfaced via CLI and GUI; (iii) detailed use cases spanning multilingual publishing, layered collaboration, reproducible distribution, and governance; and (iv) guidance for cryptographic provenance and conformance.</p>
-<h2>2. Background: Containerization for Documents and Media</h2>
+<h2>2. Background: Why Containerize Documents?</h2>
 <h3>2.1 Matroska (MKV): History and Technical Context</h3>
-<p><a href="https://en.wikipedia.org/wiki/Matroska">Matroska (MKV)</a> is an open multimedia container format announced in 2002 as a fork of the Multimedia Container Format project, notably adopting <a href="https://en.wikipedia.org/wiki/Extensible_Binary_Meta_Language">EBML</a> to enable self‑describing, extensible binary structures. Over two decades, MKV matured into a widely supported container capable of packaging multiple video, audio, and subtitle streams, chapters, and rich metadata. Notable milestones include early stable releases, the emergence of <a href="https://en.wikipedia.org/wiki/WebM">WebM</a> as a web‑oriented subset, and native support in mainstream operating systems, underscoring the robustness and adaptability of a stream‑oriented, metadata‑rich container design. See also the official overview at <a href="https://www.matroska.org/what_is_matroska.html">matroska.org</a> for goals and feature summaries.</p>
-<p>Technically, MKV exemplifies key container principles: a flexible root structure (via EBML), multiplexing of heterogeneous tracks, and resilience features that permit partial playback in the presence of corruption. These characteristics make MKV a useful conceptual antecedent for any domain where multiple orthogonal tracks must be co‑packaged without imposing codec‑level coupling.</p>
-<p>Key timeline highlights:</p>
-<ul>
-<li>2004: First stable Matroska releases signaled production maturity.</li>
-<li>2010: Google introduced <a href="https://en.wikipedia.org/wiki/WebM">WebM</a> as a web‑delivery subset of Matroska, emphasizing open codecs and browser playback.</li>
-<li>2014: Microsoft announced native MKV support in Windows 10, cementing broad OS‑level adoption.</li>
-</ul>
+<p>The <a href="https://www.rfc-editor.org/rfc/rfc9559">Matroska specification, RFC 9559</a>,
+published in October 2024 by Steve Lhomme, Moritz Bunkus and Dave Rice, defines
+an audiovisual container based on EBML. Its independently described tracks
+provide a design analogy here, not evidence that a ZIP/YAML text format inherits
+Matroska's streaming, recovery or interoperability properties.</p>
+<p>MDKV does not implement Matroska or EBML. Historical adoption timelines are not
+needed to establish the text-container design and are not evaluated in this work.</p>
 <h3>2.2 MDKV and MKV: Orthogonal Domains, Shared Intuition</h3>
 <p>MDKV is not an MKV editor, wrapper, or derivative; it targets plaintext documents rather than multimedia. The similarity in names is intentional only insofar as both are “container‑centric” designs. MDKV borrows the intuition that many artifacts are multi‑track by nature, but it embraces a radically simpler substrate—<a href="https://commonmark.org">Markdown (CommonMark)</a>, <a href="https://yaml.org/spec/">YAML</a>, and <a href="https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT">ZIP</a>—to maximize openness, inspectability, and compatibility with standard tooling. Where MKV multiplexes time‑based streams, MDKV co‑packages logically distinct textual layers.</p>
 <h3>2.3 Why a textual container (vs. multimedia/EPUB/PDF)</h3>
@@ -36,14 +36,14 @@ August 10, 2025<br />
 <li><strong>Sovereign metadata</strong>: <code>manifest.yaml</code> is explicit and auditable; no hidden state.</li>
 </ul>
 <h2>3. MDKV Concept and Format</h2>
-<h3>3.1 Overview</h3>
+<h3>3.1 Container Layout: Manifest, Tracks and ZIP Envelope</h3>
 <p>An <code>.mdkv</code> file is a ZIP archive that contains:</p>
 <ul>
 <li><code>manifest.yaml</code>: top‑level document metadata and an index of tracks</li>
 <li><code>tracks/</code>: UTF‑8 Markdown files, one per track</li>
 </ul>
-<p>The format is purposely simple for inspection and tooling: no custom filesystem or binary framing beyond ZIP, and no Markdown dialect beyond <a href="https://commonmark.org">CommonMark</a>‑compatible text.</p>
-<h3>3.2 Manifest Schema</h3>
+<p>Track text is CommonMark-compatible. The reference HTML renderer also enables pipe tables; arbitrary raw HTML is escaped. This is a renderer profile, not a new binary or media format.</p>
+<h3>3.2 Manifest Schema: Required Fields and Track Index</h3>
 <p>Top‑level fields (required unless noted):</p>
 <ul>
 <li><code>title</code>: string</li>
@@ -58,12 +58,12 @@ August 10, 2025<br />
 <li><code>track_id</code>: string (unique within the document)</li>
 <li><code>track_type</code>: one of <code>primary</code>, <code>translation</code>, <code>commentary</code>, <code>code</code>, <code>reference</code>, <code>media_ref</code>, <code>revision</code></li>
 <li><code>language</code>: string or null (BCP‑47/ISO‑639 recommended for linguistic content)</li>
-<li><code>path</code>: string (must start with <code>tracks/</code>; paths SHOULD end with <code>.md</code>)</li>
+<li><code>path</code>: a relative POSIX path below <code>tracks/</code>, without empty, dot, parent, backslash or NUL components; paths SHOULD end with <code>.md</code>.</li>
 </ul>
 <p>Example manifest:</p>
 <pre><code class="language-yaml">title: Example
 authors: [&quot;Author&quot;]
-  created: 2025-01-01T00:00:00Z
+created: 2025-01-01T00:00:00Z
 version: &quot;0.1&quot;
 metadata: {}
 tracks:
@@ -78,21 +78,91 @@ tracks:
 </code></pre>
 <h4>3.2.1 Specification at a glance</h4>
 <p>Field overview:</p>
-<p>| Field | Type | Required | Notes |
-|---|---|---|---|
-| <code>title</code> | string | yes | Document title |
-| <code>authors</code> | list[string] | yes | At least one author |
-| <code>created</code> | ISO‑8601 string | yes | UTC recommended |
-| <code>version</code> | string | no | Default &quot;0.1&quot; |
-| <code>metadata</code> | map[string,string] | no | Freeform key/value pairs |
-| <code>tracks</code> | list[Track] | schema‑optional | Validation requires at least one <code>primary</code> |</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>title</code></td>
+<td>string</td>
+<td>yes</td>
+<td>Document title</td>
+</tr>
+<tr>
+<td><code>authors</code></td>
+<td>list[string]</td>
+<td>yes</td>
+<td>At least one author</td>
+</tr>
+<tr>
+<td><code>created</code></td>
+<td>ISO‑8601 string</td>
+<td>yes</td>
+<td>UTC recommended</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td>string</td>
+<td>no</td>
+<td>Default &quot;0.1&quot;</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td>map[string,string]</td>
+<td>no</td>
+<td>Freeform key/value pairs</td>
+</tr>
+<tr>
+<td><code>tracks</code></td>
+<td>list[Track]</td>
+<td>schema‑optional</td>
+<td>Validation requires at least one <code>primary</code></td>
+</tr>
+</tbody>
+</table>
 <p>Track descriptor overview:</p>
-<p>| Field | Type | Required | Notes |
-|---|---|---|---|
-| <code>track_id</code> | string | yes | Unique within the document |
-| <code>track_type</code> | enum | yes | One of <code>primary, translation, commentary, code, reference, media_ref, revision</code> |
-| <code>language</code> | string or null | no | BCP‑47 recommended for linguistic tracks |
-| <code>path</code> | string | yes | Must start with <code>tracks/</code> |</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>track_id</code></td>
+<td>string</td>
+<td>yes</td>
+<td>Unique within the document</td>
+</tr>
+<tr>
+<td><code>track_type</code></td>
+<td>enum</td>
+<td>yes</td>
+<td>One of <code>primary, translation, commentary, code, reference, media_ref, revision</code></td>
+</tr>
+<tr>
+<td><code>language</code></td>
+<td>string or null</td>
+<td>no</td>
+<td>BCP‑47 recommended for linguistic tracks</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td>string</td>
+<td>yes</td>
+<td>Must start with <code>tracks/</code></td>
+</tr>
+</tbody>
+</table>
 <h3>3.3 Multi‑track example (manifest + track bodies)</h3>
 <p>Below is a compact, realistic multi‑track container using several track types side‑by‑side. This illustrates how translations, commentary, code listings, references, media references, and revisions live next to the canonical <code>primary</code> track.</p>
 <p>Manifest:</p>
@@ -167,13 +237,13 @@ assets/gui_demo.webm  # external file shipped alongside exported package
 &lt;!-- track:release_notes type:revision lang:None --&gt;
 - 2025-06-15: Updated step 2 for new sign‑in flow.
 </code></pre>
-<p>Combined exports simply concatenate these bodies in the order present, preserving the headers for round‑trip reconstruction. Composition order follows the manifest track list order.</p>
-<h3>3.4 This paper as an MDKV (self‑contained guidance)</h3>
-<p>This Markdown file is authored to be round‑trip friendly for MDKV tooling. To package it as a <code>.mdkv</code>:</p>
+<p>Combined exports concatenate track bodies in manifest order with informational attribution headers. Literal header-like content is not escaped into a reversible framing protocol.</p>
+<h3>3.4 The Paper as a Reproducible MDKV Bundle</h3>
+<p>Use <code>paper/build_paper_bundle.sh --no-clone</code> to package the explicitly attributed authored source. The following manifest illustrates the same model:</p>
 <ol>
 <li>Create <code>manifest.yaml</code> with at least one primary track and metadata:</li>
 </ol>
-<pre><code class="language-yaml">title: MDKV: A Multitrack Markdown Container for Structured, Portable Documents
+<pre><code class="language-yaml">title: &quot;MDKV: A Multitrack Markdown Container for Structured, Portable Documents&quot;
 authors: [&quot;Daniel Ari Friedman&quot;]
 created: 2025-08-10T00:00:00Z
 version: &quot;0.1&quot;
@@ -187,34 +257,29 @@ tracks:
     language: en
     path: tracks/primary.md
 </code></pre>
-<ol>
-<li>
-<p>Place this file’s Markdown content (including the <code>&lt;!-- track:... --&gt;</code> header above) into <code>tracks/primary.md</code>.</p>
-</li>
-<li>
-<p>Zip <code>manifest.yaml</code> and <code>tracks/</code> into <code>paper.mdkv</code> (use the CLI below), then validate.</p>
-</li>
-</ol>
+<p>Place the authored body in <code>tracks/primary.md</code>; a ZIP may use implicit <code>tracks/</code>
+prefixes rather than an explicit directory entry. The owning bundle builder
+validates metadata and content, emits current exports and records their provenance.</p>
 <p>CLI (linked): see <a href="https://github.com/docxology/mdkv/blob/main/docs/cli.md"><code>docs/cli.md</code></a>. Minimal sequence:</p>
 <pre><code class="language-bash">uv run mdkv init --title &quot;MDKV Paper&quot; --author &quot;Daniel Ari Friedman&quot; --out paper.mdkv
-uv run mdkv update-track paper.mdkv --id primary --content &quot;$(cat paper/mdkv_paper.md)&quot;
+uv run mdkv update-track paper.mdkv --id primary --file paper/mdkv_paper.md
 uv run mdkv set-meta paper.mdkv doi 10.5281/zenodo.16790555
 uv run mdkv validate paper.mdkv
 uv run mdkv info paper.mdkv
 </code></pre>
-<h3>3.5 Validation Rules</h3>
+<h3>3.5 Validation Rules: Structural and Editorial</h3>
 <p>MDKV’s base validator enforces:</p>
 <ul>
 <li>Presence of <code>title</code>, <code>authors</code>, and at least one <code>primary</code> track</li>
 <li>Track <code>path</code> begins with <code>tracks/</code></li>
 <li><code>track_type</code> is one of the supported values</li>
 <li><code>track_id</code> is non‑empty and unique</li>
-<li><code>language</code> is either a BCP‑47 string or null</li>
+<li><code>language</code> is a string or null; BCP-47 is recommended, not syntactically enforced</li>
 </ul>
 <p>The intentionally small rule set preserves extensibility while ensuring minimal integrity guarantees for downstream services.</p>
-<p>Implementation note: the reference validator currently checks for the presence of a track with id <code>primary</code>; this could be aligned to the type‑level requirement in future releases.</p>
-<h3>3.6 Round‑Trip Export Headers</h3>
-<p>When exporting multiple tracks into a single Markdown stream, MDKV prefixes each track with a lightweight HTML comment that encodes track metadata. These hints enable round‑trip attribution and reconstruction without altering the track files in the container:</p>
+<p>Implementation note: the reference validator checks for the presence of a track whose <code>track_type</code> is <code>primary</code> (<code>mdkv/core/validate.py</code>), matching the rule above rather than requiring the specific id <code>primary</code>.</p>
+<h3>3.6 Informational Export Headers: Attribution Without a Parser</h3>
+<p>Combined Markdown includes a comment encoding track metadata. These are attribution hints, not a lossless reconstruction grammar; ZIP/JSON are the structured interchange paths. Native PDF/EPUB/DOCX conversion composes the selected body plus allowlisted frontmatter directly, so these comments do not become visible publication text:</p>
 <pre><code class="language-markdown">&lt;!-- track:primary type:primary lang:en --&gt;
 Title
 
@@ -224,24 +289,24 @@ Editorial notes here
 <h3>3.7 Normative Container Requirements (Conformance)</h3>
 <p>The MDKV container is defined by the following MUST/SHOULD requirements:</p>
 <ul>
-<li>A valid <code>.mdkv</code> MUST be a ZIP archive containing a root‑level <code>manifest.yaml</code> and a <code>tracks/</code> directory.</li>
-<li><code>manifest.yaml</code> MUST be a valid YAML mapping with fields: <code>title</code> (string), <code>authors</code> (list of strings, non‑empty), <code>created</code> (ISO‑8601 string), and optionally <code>version</code> (string, default &quot;0.1&quot;), <code>metadata</code> (mapping), and <code>tracks</code> (list of track descriptors).</li>
-<li>Each track descriptor MUST include <code>track_id</code> (unique string), <code>track_type</code> (one of the allowed values), <code>language</code> (string or null), and <code>path</code> (string beginning with <code>tracks/</code>).</li>
+<li>A conforming <code>.mdkv</code> MUST be a ZIP archive with one unambiguous root <code>manifest.yaml</code> and indexed UTF-8 track members under <code>tracks/</code> (directory entries may be implicit).</li>
+<li>Editorial conformance requires a nonempty title, nonempty author list and at least one primary-type track. Structural loading is deliberately separate and can load incomplete documents for editing.</li>
+<li>Each descriptor MUST contain a unique nonempty <code>track_id</code>, registered <code>track_type</code> and safe relative <code>path</code>. <code>language</code> is optional and defaults to null. The metadata map contains string values, with documented safe scalar normalization.</li>
 <li>At least one track with <code>track_type: primary</code> MUST be present.</li>
-<li>For round‑trip combined Markdown exports, each included track MUST be prefixed by an HTML comment header of the form: <code>&lt;!-- track:{id} type:{type} lang:{lang} --&gt;</code>.</li>
+<li>Combined Markdown exports use informational comment headers. They do not define a conforming lossless import protocol.</li>
 <li>Implementations SHOULD preserve field ordering in <code>manifest.yaml</code> for human readability, though ordering is not semantically significant.</li>
 <li>Implementations SHOULD emit UTF‑8 for all track files and SHOULD NOT assume line ending conventions beyond standard text processing.</li>
 </ul>
 <h3>3.8 Conformance Levels</h3>
 <ul>
 <li>Core Conformance: satisfies all MUST requirements above and passes validation.</li>
-<li>Extended Conformance: additionally supports selective export by track type and language filters, and preserves track headers for round‑trip workflows.</li>
+<li>Extended presentation: selective export by track type and GUI preview by track ID. Language filtering is implemented for search, not as a direct export parameter.</li>
 </ul>
-<h3>3.9 Design principles</h3>
+<h3>3.9 Design Principles: Durable Primitives and Explicit Layers</h3>
 <ul>
 <li>Simplicity first: rely on ubiquitous primitives (ZIP, YAML, Markdown) to maximize longevity and inspectability.</li>
 <li>Separation of concerns: keep tracks orthogonal; orchestrate at export time rather than embedding format‑specific directives into bodies.</li>
-<li>Round‑trip fidelity: preserve attribution via headers so combined streams can be losslessly de‑multiplexed.</li>
+<li>Round-trip fidelity: ZIP and JSON serialization preserve modeled document fields and exact track text. Combined Markdown headers are informational, not an unambiguous lossless interchange grammar.</li>
 <li>Deterministic composition: identical manifests and track sets produce identical exports to support reproducible publishing.</li>
 <li>Extensibility: add tracks and exporters without changing the core model or on‑disk layout.</li>
 </ul>
@@ -254,7 +319,7 @@ Editorial notes here
 <li><strong>No cross‑doc linking semantics</strong>: references across containers are conventional; not part of the base spec.</li>
 <li><strong>Time semantics are shallow</strong>: <code>created</code> is recorded; versioning/history are external concerns.</li>
 </ul>
-<h2>4. Software Architecture</h2>
+<h2>4. Software Architecture: Thin Orchestration over a Typed Core</h2>
 <p>MDKV follows a thin‑orchestrator, modular architecture:</p>
 <ul>
 <li><code>mdkv.core</code>: data model and validation</li>
@@ -268,7 +333,7 @@ Editorial notes here
 <ul>
 <li><code>Track</code>: a single Markdown track with <code>track_id</code>, <code>track_type</code>, <code>language</code>, <code>path</code>, <code>content</code>, and invariant checks (valid type, non‑empty id, <code>path</code> under <code>tracks/</code>).</li>
 <li><code>MDKVDocument</code>: an in‑memory aggregate with metadata (<code>title</code>, <code>authors</code>, <code>created</code>, <code>version</code>, and <code>metadata</code> map) and a mapping <code>track_id → Track</code>. It provides helpers for adding/removing tracks, renaming, content updates, language listing, and metadata set/get/remove.</li>
-<li>Invariants are validated eagerly on construction and update; violations raise narrow exceptions (<code>ValueError</code>, <code>ValidationError</code>).</li>
+<li>Track constructors and mutation helpers enforce structural checks; mutable dataclasses are revalidated at save/explicit validation boundaries. Storage safety and editorial validity are separate contracts.</li>
 </ul>
 <p>The core also surfaces <code>allowed_track_types()</code> and validation types (<code>ValidationError</code>, <code>ValidationIssue</code>).</p>
 <h3>4.2 Storage (<code>mdkv.storage</code>)</h3>
@@ -279,19 +344,21 @@ Editorial notes here
 </ul>
 <p>The manifest lists metadata and track descriptors; bodies remain discrete files for transparency and editability.</p>
 <h3>4.3 Services (<code>mdkv.services</code>)</h3>
-<p>Two primary services operate over <code>MDKVDocument</code> instances:</p>
+<p>Services operate over <code>MDKVDocument</code> instances without owning container I/O:</p>
 <ul>
-<li>Search: regex search with optional filters by <code>track_type</code> and <code>language</code>, returning match structures suitable for CLI/GUI display.</li>
-<li>Export: composition of multi‑track Markdown via <code>to_markdown()</code> and primary‑track HTML via <code>to_html()</code> using <a href="https://github.com/executablebooks/markdown-it-py">markdown‑it‑py</a>. <code>export_to_files()</code> writes selected tracks to individual <code>.md</code> files for channel‑specific distribution.</li>
-<li>Export determinism: order is manifest‑driven; identical inputs produce identical outputs.</li>
+<li>Search: stdlib <code>re</code> matching with optional <code>track_type</code>/<code>language</code> filters, supervised deadline enforcement and bounded pages; sync and async APIs share results.</li>
+<li>Export: composition of multi‑track Markdown via <code>to_markdown()</code>, primary‑track HTML via <code>to_html()</code> using <a href="https://github.com/executablebooks/markdown-it-py">markdown‑it‑py</a>, and per‑track files via <code>export_to_files()</code>.</li>
+<li>Native conversion: optional Pandoc PDF/EPUB/DOCX export of the body plus allowlisted frontmatter; informational MDKV comments are not emitted into native output.</li>
+<li>Comparison and statistics: structured <code>diff_documents()</code> results and textual <code>compute_stats()</code> counts; neither is an empirical benchmark.</li>
+<li>Export determinism: order is manifest‑driven; fixed inputs and renderer versions give identical text, while ZIP bytes and generation timestamps may differ.</li>
 </ul>
 <h3>4.4 CLI (<code>mdkv.cli</code>)</h3>
 <p>Thin orchestrators for: init, info, validate, track ops, search, export, metadata, and GUI. Commands call module APIs directly for testability and minimal command‑layer logic.</p>
 <h3>4.5 GUI (<code>mdkv.gui</code>)</h3>
-<p>The optional GUI offers a live preview and editing workflow with track selection via checkboxes. A backend endpoint (<code>POST /api/render/tracks_html</code>) renders arbitrary track subsets, while the visual editor maintains a full combined view with live persistence per track. Additional endpoints include <code>GET /api/render/html</code> (primary HTML) and <code>GET /api/render/markdown</code> (combined Markdown). The GUI is intended as an affordance for users uncomfortable with the CLI while preserving parity with programmatic workflows. State is ephemeral; persistence uses the same <code>save_mdkv</code> path as the CLI.</p>
-<h3>4.6 Architecture overview (linked)</h3>
+<p>The local GUI has a canonical single-track editor and independent preview checkboxes. <code>POST /api/render/tracks_html</code> renders subsets; <code>GET /api/track?track_id=...</code> reads a literal track identifier and <code>PUT /api/track</code> updates an existing track without parsing display comments. <code>GET /api/render/markdown</code> remains a combined presentation export. Browser operations serialize pending edits before switches/saves. State is shared across clients; persistence uses the same atomic <code>save_mdkv</code> writer as the CLI.</p>
+<h3>4.6 Architecture Map and Source Pointers</h3>
 <ul>
-<li>Layers and responsibilities: see <a href="https://github.com/docxology/mdkv/blob/main/docs/architecture.md"><code>docs/architecture.md</code></a> and the published docs site.</li>
+<li>Layers and responsibilities: see <a href="https://github.com/docxology/mdkv/blob/main/docs/architecture.md"><code>docs/architecture.md</code></a> (built locally with Sphinx; there is no hosted docs site).</li>
 <li>Core model: <a href="https://github.com/docxology/mdkv/blob/main/mdkv/core/model.py"><code>mdkv/core/model.py</code></a> defines <code>Track</code>, <code>MDKVDocument</code>, and invariants; re‑exported via <a href="https://github.com/docxology/mdkv/blob/main/mdkv/__init__.py"><code>mdkv/__init__.py</code></a>.</li>
 <li>Storage: <a href="https://github.com/docxology/mdkv/blob/main/mdkv/storage/io.py"><code>mdkv/storage/io.py</code></a> implements <code>save_mdkv</code> and <code>load_mdkv</code> (ZIP + YAML manifest and <code>tracks/</code>).</li>
 <li>Services: export in <a href="https://github.com/docxology/mdkv/blob/main/mdkv/services/export.py"><code>mdkv/services/export.py</code></a> (<code>to_markdown</code>, <code>to_html</code>, <code>export_to_files</code>); search in <a href="https://github.com/docxology/mdkv/blob/main/mdkv/services/search.py"><code>mdkv/services/search.py</code></a>. Both are re‑exported at the top‑level package for a stable public API.</li>
@@ -304,21 +371,21 @@ Editorial notes here
 <li>Persistence: <code>save_mdkv</code> writes <code>tracks/</code> and <code>manifest.yaml</code> into a <code>.mdkv</code> ZIP; <code>load_mdkv</code> reconstructs.</li>
 <li>Services: <code>search_document</code> filters/matches; <code>to_markdown</code> and <code>to_html</code> export views; <code>export_to_files</code> writes per‑track files. For end‑to‑end CLI usage, see <a href="https://github.com/docxology/mdkv/blob/main/docs/cli.md"><code>docs/cli.md</code></a>.</li>
 </ul>
-<h2>5. Public API and Re‑Exports</h2>
+<h2>5. Public API: Stable Imports and Compatibility Boundaries</h2>
 <p>The top‑level <code>mdkv</code> package re‑exports the public API to provide a stable surface:</p>
 <ul>
-<li><code>MDKVDocument</code>, <code>Track</code>, <code>allowed_track_types</code>, <code>ValidationError</code>, <code>validate_document</code>, <code>ValidationIssue</code></li>
-<li><code>search_document</code>, <code>SearchMatch</code>, <code>to_markdown</code>, <code>to_html</code>, <code>export_to_files</code></li>
-<li><code>save_mdkv</code>, <code>load_mdkv</code></li>
+<li><code>MDKVDocument</code>, <code>Track</code>, <code>allowed_track_types</code>, <code>ValidationError</code>, <code>validate_document</code>, <code>validate_track</code>, <code>ValidationIssue</code></li>
+<li><code>search_document</code>, <code>search_document_async</code>, <code>SearchMatch</code>, <code>diff_documents</code>, <code>DiffResult</code>, <code>compute_stats</code>, <code>DocumentStats</code></li>
+<li><code>to_markdown</code>, <code>to_html</code>, <code>export_to_files</code>, <code>to_pdf</code>, <code>to_epub</code>, <code>to_docx</code></li>
+<li><code>save_mdkv</code>, <code>save_mdkv_incremental</code>, <code>load_mdkv</code>, <code>MDKVFormatError</code>, <code>TrackHistory</code>, <code>TrackVersion</code></li>
+<li><code>TrackTypeRegistry</code>, <code>register_track_type</code>, <code>get_registry</code></li>
 </ul>
 <p>This consolidation supports both script‑level usage and library integrations without deep import paths.</p>
-<h2>6. Usage</h2>
+<h2>6. Usage: CLI, Python API and GUI Workflows</h2>
 <h3>6.1 Quickstart</h3>
-<pre><code class="language-bash"># install uv once per machine (Linux/macOS)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
+<pre><code class="language-bash"># use an existing uv installation; no installer is run by the builder
 # from repo root
-uv venv
+uv sync --locked --extra dev
 uv run pytest -q
 uv run mdkv --help
 </code></pre>
@@ -345,11 +412,11 @@ uv run mdkv gui --path doc.mdkv
 </code></pre>
 <h3>6.5 Programmatic Export</h3>
 <pre><code class="language-python">from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from mdkv import MDKVDocument, Track, export_to_files, to_markdown, save_mdkv, validate_document
 
 # write selected tracks as individual .md files
-doc = MDKVDocument(title=&quot;Doc&quot;, authors=[&quot;You&quot;], created=datetime.utcnow(), version=&quot;0.1&quot;)
+doc = MDKVDocument(title=&quot;Doc&quot;, authors=[&quot;You&quot;], created=datetime.now(timezone.utc), version=&quot;0.1&quot;)
 doc.add_track(Track(track_id=&quot;primary&quot;, track_type=&quot;primary&quot;, language=&quot;en&quot;, path=&quot;tracks/primary.md&quot;, content=&quot;# Hello\n&quot;))
 
 # validate, save, export
@@ -369,7 +436,9 @@ uv run mdkv init --title &quot;Paper&quot; --author &quot;Author&quot; --out pap
 uv run mdkv add-track paper.mdkv --id ru --type translation --lang ru --content &quot;# Резюме\n...&quot;
 uv run mdkv add-track paper.mdkv --id zh --type translation --lang zh --content &quot;# 摘要\n...&quot;
 uv run mdkv add-track paper.mdkv --id commentary --type commentary --content &quot;Editors: tighten abstract.&quot;
-uv run mdkv add-track paper.mdkv --id code --type code --content &quot;```bash\nuv run pytest -q\n```&quot;
+uv run mdkv add-track paper.mdkv --id code --type code --content '```bash
+uv run pytest -q
+```'
 uv run mdkv add-track paper.mdkv --id refs --type reference --content &quot;- CommonMark: https://commonmark.org&quot;
 uv run mdkv add-track paper.mdkv --id media --type media_ref --content &quot;docs/_static/gui_demo.webm&quot;
 uv run mdkv add-track paper.mdkv --id revisions --type revision --content &quot;- 2025-08-10: camera‑ready edits&quot;
@@ -390,14 +459,14 @@ uv run mdkv export --html paper.mdkv &gt; primary.html
 <ul>
 <li><code>primary</code>: canonical content intended for publication and primary consumption.</li>
 <li><code>translation</code>: language alternatives to <code>primary</code>, preserving structure but adapting language and, where necessary, locale.</li>
-<li><code>commentary</code>: annotations, editorial notes, and audience‑specific guidance; excluded by default from canonical exports.</li>
+<li><code>commentary</code>: editorial guidance; excluded by default from HTML, but included by default in unfiltered combined Markdown. Public Markdown should explicitly select <code>--types primary</code>.</li>
 <li><code>code</code>: code listings and examples that remain synchronized with the narrative; not intended as executed notebooks.</li>
 <li><code>reference</code>: citations and reference lists, metadata‑heavy but typically orthogonal to <code>primary</code> structure.</li>
 <li><code>media_ref</code>: references to external media (figures, videos) that are managed outside the container but linked textually.</li>
 <li><code>revision</code>: review notes and change summaries; useful for governance, release notes, and compliance trails.</li>
 </ul>
 <p>Semantically, MDKV treats tracks as parallel layers; it does not prescribe alignment at paragraph or section granularity. Alignment strategies (e.g., anchor conventions) can be layered atop the format by convention when needed.</p>
-<h2>8. Validation and Integrity</h2>
+<h2>8. Validation, Integrity and Resource Bounds</h2>
 <p>Minimal by design to maximize compatibility while catching common integrity issues. Optional profiles can enforce stricter policies (e.g., translation coverage, mandatory references) without compromising baseline portability. See Appendix C for an example of bundle metadata and checksums emitted by the paper builder.</p>
 <h3>8.1 Common validation errors and remedies</h3>
 <ul>
@@ -409,7 +478,7 @@ uv run mdkv export --html paper.mdkv &gt; primary.html
 <li><strong>Duplicate <code>track_id</code></strong>: Ensure each <code>track_id</code> is unique; rename or remove conflicts.</li>
 <li><strong>Bad <code>track_type</code> change</strong>: When changing a track’s type, ensure downstream exporters are aware of filtering.</li>
 </ul>
-<h2>9. Search and Export</h2>
+<h2>9. Search and Export: Exact Matching, Bounded Output</h2>
 <p>Regex search across selected tracks and languages enables cross‑cutting queries (e.g., beta‑flagged commentary in Spanish). Export is deterministic given a manifest and track set:</p>
 <ul>
 <li>Multi‑track Markdown: concatenates track bodies with track headers for round‑trip attribution and optional filtering by track type.</li>
@@ -418,21 +487,21 @@ uv run mdkv export --html paper.mdkv &gt; primary.html
 </ul>
 <p>These capabilities support reproducible publishing.</p>
 <p>Programmatic search is available via <code>mdkv.services.search.search_document(doc, pattern, track_types=None, languages=None)</code>; the CLI mirrors this with <code>uv run mdkv search &lt;path&gt; --pattern PATTERN [--types ...] [--languages ...]</code>.
-For combined exports intended for downstream tools (e.g., pandoc), keep round‑trip headers intact to preserve provenance.</p>
-<h2>10. Implementation Notes</h2>
+Combined export headers assist human attribution; they are not reversible identifiers for arbitrary bodies. Native conversion uses restricted Pandoc defaults; PDF requires trusted source and an existing engine.</p>
+<h2>10. Implementation Notes: Runtime, Packaging and Testing</h2>
 <ul>
-<li>Python 3.9+; dataclasses and type hints; explicit naming.</li>
+<li>Python 3.11+; dataclasses and type hints; explicit naming.</li>
 <li>Packaging: public API re‑exports; CLI entry point <code>mdkv</code>.</li>
 <li>Dependencies: YAML, ZIP (std lib), Markdown renderer for HTML export.</li>
 <li>Tests: cover CLI, services, model invariants, and storage round‑trip.</li>
 </ul>
-<h2>11. Use Cases</h2>
+<h2>11. Use Cases: From Localization to Audit Trails</h2>
 <h3>11.1 Multilingual publishing and localization</h3>
 <ul>
 <li>Goal: ship a single canonical text to multiple locales without forking.</li>
 <li>Tracks: <code>primary</code> (en), <code>translation</code> (ru, zh, …).</li>
-<li>Flow: author in <code>primary</code>; translators add language tracks; QA searches for unresolved tags (e.g., TODO) scoped to translations; export per‑locale Markdown/HTML.</li>
-<li>Benefit: eliminates redundant branching; preserves structure and provenance across locales.</li>
+<li>Flow: author primary/translation tracks and search by language. To export a locale, select the corresponding tracks in a document view before type-filtered export; there is no direct language-export parameter.</li>
+<li>Intended benefit: organizing locale variants without requiring separate repositories. This has not been empirically compared with branching workflows.</li>
 <li>Notes: reserve <code>track_id</code> values for ISO language tags where possible (e.g., <code>ru</code>, <code>zh-Hans</code>).</li>
 </ul>
 <h3>11.2 Layered collaboration, review, and stakeholder tailoring</h3>
@@ -462,7 +531,7 @@ For combined exports intended for downstream tools (e.g., pandoc), keep round‑
 <h3>11.5 Governance, compliance, and audit trails</h3>
 <ul>
 <li>Goal: capture intent and decision history without imposing a VCS workflow on recipients.</li>
-<li>Tracks: <code>revision</code> for change logs; <code>metadata</code> for release info.</li>
+<li>Tracks: <code>revision</code> for change logs; document <code>metadata</code> fields for release info.</li>
 <li>Flow: record rationale per release in <code>revision</code>; embed DOI, version, or policy IDs in <code>metadata</code>; export for auditors or regulators with selected layers.</li>
 <li>Benefit: lightweight provenance and traceability without heavy infrastructure.</li>
 <li>Notes: use checksums/signatures described in Appendix C to support integrity attestations.</li>
@@ -483,14 +552,14 @@ For combined exports intended for downstream tools (e.g., pandoc), keep round‑
 <li>Benefit: longevity and portability via ubiquitous primitives (ZIP, YAML, Markdown).</li>
 <li>Notes: include <code>BUNDLE_INFO.yaml</code> with source commit metadata when available.</li>
 </ul>
-<h2>12. Implications</h2>
+<h2>12. Implications for Governance and Reproducibility</h2>
 <ul>
 <li>Governance: <code>revision</code> + metadata expose intent and review structure.</li>
 <li>Reproducibility: deterministic export + manifest versioning.</li>
 <li>Interoperability: ubiquitous primitives (ZIP, YAML, Markdown).</li>
 <li>Diff‑friendliness: semantic separation reduces merge conflicts.</li>
 <li>Extensibility: add track types/exporters without core changes.</li>
-<li>Supply‑chain clarity: explicit manifests and deterministic builds simplify reproducibility and review.</li>
+<li>Supply-chain clarity: explicit manifests, source hashes and runtime records make a specific bundle auditable; deterministic text composition is not a byte-reproducible build certification.</li>
 </ul>
 <h3>Licensing and community</h3>
 <ul>
@@ -505,12 +574,27 @@ For combined exports intended for downstream tools (e.g., pandoc), keep round‑
 <li>Track headers in exported Markdown are informational; avoid embedding secrets in headers or comments.</li>
 <li>Validation is minimal by design; distributors SHOULD layer additional checks where provenance and integrity are critical (e.g., checksums, signatures).</li>
 </ul>
+<h3>Evidence and limitations of this methods description</h3>
+<p>The examples in this paper and <code>library/definitions/</code> are authored synthetic
+demonstrations, not empirical datasets. This work reports no user study,
+comparative benchmark, empirical validation of an active-inference model, or
+measured improvement in governance, collaboration, cognition or merge-conflict rates. The use-case
+benefits are design motivations and hypotheses, not experimental findings.</p>
+<p>For implementation assurance, the repository's versioned release receipt records
+the exact runtime, commands, source binding and observed checks. Statement
+coverage measures executed statements, not conformance completeness or security.
+The defensive review models a malicious document supplier and a website
+attempting access to the loopback GUI; hostile same-user processes, collaborative
+concurrency and external Pandoc/LaTeX resource policies remain outside that model.
+History helpers are standalone in-memory objects; MDKV does not automatically
+persist edits as revision history. Unknown ZIP members and unknown manifest keys
+are not preserved by model-based save/load roundtrips.</p>
 <h3>Cryptographic provenance and signing</h3>
 <ul>
 <li>Manifest and track checksums: producers MAY compute SHA‑256 (or stronger) digests for each file and include them in <code>metadata</code> for integrity verification after transport.</li>
 <li>Container signing: producers MAY sign the <code>.mdkv</code> archive (e.g., using minisign or GPG) and distribute the signature alongside the artifact. Consumers SHOULD verify signatures prior to ingest in security‑sensitive contexts.</li>
-<li>Reproducible builds: deterministic export semantics enable consistent digests across builds from the same manifest/tracks. Consumers SHOULD compare published checksums against local builds when a source repository is available.</li>
-<li>Threat model notes: MDKV is plaintext‑oriented and does not execute code; however, downstream pipelines (e.g., HTML renderers) SHOULD sanitize untrusted Markdown before display.</li>
+<li>Reproducibility scope: fixed document fields, track order and renderer versions give deterministic text exports. ZIP timestamps and bundle generation timestamps are not byte-reproducible build guarantees; published checksums verify the particular supplied artifacts, not independent rebuild identity.</li>
+<li>Threat model notes: code tracks are not executed by MDKV. Version 0.12.0 disables raw HTML in its HTML renderers, escapes diff descriptions, sandboxes GUI previews and rejects foreign browser origins/hosts. This is not authentication, an external-resource fetch sandbox, or isolation from another process running as the same user.</li>
 </ul>
 <h3>Interoperability and Migration Guidance</h3>
 <ul>
@@ -518,29 +602,29 @@ For combined exports intended for downstream tools (e.g., pandoc), keep round‑
 <li>For downstream channels (PDF/EPUB), use <code>to_markdown()</code> with pandoc‑compatible flags/templates; retain track headers to assist provenance.</li>
 <li>When migrating legacy multi‑file projects, prefer one‑track‑per‑file mapping under <code>tracks/</code> and encode provenance in <code>metadata</code>.</li>
 </ul>
-<h2>13. Related Work and Positioning</h2>
+<h2>13. Related Work: Containers, Markdown and Publication Pipelines</h2>
 <ul>
 <li>Matroska (MKV): multimedia container with EBML, multiplexing heterogeneous streams and metadata. Conceptually adjacent as a container design; orthogonal in domain (binary streams vs. plaintext tracks).</li>
-<li>CommonMark: Markdown specification underpinning content rendering; MDKV does not introduce dialect changes.</li>
+<li>CommonMark: Markdown specification underpinning content rendering; MDKV does not require new Markdown syntax. The reference HTML renderer's pipe-table support is an explicit rendering profile.</li>
 <li>EPUB/PDF pipelines: rich, distribution‑focused bundles; MDKV targets authoring/editing unity and channel‑agnostic composition, and can serve as an upstream source for such exporters.</li>
 <li>Jupyter notebooks: literate, executable documents combining code and text; MDKV focuses on non‑executable, layered textual artifacts with optional code listings.</li>
 </ul>
-<h2>14. Future Work</h2>
+<h2>14. Future Work: Validation Profiles and Richer Exporters</h2>
 <ul>
 <li>Validation profiles: optional, stricter validators (coverage constraints, reference bibliography schemas).</li>
-<li>Alternate exporters: PDF/EPUB builders atop <code>to_markdown()</code>, pandoc interop, and track‑aware templates.</li>
+<li>Exporter evolution: PDF/EPUB/DOCX are already implemented through optional Pandoc; further work includes track-aware templates and rendering profiles.</li>
 <li>Track alignment aids: soft anchors and cross‑track link conventions for advanced localization/review.</li>
 <li>Provenance and signing: cryptographic checksums and signatures for manifests and tracks.</li>
 <li>Remote storage: mapping tracks to object stores while preserving a virtual manifest.</li>
-<li>Richer GUI: per‑track editing affordances, diff views, and translation workflows.</li>
+<li>Richer GUI: current per-track editing, selective preview and diff views do not implement collaborative editing or translation alignment.</li>
 </ul>
-<h2>15. Conclusion</h2>
+<h2>15. Conclusion: A Small Format with Explicit Boundaries</h2>
 <p>MDKV introduces a practical, minimal, and extensible approach to multitrack textual documents. By embracing simple, durable primitives (Markdown, YAML, ZIP) and separating core modeling from storage and services, MDKV enables multilingual and multi‑audience authoring without branching, improves governance through explicit layer semantics, and supports reproducible publishing. As the ecosystem evolves, MDKV can integrate stronger validation profiles and richer exporters while preserving its core promise: a small, inspectable container for structured documents that travels well and ages gracefully.</p>
 <h2>References</h2>
 <ul>
-<li>Matroska (MKV) overview: <a href="https://en.wikipedia.org/wiki/Matroska">Wikipedia</a></li>
-<li>CommonMark specification: <a href="https://commonmark.org">commonmark.org</a></li>
-<li>YAML 1.2 specification: <a href="https://yaml.org/spec/">yaml.org/spec</a></li>
+<li>Lhomme, S.; Bunkus, M.; Rice, D. (2024). <a href="https://www.rfc-editor.org/rfc/rfc9559">Matroska Media Container Format Specification, RFC 9559</a>.</li>
+<li>MacFarlane, J. (2024). <a href="https://spec.commonmark.org/0.31.2/">CommonMark Specification 0.31.2</a>.</li>
+<li>YAML Language Development Team (2021). <a href="https://yaml.org/spec/1.2.2/">YAML 1.2.2 specification</a>.</li>
 <li>ZIP Appnote (PKWARE): <a href="https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT">PKWARE Appnote</a></li>
 <li>markdown‑it‑py project: <a href="https://github.com/executablebooks/markdown-it-py">executablebooks/markdown-it-py</a></li>
 <li>Astral uv project: <a href="https://github.com/astral-sh/uv">astral-sh/uv</a></li>
@@ -550,20 +634,20 @@ For combined exports intended for downstream tools (e.g., pandoc), keep round‑
 <li>MDKV: Multitrack Markdown container defined by this specification.</li>
 <li>Track: A named, typed Markdown layer within an MDKV document (e.g., <code>primary</code>, <code>translation</code>).</li>
 <li>Manifest: YAML file at the root of the container that indexes tracks and captures metadata.</li>
-<li>Round‑trip: Ability to reconstruct track attribution from a combined export using embedded headers.</li>
+<li>Round-trip: exact modeled field and track-text preservation through ZIP or JSON. Combined Markdown is a presentation export; embedded header-like text is not escaped into a reversible interchange format.</li>
 <li>Conformance: Degree to which an implementation satisfies normative requirements in this document.</li>
 </ul>
-<h2>Appendix B: Track header grammar</h2>
-<p>The header used for round‑trip exports follows a simple, stable grammar:</p>
+<h2>Appendix B: Informational Headers, Pandoc Recipes and Tooling Checks</h2>
+<p>The informational header emitted in combined exports has the following shape. It does not distinguish literal header-like text in a track body and must not be used as a lossless parser:</p>
 <pre><code class="language-text">&lt;!--\s+track:{track_id}\s+type:{track_type}\s+lang:{language}\s+--&gt;
 </code></pre>
 <p>When language is unspecified, the literal text <code>None</code> is emitted for <code>{language}</code>.</p>
-<h3>6.7 Pandoc pipeline (PDF)</h3>
-<pre><code class="language-bash"># render primary track to Markdown, then to PDF with pandoc
-uv run mdkv export paper.mdkv &gt; primary.md
-pandoc primary.md -o primary.pdf
+<h3>B.1 Pandoc pipeline (PDF)</h3>
+<pre><code class="language-bash"># export only the primary track, with explicit title/author frontmatter
+uv run mdkv export paper.mdkv --types primary --metadata-header &gt; primary.md
+pandoc primary.md --resource-path=paper --pdf-engine=xelatex -o primary.pdf
 </code></pre>
-<h3>6.8 Inspect and verify</h3>
+<h3>B.2 Inspect and verify</h3>
 <pre><code class="language-bash"># show manifest summary and tracks
 uv run mdkv info paper.mdkv | sed -n '1,60p'
 
@@ -571,7 +655,7 @@ uv run mdkv info paper.mdkv | sed -n '1,60p'
 uv run mdkv validate paper.mdkv
 uv run mdkv list-tracks paper.mdkv
 </code></pre>
-<h3>6.9 When to choose MDKV</h3>
+<h3>B.3 When to choose MDKV</h3>
 <ul>
 <li>
 <p><strong>You need layered authorship</strong>: separate canonical text, translations, commentary, references, code listings, and revisions without branching the project.</p>
@@ -583,7 +667,7 @@ uv run mdkv list-tracks paper.mdkv
 <p><strong>You prefer plain text pipelines</strong>: leverage Markdown/YAML and existing tools (git, grep, pandoc) rather than custom ecosystems.</p>
 </li>
 <li>
-<p><strong>You need selective exports</strong>: tailor output by track types and languages for different audiences/channels.</p>
+<p><strong>You need selective exports</strong>: tailor by track types or build explicit track views; direct language filtering is a search feature.</p>
 </li>
 <li>
 <p><strong>You need to be able to edit the document via multiple tools</strong>: MDKV is a container for text, not a text editor.</p>
@@ -601,20 +685,21 @@ uv run mdkv list-tracks paper.mdkv
 <p><code>language</code>: BCP‑47 code or <code>None</code></p>
 </li>
 </ul>
-<h2>Appendix C: Example bundle artifacts</h2>
+<h2>Appendix C: Bundle Artifacts, Checksums and Verification</h2>
 <p>This appendix sketches the files created by the builder (<code>paper/build_paper_bundle.py</code>) to support reproducible publication and verification.</p>
 <ul>
 <li><code>paper/paper.mdkv</code>: ZIP archive with <code>manifest.yaml</code> and <code>tracks/</code> (e.g., <code>tracks/primary.md</code>, optional <code>tracks/references.md</code>).</li>
-<li><code>paper/_bundle/paper.md</code>: combined multi‑track Markdown export from <code>to_markdown()</code>.</li>
+<li><code>paper/_bundle/paper.md</code>: primary-only Markdown with title/author frontmatter; the reference track is not duplicated in the publication stream.</li>
 <li><code>paper/_bundle/paper.html</code>: HTML of the <code>primary</code> track from <code>to_html()</code>.</li>
 <li><code>paper/_bundle/tracks/</code>: individual per‑track Markdown files exported for distribution pipelines.</li>
-<li><code>paper/_bundle/BUNDLE_INFO.yaml</code>: bundle metadata (source path, timestamps, clone info, commit hashes when available).</li>
-<li><code>paper/_bundle/CHECKSUMS.yaml</code>: SHA‑256 digests of <code>paper.mdkv</code> and exported files to enable integrity checks.</li>
+<li><code>paper/_bundle/figures/</code>: copied SVG/PNG figure assets referenced by the manuscript.</li>
+<li><code>paper/_bundle/BUNDLE_INFO.yaml</code>: source/builder/lock hashes, runtime versions, timestamps, dirty state and optional exact clone identity.</li>
+<li><code>paper/_bundle/CHECKSUMS.yaml</code>: exact artifact SHA-256 digests, with keys relative to the bundle directory's parent (including custom output names).</li>
 </ul>
 <p>Example excerpt of <code>BUNDLE_INFO.yaml</code>:</p>
 <pre><code class="language-yaml">generated_at: 2025-08-10T12:34:56Z
-source_markdown: /abs/path/paper/mdkv_paper.md
-output_mdkv: /abs/path/paper/paper.mdkv
+source_markdown: mdkv_paper.md
+output_mdkv: paper.mdkv
 repo_url: https://github.com/docxology/mdkv
 cloned_commit: 0123abcd...
 builder_commit: 89ef4567...
@@ -623,5 +708,6 @@ builder_commit: 89ef4567...
 <pre><code class="language-yaml">_bundle/paper.html: 7f4c2b...
 _bundle/paper.md: 8b91fe...
 _bundle/tracks/primary.md: 0b12aa...
+_bundle/figures/mdkv-graphical-abstract.png: 9d31c0...
 paper.mdkv: 5c44d1...
 </code></pre>

@@ -10,16 +10,35 @@ jobs:
   build-test-docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout@v7.0.1
-      - name: Install uv
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
-      - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # actions/setup-python@v7.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.7"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version-file: ".python-version"
-      - name: Install (create .venv from uv.lock with dev extras)
-        run: uv sync --extra dev
-      - name: Run tests with coverage
-        run: uv run pytest -q --cov=mdkv --cov-report=term-missing
-      - name: Build docs
-        run: uv run sphinx-build -b html docs docs/_build/html
+      - run: uv sync --locked --extra dev
+      - run: uv run --no-sync ruff check mdkv
+      - run: uv run --no-sync mypy mdkv
+      - run: uv run --no-sync pytest -q --cov=mdkv --cov-report=term-missing --cov-fail-under=90
+      - run: uv run --no-sync sphinx-build -W --keep-going -b html docs docs/_build/html
+      - run: uv build --out-dir docs/_build/dist
+      - name: Inspect installed wheel outside checkout
+        run: |
+          uv venv docs/_build/wheel-env
+          uv pip install --python docs/_build/wheel-env/bin/python docs/_build/dist/*.whl
+          cd docs/_build
+          wheel-env/bin/python -c "from mdkv.library import example_definitions_dir, load_example_document; names=[p.name for p in example_definitions_dir().iterdir() if p.name.endswith('.yaml')]; assert len(names)==7; [load_example_document(name) for name in names]"
+
+  minimum-supported-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+        with:
+          version: "0.13.7"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.11"
+      - run: uv sync --locked --extra dev --python 3.11
+      - run: uv run --no-sync --python 3.11 pytest -q

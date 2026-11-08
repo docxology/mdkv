@@ -1,7 +1,8 @@
-"""Track versioning subsystem for MDKV.
+"""Standalone, in-memory track revision history.
 
-Stores content revision history per track_id, enabling undo/restore
-and revision-track integration.
+Document mutations do not automatically record versions, and MDKV container
+saves do not persist ``TrackHistory`` instances. Use ``to_dict`` explicitly when
+an application needs to serialize this separate history API.
 """
 from __future__ import annotations
 
@@ -23,72 +24,97 @@ class TrackVersion:
 
 @dataclass
 class TrackHistory:
-    """Revision history for a single track.
+    """Chronological revision history, separate from document persistence.
 
-    Stores ordered list of (timestamp, content) tuples.
-    The most recent entry is the current content.
+    Equal timestamps preserve ingestion order. Naive and timezone-aware times
+    cannot be mixed: ingestion and queries reject them before mutating history.
     """
 
     track_id: str
     versions: list[TrackVersion] = field(default_factory=list)
 
-    def add_version(self, content: str, track_type: str, language: str | None,
-                    timestamp: datetime | None = None) -> None:
-        """Record a new version of the track content."""
-        if timestamp is None:
-            timestamp = datetime.now(UTC)
-        self.versions.append(TrackVersion(
-            timestamp=timestamp,
-            content=content,
-            track_type=track_type,
-            language=language,
-            track_id=self.track_id,
-        ))
+    def __post_init__(self) -> None:
+        self.versions = self._ordered_versions()
 
-    def get_current(self) -> TrackVersion | None:
-        """Return the most recent version, or None if empty."""
-        if not self.versions:
-            return None
-        return self.versions[-1]
+    def _ordered_versions(self) -> list[TrackVersion]:
+        if any(not isinstance(version.timestamp, datetime) for version in self.versions):
+            raise ValueError("history timestamps must be datetime instances")
+        try:
+            return sorted(self.versions, key=lambda version: version.timestamp)
+        except TypeError as exc:
+            raise ValueError("history timestamps must have comparable timezones") from exc
 
-    def get_version_at(self, timestamp: datetime) -> TrackVersion | None:
-        """Return the version that was current at the given timestamp."""
+    @staticmethod
+    def _version_at(versions: list[TrackVersion], timestamp: datetime) -> TrackVersion | None:
+        if not isinstance(timestamp, datetime):
+            raise ValueError("history timestamps must be datetime instances")
         result = None
-        for v in self.versions:
-            if v.timestamp <= timestamp:
-                result = v
-            else:
-                break
+        try:
+            for version in versions:
+                if version.timestamp <= timestamp:
+                    result = version
+                else:
+                    break
+        except TypeError as exc:
+            raise ValueError("history timestamps must have comparable timezones") from exc
         return result
 
+    def add_version(self, content: str, track_type: str, language: str | None,
+                    timestamp: datetime | None = None) -> None:
+        """Record a version chronologically without partially changing history.
+
+        An omitted timestamp uses UTC for empty/aware histories and local naive
+        time for an existing naive history, keeping the existing time convention.
+        """
+        ordered = self._ordered_versions()
+        if timestamp is None:
+            timestamp = datetime.now(UTC)
+            if ordered and ordered[0].timestamp.utcoffset() is None:
+                timestamp = datetime.now()
+        if not isinstance(timestamp, datetime):
+            raise ValueError("history timestamps must be datetime instances")
+        candidate = TrackVersion(timestamp, content, track_type, language, self.track_id)
+        try:
+            updated = sorted([*ordered, candidate], key=lambda version: version.timestamp)
+        except TypeError as exc:
+            raise ValueError("history timestamps must have comparable timezones") from exc
+        self.versions = updated
+
+    def get_current(self) -> TrackVersion | None:
+        """Return the chronologically most recent version, or None if empty."""
+        ordered = self._ordered_versions()
+        return ordered[-1] if ordered else None
+
+    def get_version_at(self, timestamp: datetime) -> TrackVersion | None:
+        """Return the latest version at or before a comparable timestamp."""
+        return self._version_at(self._ordered_versions(), timestamp)
+
     def list_versions(self) -> list[TrackVersion]:
-        """Return all versions in chronological order."""
-        return list(self.versions)
+        """Return a chronological copy, including externally reordered versions."""
+        return self._ordered_versions()
 
     def restore_to(self, timestamp: datetime) -> TrackVersion | None:
-        """Truncate history to the version at the given timestamp.
-
-        Returns the restored version, or None if no version matches.
-        """
-        target = self.get_version_at(timestamp)
+        """Keep versions up to the requested time; invalid queries change nothing."""
+        ordered = self._ordered_versions()
+        target = self._version_at(ordered, timestamp)
         if target is None:
             return None
-        # Keep only versions up to and including the target
-        idx = self.versions.index(target)
-        self.versions = self.versions[: idx + 1]
+        # Keep every equal-timestamp ingestion, even a repeated snapshot object.
+        index = max(i for i, version in enumerate(ordered) if version is target)
+        self.versions = ordered[:index + 1]
         return target
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize to a plain dict."""
+        """Serialize this standalone history in chronological order."""
         return {
             "track_id": self.track_id,
             "versions": [
                 {
-                    "timestamp": v.timestamp.isoformat(),
-                    "content": v.content,
-                    "track_type": v.track_type,
-                    "language": v.language,
+                    "timestamp": version.timestamp.isoformat(),
+                    "content": version.content,
+                    "track_type": version.track_type,
+                    "language": version.language,
                 }
-                for v in self.versions
+                for version in self.list_versions()
             ],
         }

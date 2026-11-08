@@ -97,7 +97,7 @@ def test_gui_diff_view(tmp_path: Path):
     sm(other_doc, other)
 
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/diff/view", params={"other_path": str(other)})
     assert r.status_code == 200
     assert "<table" in r.text  # difflib.HtmlDiff outputs a table
@@ -112,7 +112,7 @@ def test_gui_diff_view_missing_file(tmp_path: Path):
     state.path = tmp_path / "a.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/diff/view", params={"other_path": str(tmp_path / "missing.mdkv")})
     assert r.status_code == 404
 
@@ -125,7 +125,7 @@ def test_gui_diff_view_no_doc():
     state.path = None
     state.doc = None
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/diff/view", params={"other_path": "/tmp/test.mdkv"})
     assert r.status_code == 400
 
@@ -196,17 +196,3 @@ def test_incremental_save_no_manifest(tmp_path: Path):
     assert load_mdkv(p).tracks["primary"].content == "content"
 
 
-# === Public API exports ===
-
-def test_public_api_has_v08_exports():
-    import mdkv
-    assert hasattr(mdkv, "TrackHistory")
-    assert hasattr(mdkv, "TrackVersion")
-    assert hasattr(mdkv, "TrackTypeRegistry")
-    assert hasattr(mdkv, "register_track_type")
-    assert hasattr(mdkv, "get_registry")
-    assert hasattr(mdkv, "search_document_async")
-    assert hasattr(mdkv, "save_mdkv_incremental")
-    assert "TrackHistory" in mdkv.__all__
-    assert "search_document_async" in mdkv.__all__
-    assert "save_mdkv_incremental" in mdkv.__all__

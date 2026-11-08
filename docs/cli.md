@@ -1,4 +1,4 @@
-# CLI Reference
+# CLI Reference: Commands, Formats and Exit Behavior
 
 ```bash
 uv run mdkv --help
@@ -102,16 +102,16 @@ uv run mdkv move-track doc.mdkv --id notes   # move to first position
 # show revision history for a specific track (revision tracks whose id matches)
 uv run mdkv history doc.mdkv --id rev1
 
-# save the document to disk, reusing unchanged track content
+# validated atomic full-container rewrite
 uv run mdkv save-incremental doc.mdkv
 ```
 
 `history --id <track>` returns only the `revision`-type tracks whose `track_id`
 equals `<track>`; if none match it prints a message and exits 0. Revisions are
-expected to be stored as `revision` tracks. `save-incremental` rewrites the
-container atomically, carrying unchanged track content over instead of
-re-encoding it, and falls back to a full save if the file is missing or
-corrupt.
+expected to be stored as `revision` tracks. `save-incremental` performs a full
+validated atomic rewrite, not ZIP append or compressed-member reuse. Its Python
+boolean is true only when the prior container was valid; missing/corrupt inputs
+use the full-save fallback. Both paths preserve the prior destination on failure.
 
 ## Export
 
@@ -143,6 +143,11 @@ uv run mdkv export --out-dir tracks_out/ doc.mdkv
 uv run mdkv gui --path doc.mdkv
 ```
 
+Native PDF/EPUB/DOCX conversion includes Markdown images only when their files are
+reachable. Pass `--resource-path=<document directory>` through `pandoc_args` (or
+`--resource-path` to Pandoc directly); the conversion runs in a temporary directory
+and does not copy arbitrary local assets.
+
 GUI notes:
 - The preview supports multi-select via checkboxes (All or any subset).
 - Backend also exposes `POST /api/render/tracks_html` to render a specific subset by `track_ids`.
@@ -154,10 +159,10 @@ GUI notes:
 uv run mdkv diff doc_v1.mdkv doc_v2.mdkv
 ```
 
-Reports changes in title, authors, version, tracks (added/removed/modified),
-and metadata (added/removed/changed). A track is considered "modified" if its
-content, type, language, or path differs. Outputs "No differences found." if
-identical.
+Reports changes in title, authors, version, creation time, track ordering,
+tracks (added/removed/modified), and metadata. JSON adds `created_changed` and
+`track_order_changed`. Content, type, language or path changes modify a track;
+archive bytes/unknown fields are not part of this comparison.
 
 ## Stats
 
@@ -189,8 +194,11 @@ uv run mdkv search doc.mdkv --pattern "." --limit 10
 ```
 
 Search results include `track_id`, `track_type`, `language`, `start`, `end`,
-and `extract` for each match. Invalid regex patterns return a clean error
-message with exit code 1.
+and `extract` for each match. Invalid regex patterns, negative limits and
+one-second matching deadlines produce clean nonzero exits. Empty Python filters
+select no tracks; `None` selects all. Matching runs in a supervised interpreter;
+async APIs collect bounded pages before yielding. Pages may contain at most
+10,000 results; larger unbounded searches fail explicitly rather than truncate.
 
 ## Batch Operations
 
@@ -205,13 +213,15 @@ uv run mdkv batch validate *.mdkv --json
 uv run mdkv batch stats doc1.mdkv doc2.mdkv
 ```
 
+Both batch commands report all peers, then exit 1 if any input failed.
+
 ## Shell Completions
 
 ```bash
-# generate completion instructions for bash, zsh, or fish
-uv run mdkv completions bash
-uv run mdkv completions zsh
-uv run mdkv completions fish
+# generate an actual completion script without exporting persistent completion mode
+uv run mdkv completions bash > mdkv-completion.bash
+source mdkv-completion.bash
+# zsh and fish scripts are available through the same command
 ```
 
 ## Error Handling

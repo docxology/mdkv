@@ -85,12 +85,12 @@
 ## Security
 - `_safe_filename()` prevents path traversal in `export_to_files`
 - `yaml.safe_dump` for metadata_header frontmatter (YAML injection prevention)
-- HTML comment injection prevention (strip `-->` from track metadata in headers)
-- `save_mdkv` detects and rejects duplicate track paths
+- HTML-escaped metadata comments; raw HTML disabled in every HTML renderer; GUI preview sandbox/CSP and Host/Origin checks.
+- Both save APIs validate structural identities/paths and atomically replace complete containers. Incremental is a full rewrite.
 - CLI catches `FileNotFoundError`, `MDKVFormatError`, `re.error` with clean messages
 
 ## GUI API Endpoints
-- CRUD: `/api/document`, `/api/document/json`, `/api/track`, `/api/tracks`, `/api/open`, `/api/save`
+- CRUD: `/api/document`, `/api/document/json`, `/api/track` (GET/DELETE query id, PUT body id, POST upsert), `/api/tracks`, `/api/open`, `/api/save` (optional explicit Save As path)
 - Render: `/api/render/html`, `/api/render/markdown`, `/api/render/track_html`,
   `/api/render/all_html`, `/api/render/tracks_html`
 - Operations: `/api/search` (with `limit`), `/api/stats`, `/api/diff`, `/api/validate`,
@@ -105,4 +105,4 @@
 ## CI Guidance
 - Validate docs build + run tests on each change.
 - Run: `uv run pytest -q --cov=mdkv --cov-report=term-missing`
-- Python 3.14 in CI.
+- `.python-version` selects current CI (3.15); a separate 3.11 job checks the supported floor.

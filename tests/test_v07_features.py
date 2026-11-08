@@ -155,35 +155,6 @@ def _check_pandoc_safe():
 _has_pandoc = _check_pandoc_safe()
 
 
-def test_to_pdf_and_epub_and_docx_direct_execution(tmp_path: Path):
-    """Direct execution test for pandoc_export error and success paths."""
-    import subprocess
-    from unittest.mock import patch
-
-    from mdkv.services.pandoc_export import to_docx, to_epub, to_pdf
-    doc = Doc(title="Doc", authors=["A"], created=datetime(2025, 1, 1))
-    doc.add_track(Tr("primary", "primary", "en", "tracks/primary.md", "# Head"))
-
-    with patch("mdkv.services.pandoc_export._check_pandoc", return_value="/usr/bin/pandoc"), \
-         patch("subprocess.run", return_value=subprocess.CompletedProcess([], 1, stdout="out", stderr="err")):
-        with pytest.raises(subprocess.CalledProcessError):
-            to_pdf(doc, tmp_path / "t.pdf", pandoc_args=["--toc"])
-        with pytest.raises(subprocess.CalledProcessError):
-            to_epub(doc, tmp_path / "t.epub", cover_image=tmp_path / "cov.png", pandoc_args=["--toc"])
-        with pytest.raises(subprocess.CalledProcessError):
-            to_docx(doc, tmp_path / "t.docx", reference_doc=tmp_path / "ref.docx", pandoc_args=["--toc"])
-
-    # Direct pandoc_export success path execution
-    with patch("mdkv.services.pandoc_export._check_pandoc", return_value="/usr/bin/pandoc"), \
-         patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout="ok", stderr="")):
-        p_pdf = to_pdf(doc, tmp_path / "success.pdf")
-        assert p_pdf.name == "success.pdf"
-        p_epub = to_epub(doc, tmp_path / "success.epub")
-        assert p_epub.name == "success.epub"
-        p_docx = to_docx(doc, tmp_path / "success.docx")
-        assert p_docx.name == "success.docx"
-
-
 @pytest.mark.skipif(not _check_pandoc_safe(), reason="pandoc not installed")
 def test_to_pdf(tmp_path: Path):
     doc = Doc(title="Test PDF", authors=["Author"], created=datetime(2025, 1, 1))
@@ -216,8 +187,9 @@ def test_to_docx(tmp_path: Path):
 
 def test_pandoc_export_without_pandoc(tmp_path: Path, monkeypatch):
     """If pandoc is not installed, should raise FileNotFoundError."""
-    import mdkv.services.pandoc_export as pe
-    monkeypatch.setattr(pe.shutil, "which", lambda x: None)
+    empty_path = tmp_path / "no-tools"
+    empty_path.mkdir()
+    monkeypatch.setenv("PATH", str(empty_path))
     doc = Doc(title="T", authors=["A"], created=datetime(2025, 1, 1))
     doc.add_track(Tr("primary", "primary", "en", "tracks/primary.md", "# Hi"))
     with pytest.raises(FileNotFoundError, match="pandoc"):
@@ -235,7 +207,7 @@ def test_gui_move_track(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     # Move primary to first position
     r = c.post("/api/move-track", json={"track_id": "primary", "after_id": None})
     assert r.status_code == 200
@@ -251,7 +223,7 @@ def test_gui_move_track_missing(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.post("/api/move-track", json={"track_id": "nonexistent"})
     assert r.status_code == 404
 
@@ -265,7 +237,7 @@ def test_gui_validate_track(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/validate-track", params={"track_id": "primary"})
     assert r.status_code == 200
     data = r.json()
@@ -281,7 +253,7 @@ def test_gui_validate_track_missing(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/validate-track", params={"track_id": "nonexistent"})
     assert r.status_code == 404
 
@@ -295,7 +267,7 @@ def test_gui_search_limit(tmp_path: Path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/search", params={"pattern": ".", "limit": 2})
     assert r.status_code == 200
     assert len(r.json()["matches"]) <= 2

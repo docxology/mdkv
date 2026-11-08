@@ -1,6 +1,17 @@
-generated_at: '2025-08-10T22:57:57.495400+00:00'
-source_markdown: /home/trim/Documents/GitHub/mdkv/paper/mdkv_paper.md
-output_mdkv: /home/trim/Documents/GitHub/mdkv/paper/paper.mdkv
+generated_at: '2026-11-08T19:06:41.836104+00:00'
+source_markdown: mdkv_paper.md
+source_sha256: dfbf787bd3115a2848dd8fdca39982de119c4248419ad33f5f3b0eefbe33899f
+builder_sha256: 2aabce11f6362c78d3eddd3c24dd962fb76ad7597733b6a1c5545b59d32a07ef
+output_mdkv: paper.mdkv
 repo_url: https://github.com/docxology/mdkv
-cloned_commit: d0ea453c5578e5b0f366e41a1cdef23bd08f045e
-builder_commit: d0ea453c5578e5b0f366e41a1cdef23bd08f045e
+cloned_commit: null
+builder_commit: 9391f30b42f685c890238b1eadc2b6c882a43a27
+checksum_root: parent of bundle directory
+builder_dirty: true
+python: 3.15.2
+mdkv_version: 0.12.0
+markdown_it_version: 4.2.0
+pyyaml_version: 6.0.3
+uv_lock_sha256: cbbd22c7794b9bd4b11b8392ff50a7e8ccbd5c69f2d75aac955ec901ab38212f
+reproducibility: text composition for fixed inputs/runtime; ZIP and generation timestamps
+  vary

@@ -2,6 +2,8 @@
 
 A modular Python implementation of the MDKV concept in `MKVD_overview.md`.
 
+![MDKV graphical abstract: one canonical Markdown source, a ZIP/YAML container with parallel tracks, and deterministic reader, reviewer and archive views under explicit reader, search, write, GUI and converter bounds.](paper/figures/mdkv-graphical-abstract.png)
+
 - Zip-based `.mdkv` container with `manifest.yaml` and `tracks/`.
 - Tracks: primary, translation, commentary, code, reference, media_ref, revision.
 - Services: validation, search, export (Markdown/HTML/JSON, PDF/EPUB/DOCX via pandoc), diff, stats, CLI.
@@ -66,7 +68,7 @@ uv run mdkv import README.md --out imported.mdkv --title "Imported" --author "Yo
 | `diff` | Compare two .mdkv documents |
 | `stats` | Show document statistics |
 | `history` | Show revision history for a track (from revision tracks) |
-| `save-incremental` | Save only changed tracks (incremental mode) |
+| `save-incremental` | Validated atomic full-container rewrite (Python boolean reports prior-container validity) |
 | `batch validate` / `batch stats` | Run operations across multiple .mdkv files |
 | `completions` | Generate shell completion scripts |
 | `gui` | Launch web GUI |
@@ -189,6 +191,12 @@ uv run mdkv gui --path doc.mdkv
 The GUI exposes a REST API with endpoints for search, stats, diff, validate,
 and CRUD operations on documents and tracks.
 
+The editor selects one canonical track; preview checkboxes do not change what is
+being edited. Saves no longer parse combined Markdown comments. Unchanged saves
+retain exact track text; editing in a browser textarea normalizes line endings.
+Installed library examples load in memory and use explicit Save As. The server is
+loopback-only, shared-state and unauthenticated; see [security](docs/security.md).
+
 ## Features
 
 - Structured container: `.mdkv` is a ZIP with `manifest.yaml` and `tracks/` directory
@@ -205,8 +213,12 @@ and CRUD operations on documents and tracks.
 ## Development
 
 ```bash
+uv sync --locked --extra dev
 uv run pytest -q --cov=mdkv --cov-report=term-missing
 uv run sphinx-build -b html docs docs/_build/html
+uv run ruff check mdkv
+uv run mypy mdkv
+uv build --out-dir docs/_build/dist
 ```
 
 Current version: `grep '^version' pyproject.toml` (canonical source; mirrored in
@@ -214,6 +226,12 @@ Current version: `grep '^version' pyproject.toml` (canonical source; mirrored in
 sync; release history in [CHANGELOG.md](CHANGELOG.md)). Dated status (version, tests,
 coverage): `uv run python scripts_status.py --tests`. Next planned work:
 [TODO.md](TODO.md). Agent orientation notes: [AGENTS.md](AGENTS.md).
+
+MDKV 0.12.0 strengthens container/resource boundaries and intentionally
+rejects ambiguous ZIP/YAML, unsafe paths and colliding export filenames. HTML
+escapes raw tags; custom types require process-local registration. Combined
+Markdown is a view, not a reversible import format. Package versions identify
+source, not proof that a GitHub tag/release has been published.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 

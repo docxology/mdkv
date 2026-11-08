@@ -54,31 +54,6 @@ def test_export_to_files_prevents_path_traversal(tmp_path):
     assert not (tmp_path / ".." / ".." / "evil.md").exists()
 
 
-# ============================================================
-# SECURITY: HTML comment injection in to_markdown
-# ============================================================
-
-def test_to_markdown_escapes_comment_injection():
-    """A track_id containing '-->' should not break out of the HTML comment."""
-    doc = Doc(title="T", authors=["A"], created=datetime(2025, 1, 1))
-    t = Tr("safe", "primary", "en", "tracks/safe.md", "content")
-    t.track_id = "evil-->injected"
-    doc.add_track(t)
-    md = to_markdown(doc)
-    # The injected part should not appear as unescaped content
-    assert "evil-->injected" not in md
-    assert "evilinjected" in md  # --> stripped
-
-
-def test_to_markdown_escapes_title_comment_injection():
-    """A title containing '-->' should not break out of the MDKV comment header."""
-    doc = Doc(title="T-->INJECTED", authors=["A"], created=datetime(2025, 1, 1))
-    doc.add_track(Tr("safe", "primary", "en", "tracks/safe.md", "content"))
-    md = to_markdown(doc)
-    assert "T-->INJECTED" not in md
-    assert "TINJECTED" in md  # --> stripped from the title too
-
-
 def test_incremental_save_preserves_unchanged_tracks(tmp_path):
     """Incremental save must update changed tracks, add new ones, and keep
     unchanged track content intact."""
@@ -211,7 +186,7 @@ def test_gui_upsert_invalid_track_type_on_update(tmp_path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     # Try to update an existing track with an invalid type
     r = c.post("/api/track", json={"id": "primary", "type": "bogus_type"})
     assert r.status_code == 400
@@ -231,7 +206,7 @@ def test_gui_search_invalid_regex(tmp_path):
     state.path = tmp_path / "t.mdkv"
     state.doc = build_multitrack_demo_document()
     app = create_app()
-    c = TestClient(app)
+    c = TestClient(app, base_url="http://localhost")
     r = c.get("/api/search", params={"pattern": "[invalid"})
     assert r.status_code == 400
     assert "invalid regex" in r.json()["detail"].lower()

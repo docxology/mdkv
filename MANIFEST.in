@@ -1,0 +1,4 @@
+include CHANGELOG.md CONTRIBUTING.md scripts_status.py run_gui.py .python-version uv.lock
+include paper/mdkv_paper.md paper/build_paper_bundle.py paper/build_paper_bundle.sh
+recursive-include paper/figures *.svg *.png
+recursive-include library/_built *.mdkv

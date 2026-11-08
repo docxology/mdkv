@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from mdkv.core.model import MDKVDocument, Track
 
 from .errors import ValidationError
+from .registry import get_registry
 
 # Semver-like pattern: MAJOR.MINOR or MAJOR.MINOR.PATCH with optional pre-release
 _VERSION_RE = re.compile(r"^\d+\.\d+(?:\.\d+)?(?:[-+].+)?$")
@@ -63,14 +64,19 @@ def validate_document(doc: MDKVDocument) -> list[ValidationIssue]:
 
     # --- Track-level checks ---
     seen_paths: dict[str, str] = {}  # path → track_id
+    seen_ids: set[str] = set()
     for tid, track in doc.tracks.items():
-        # Reserved track_id warning
-        if tid.lower() in _RESERVED_TRACK_IDS:
-            issues.append(
-                ValidationIssue("WARN", f"track_id '{tid}' is a reserved word and may cause issues", track_id=tid)
-            )
-
-        # Path uniqueness
+        try:
+            track_issues = validate_track(track)
+        except ValidationError as exc:
+            issues.append(ValidationIssue("ERROR", str(exc), track_id=tid))
+            continue
+        issues.extend(track_issues)
+        if tid != track.track_id:
+            issues.append(ValidationIssue("ERROR", "track mapping key does not match track_id", track_id=tid))
+        if track.track_id in seen_ids:
+            issues.append(ValidationIssue("ERROR", f"duplicate track_id: {track.track_id}", track_id=tid))
+        seen_ids.add(track.track_id)
         if track.path in seen_paths:
             issues.append(
                 ValidationIssue(
@@ -81,24 +87,6 @@ def validate_document(doc: MDKVDocument) -> list[ValidationIssue]:
             )
         else:
             seen_paths[track.path] = tid
-
-        # Empty content warning
-        if not track.content.strip():
-            issues.append(
-                ValidationIssue("WARN", f"track '{tid}' has empty content", track_id=tid)
-            )
-
-        # Track type-specific content heuristics
-        if track.track_type == "code" and "```" not in track.content:
-            issues.append(
-                ValidationIssue("WARN", f"code track '{tid}' contains no fenced code blocks", track_id=tid)
-            )
-
-        # Language should be set for translation tracks
-        if track.track_type == "translation" and not track.language:
-            issues.append(
-                ValidationIssue("WARN", f"translation track '{tid}' has no language set", track_id=tid)
-            )
 
     # Multiple primary tracks warning
     primary_count = sum(1 for t in doc.tracks.values() if t.track_type == "primary")
@@ -122,6 +110,10 @@ def validate_track(track: Track) -> list[ValidationIssue]:
     """
     if not isinstance(track, Track):
         raise ValidationError("track must be an instance of Track")
+    try:
+        Track.__post_init__(track)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
     issues: list[ValidationIssue] = []
     tid = track.track_id
 
@@ -148,5 +140,11 @@ def validate_track(track: Track) -> list[ValidationIssue]:
         issues.append(
             ValidationIssue("WARN", f"translation track '{tid}' has no language set", track_id=tid)
         )
+
+    registry = get_registry()
+    for message in registry.validate(track.track_type, track.content):
+        issues.append(ValidationIssue("WARN", message, track_id=tid))
+    for message in registry.check_heuristics(track.track_type, track.content):
+        issues.append(ValidationIssue("WARN", message, track_id=tid))
 
     return issues

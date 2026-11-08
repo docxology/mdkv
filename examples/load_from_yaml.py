@@ -1,29 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 import yaml
 
-from mdkv.core.model import MDKVDocument, Track
+from mdkv.library import build_document_from_definition
 from mdkv.storage import save_mdkv
-
-
-def build_doc_from_definition(defn: dict[str, Any]) -> MDKVDocument:
-    doc = MDKVDocument(
-        title=defn["title"],
-        authors=list(defn.get("authors", [])),
-        created=datetime.now(UTC),
-    )
-    for t in defn.get("tracks", []):
-        track_id = t["id"]
-        track_type = t["type"]
-        language = t.get("language")
-        content = t.get("content", "")
-        path = f"tracks/{track_id}.md"
-        doc.add_track(Track(track_id, track_type, language, path, content))
-    return doc
 
 
 if __name__ == "__main__":
@@ -35,7 +17,7 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     data = yaml.safe_load(Path(args.input).read_text(encoding="utf-8"))
-    doc = build_doc_from_definition(data)
+    doc = build_document_from_definition(data)
     save_mdkv(doc, args.output)
     print(f"Wrote {args.output}")
 

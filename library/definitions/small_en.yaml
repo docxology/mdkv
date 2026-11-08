@@ -1,5 +1,9 @@
 title: Small English Doc
 authors: ["Lib"]
+created: "2026-11-07T00:00:00+00:00"
+metadata:
+  provenance: "Authored synthetic example."
+  timestamp_basis: "Fixed reproducibility fixture, not an observed publication time."
 tracks:
   - id: primary
     type: primary

@@ -1,5 +1,9 @@
 title: Active Inference and the Free Energy Principle — A Multilingual Compendium
 authors: ["Research Group", "MDKV Examples"]
+created: "2026-11-07T00:00:00+00:00"
+metadata:
+  provenance: "Authored synthetic example."
+  timestamp_basis: "Fixed reproducibility fixture, not an observed publication time."
 tracks:
   - id: primary
     type: primary
@@ -7,15 +11,15 @@ tracks:
     content: |
       # Active Inference and the Free Energy Principle
 
-      Active Inference (AIF) is a unifying framework for understanding perception,
-      action, and learning as Bayesian inference under a generative model. Central
-      to AIF is the Free Energy Principle (FEP): systems that persist in changing
-      environments must resist a natural tendency to disorder by minimizing a
-      variational bound—“free energy”—on surprisal.
+      This synthetic teaching illustration describes Active Inference (AIF) as a
+      modelling framework for perception, action, and learning under a generative
+      model. Statements about organisms, attention, and cortical processing below
+      are modelling interpretations, not established biological necessities or
+      empirical validation. No neuroscience or model-effectiveness result is tested.
 
       ## Key Intuitions
 
-      - Organisms embody generative models that predict sensory input.
+      - In this interpretation, organisms are modelled using predictive generative models.
       - Perception updates beliefs to reduce prediction errors (via variational inference).
       - Action changes the world to make sensations conform to predictions (closed-loop control).
       - Learning updates model parameters and structure to improve predictions over time.
@@ -36,60 +40,68 @@ tracks:
       \[\begin{aligned}
       \mathcal{F}(q, \theta; o)
       &= \mathrm{KL}\big(q(s) \;\Vert\; p_\theta(s \mid o)\big) - \log p_\theta(o) \\
-      &= \mathbb{E}_{q(s)}[\log q(s) - \log p_\theta(o, s)] \;\; \ge 0.
+      &= \mathbb{E}_{q(s)}[\log q(s) - \log p_\theta(o, s)] \;\; \ge -\log p_\theta(o).
       \end{aligned}\]
+
+      This identity assumes positive finite evidence and a well-defined KL
+      divergence. For discrete observations, probability mass \(p_\theta(o)\le1\)
+      gives \(\mathcal{F}\ge0\). For continuous observations, \(p_\theta(o)\) is a
+      density relative to a chosen measure and can exceed 1, so \(\mathcal{F}\)
+      can be negative. All logarithms here are natural logarithms.
 
       Minimizing \(\mathcal{F}\) with respect to \(q\) performs approximate
       inference; minimizing with respect to \(\theta\) performs learning.
 
       ## Predictive Coding Perspective
 
-      Predictive coding casts cortical processing as hierarchical prediction error
-      minimization. Higher levels generate predictions; lower levels report
-      residuals. Message passing implements gradient flows on \(\mathcal{F}\).
+      Predictive coding is a modelling perspective in which higher levels generate
+      predictions and lower levels report residuals. The particular message
+      passing and gradient updates depend on the model; none are validated here.
 
       ## Actions as Inference
 
-      In AIF, action selects policies that minimize expected free energy (EFE),
-      balancing accuracy (fit to expected data) and complexity (divergence from
-      prior preferences). This yields epistemic actions (seek information) and
-      pragmatic actions (seek preferred outcomes).
+      AIF models can select policies using expected free energy (EFE), with
+      epistemic and preference-related terms depending on the specified model.
+      The illustrative score below is not a general EFE derivation and does not
+      implement an epistemic information-gain term.
 
       ## Planning as Inference (High-Level)
 
       - Define policies \(\pi\) over control sequences.
-      - Evaluate EFE: \(G(\pi) = \mathbb{E}_{q(o, s \mid \pi)}[ -\log p(o \mid s) + \mathrm{KL}(q(s\mid o,\pi) \Vert p(s)) ]\).
-      - Select policies with minimal \(G(\pi)\).
+      - Specify a generative model, prediction horizon, preferences and EFE convention.
+      - Derive the objective before calling it EFE; this example instead uses a heuristic.
 
       ## Worked Example (Toy)
 
-      Below is a minimal Python-like sketch for computing a simple variational
-      update and simulating policy selection over a small discrete state space.
+      The following standard-library Python example scores a predictive
+      distribution using negative expected utility plus 0.1 times predictive
+      entropy. The arbitrary weight and entropy proxy make this a heuristic,
+      not general EFE or conditional likelihood ambiguity. Inputs are normalized
+      finite discrete distributions; likelihood-matrix columns sum to one.
 
       ```python
-      import numpy as np
+      from math import exp, fsum, log
 
-      def softmax(x):
-          z = x - np.max(x)
-          e = np.exp(z)
-          return e / e.sum()
+      def softmax(values):
+          largest = max(values)
+          weights = [exp(value - largest) for value in values]
+          total = fsum(weights)
+          return [weight / total for weight in weights]
 
-      def expected_free_energy(Qs, A, C):
-          # Qs: posterior over states; A: likelihood p(o|s); C: log-preferences over o
-          Po = A @ Qs  # predictive distribution over observations
-          risk = -(Po * C).sum()  # negative expected utility
-          ambiguity = -(Po * np.log(Po + 1e-16)).sum()  # entropy proxy
-          return risk + 0.1 * ambiguity
+      def heuristic_policy_score(Qs, A, C):
+          # C is an illustrative utility (unnormalized log-preference) vector.
+          Po = [fsum(prob * state for prob, state in zip(row, Qs)) for row in A]
+          negative_utility = -fsum(prob * utility for prob, utility in zip(Po, C))
+          predictive_entropy = -fsum(prob * log(prob) for prob in Po if prob > 0)
+          return negative_utility + 0.1 * predictive_entropy
 
-      # Tiny example
-      A = np.array([[0.8, 0.2],   # p(o=0|s=0), p(o=0|s=1)
-                    [0.2, 0.8]])  # p(o=1|s=0), p(o=1|s=1)
-      C = np.array([0.0, 2.0])    # prefer o=1
-      Qs = np.array([0.5, 0.5])   # prior
-
-      G = expected_free_energy(Qs, A, C)
-      policy_prob = softmax(-np.array([G, G + 0.5]))
-      print(G, policy_prob)
+      A = [[0.8, 0.2], [0.2, 0.8]]
+      C = [0.0, 2.0]
+      Qs = [0.5, 0.5]
+      score = heuristic_policy_score(Qs, A, C)
+      # A synthetic alternative score, not an evaluated alternative policy.
+      policy_prob = softmax([-score, -(score + 0.5)])
+      print(score, policy_prob)
       ```
 
       ## Applications
@@ -100,7 +112,7 @@ tracks:
 
       ## Further Reading
 
-      See the `refs` track for a curated list.
+      The `refs` track contains unverified external reading links, not supporting evidence.
 
       ## Hierarchical Generative Models
 
@@ -110,9 +122,9 @@ tracks:
 
       ## Continuous Control (Sketch)
 
-      In continuous settings, generalized coordinates and Gaussian assumptions give
-      closed-form updates resembling Kalman filtering, with control laws emerging
-      from gradients of expected free energy under policy priors.
+      Some continuous linear-Gaussian models admit Kalman-style updates.
+      No continuous controller or claim of biological applicability is derived
+      or evaluated in this example.
 
   - id: translation-es
     type: translation
@@ -120,11 +132,11 @@ tracks:
     content: |
       # Inferencia Activa y el Principio de Energía Libre
 
-      La Inferencia Activa (AIF) es un marco unificador para entender la
-      percepción, la acción y el aprendizaje como inferencia bayesiana bajo un
-      modelo generativo. El Principio de Energía Libre (FEP) sostiene que los
-      sistemas que persisten deben minimizar una cota variacional—“energía
-      libre”—sobre la sorpresa.
+      Ilustración didáctica sintética de la inferencia activa (AIF) bajo un modelo
+      generativo. Las afirmaciones sobre organismos, corteza y atención son
+      interpretaciones del modelo, no validación empírica ni necesidad biológica.
+      El código usa una heurística: utilidad negativa más 0.1 por entropía
+      predictiva; no deriva EFE general ni ganancia epistémica.
 
       ## Ideas Clave
 
@@ -146,15 +158,19 @@ tracks:
       parámetros, con \(p_\theta(o,s)=p_\theta(o\mid s)p_\theta(s)\) y un
       posterior aproximado \(q(s)\):
 
-      \[\mathcal{F}(q,\theta;o)=\mathbb{E}_{q(s)}[\log q(s)-\log p_\theta(o,s)]\ge 0.\]
+      \[\mathcal{F}(q,\theta;o)=\mathbb{E}_{q(s)}[\log q(s)-\log p_\theta(o,s)]\ge -\log p_\theta(o).\]
+
+      Con evidencia positiva finita y KL bien definida, la cota es válida.
+      Para masas discretas \(p_\theta(o)\le1\), \(\mathcal{F}\ge0\); una densidad
+      continua puede superar 1, por lo que \(\mathcal{F}\) puede ser negativa.
 
       Minimizar \(\mathcal{F}\) en \(q\) realiza inferencia; en \(\theta\), aprendizaje.
 
       ## Codificación Predictiva
 
-      La corteza se concibe como una jerarquía que minimiza errores de predicción.
-      Niveles altos generan predicciones; niveles bajos reportan residuos. El
-      paso de mensajes implementa flujos de gradiente sobre \(\mathcal{F}\).
+      En esta interpretación de modelado, una jerarquía intercambia predicciones
+      y residuos. La dinámica depende del modelo; no se ha validado aquí como
+      mecanismo cortical.
 
       ## La Acción como Inferencia
 
@@ -199,10 +215,11 @@ tracks:
     content: |
       # Inférence Active et Principe d'Énergie Libre
 
-      L'inférence active (AIF) unifie perception, action et apprentissage comme
-      inférence bayésienne sous un modèle génératif. Le principe d'énergie libre
-      (FEP) stipule que les systèmes persistants minimisent une borne
-      variationnelle — l'énergie libre — sur la surprise.
+      Illustration pédagogique synthétique de l'inférence active sous un modèle
+      génératif. Les descriptions des organismes, du cortex et de l'attention
+      sont des interprétations du modèle, non une validation empirique.
+      Le code utilise une heuristique: utilité négative plus 0.1 fois l'entropie
+      prédictive; il ne dérive ni EFE générale ni gain épistémique.
 
       ## Intuitions Clés
 
@@ -218,7 +235,11 @@ tracks:
 
       ## Énergie Libre Variationnelle (Esquisse)
 
-      \[\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0.\]
+      \[\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o).\]
+
+      L'évidence doit être positive et finie, la divergence KL bien définie.
+      Pour une masse discrète \(p_\theta(o)\le1\), \(\mathcal{F}\ge0\); une densité
+      continue peut dépasser 1 et rendre \(\mathcal{F}\) négative.
 
       Minimiser en \(q\) ≈ inférence; en \(\theta\) ≈ apprentissage.
 
@@ -255,10 +276,11 @@ tracks:
     content: |
       # Aktive Inferenz und das Freie-Energie-Prinzip
 
-      Aktive Inferenz (AIF) vereint Wahrnehmung, Handlung und Lernen als
-      bayessche Inferenz unter einem generativen Modell. Das
-      Freie-Energie-Prinzip besagt, dass persistente Systeme eine
-      Variationsschranke auf Überraschung minimieren.
+      Synthetisches Lehrbeispiel für aktive Inferenz unter einem generativen
+      Modell. Aussagen zu Organismen, Kortex und Aufmerksamkeit sind
+      Modellinterpretationen, keine empirische Validierung.
+      Der Code nutzt eine Heuristik: negativer Nutzen plus 0.1 mal prädiktive
+      Entropie; keine allgemeine EFE-Ableitung und kein epistemischer Gewinn.
 
       ## Zentrale Intuitionen
 
@@ -274,7 +296,11 @@ tracks:
 
       ## Variationale Freie Energie (Skizze)
 
-      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o)\).
+
+      Voraussetzung: positive endliche Evidenz und wohldefinierte KL-Divergenz.
+      Bei diskreter Masse \(p_\theta(o)\le1\) gilt \(\mathcal{F}\ge0\); stetige
+      Dichten können größer als 1 und \(\mathcal{F}\) daher negativ sein.
 
       ## Prädiktives Kodieren, Handlung als Inferenz, Planung als Inferenz
 
@@ -291,8 +317,9 @@ tracks:
     content: |
       # 主动推断与自由能原理
 
-      主动推断（AIF）把感知、行动与学习统一为在生成模型下的贝叶斯推断。
-      自由能原理指出：能在环境中持续存在的系统需最小化对“惊奇”的变分上界——自由能。
+      这是生成模型下主动推断的合成教学示例。关于机体、皮层和注意的说法是
+      模型解释，不是生物学必然性或实证验证。代码使用负效用加上 0.1 倍预测
+      熵的启发式评分；它不是一般期望自由能（EFE）的推导，也不含认识性信息增益。
 
       ## 关键直觉
 
@@ -307,7 +334,10 @@ tracks:
 
       ## 变分自由能（概要）
 
-      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\)。
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o)\)。
+
+      假设证据为正且有限，KL 散度有定义。离散概率质量满足 \(p_\theta(o)\le1\)，
+      故 \(\mathcal{F}\ge0\)；连续概率密度可以超过 1，因此 \(\mathcal{F}\) 可以为负。
 
       ## 预测编码、作为推断的行动、作为推断的规划
 
@@ -323,9 +353,10 @@ tracks:
     content: |
       # الاستدلال النشط ومبدأ الطاقة الحرة
 
-      يوحّد الاستدلال النشط (AIF) الإدراك والفعل والتعلّم بوصفها استدلالًا
-      بايزيًا تحت نموذج توليدي. ينصّ مبدأ الطاقة الحرة على تقليل حدٍّ
-      تغييري على الدهشة.
+      هذا مثال تعليمي اصطناعي للاستدلال النشط تحت نموذج توليدي. وصف الكائنات
+      والقشرة والانتباه تفسير للنموذج وليس تحققًا تجريبيًا أو ضرورة بيولوجية.
+      تستخدم الشيفرة مقياسًا استدلاليًا: منفعة سالبة مع 0.1 من الإنتروبيا
+      التنبؤية؛ وليس اشتقاقًا عامًا لـ EFE ولا يتضمن مكسبًا معلوماتيًا معرفيًا.
 
       ## أفكار أساسية
 
@@ -340,7 +371,11 @@ tracks:
 
       ## الطاقة الحرة التغييرية (موجز)
 
-      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o)\).
+
+      نفترض دليلًا موجبًا منتهيًا وتباعد KL معرّفًا. للكتلة الاحتمالية المتقطعة
+      \(p_\theta(o)\le1\) نحصل على \(\mathcal{F}\ge0\)؛ أما الكثافة المستمرة
+      فقد تتجاوز 1 وتكون \(\mathcal{F}\) سالبة.
 
       ## الترميز التنبؤي والفعل بوصفه استدلالًا
 
@@ -356,9 +391,10 @@ tracks:
     content: |
       # सक्रिय अनुमान और मुक्त ऊर्जा सिद्धांत
 
-      सक्रिय अनुमान (AIF) संवेदन, क्रिया और सीख को जनरेटिव मॉडल के तहत
-      बेयज़ियन अनुमान के रूप में एकीकृत करता है। मुक्त ऊर्जा सिद्धांत बताता
-      है कि प्रणालियाँ आश्चर्य पर एक परिवर्तनशील सीमा—मुक्त ऊर्जा—को कम करती हैं।
+      यह जनरेटिव मॉडल के तहत सक्रिय अनुमान का कृत्रिम शिक्षण उदाहरण है।
+      जीवों, कॉर्टेक्स और ध्यान संबंधी कथन मॉडल की व्याख्याएँ हैं, अनुभवजन्य
+      सत्यापन नहीं। कोड ऋणात्मक उपयोगिता और 0.1 गुना पूर्वानुमान एंट्रॉपी का
+      अनुमानी स्कोर है; यह सामान्य EFE व्युत्पत्ति या ज्ञानात्मक सूचना-लाभ नहीं है।
 
       ## मुख्य बिंदु
 
@@ -373,7 +409,11 @@ tracks:
 
       ## परिवर्तनशील मुक्त ऊर्जा (संक्षेप)
 
-      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o)\).
+
+      साक्ष्य धनात्मक व सीमित और KL सुपरिभाषित होना चाहिए। असतत प्रायिकता
+      द्रव्यमान \(p_\theta(o)\le1\) पर \(\mathcal{F}\ge0\); सतत घनत्व 1 से
+      बड़ा हो सकता है, इसलिए \(\mathcal{F}\) ऋणात्मक हो सकती है।
 
       ## प्रिडिक्टिव कोडिंग और योजना-रूप में अनुमान
 
@@ -389,9 +429,11 @@ tracks:
     content: |
       # Активный вывод и принцип свободной энергии
 
-      Активный вывод (AIF) объединяет восприятие, действие и обучение как
-      байесовский вывод под генеративной моделью. Принцип свободной энергии
-      утверждает минимизацию вариационной границы удивления.
+      Синтетический учебный пример активного вывода в генеративной модели.
+      Утверждения об организмах, коре и внимании — интерпретации модели,
+      а не эмпирическая проверка. Код использует эвристику: отрицательная
+      полезность плюс 0.1 энтропии прогноза; это не общий вывод EFE
+      и не эпистемический информационный выигрыш.
 
       ## Ключевые идеи
 
@@ -406,7 +448,11 @@ tracks:
 
       ## Вариационная свободная энергия (эскиз)
 
-      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\).
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o)\).
+
+      Нужны положительное конечное свидетельство и определённая KL-дивергенция.
+      Для дискретной массы \(p_\theta(o)\le1\) имеем \(\mathcal{F}\ge0\);
+      непрерывная плотность может превышать 1, а \(\mathcal{F}\) быть отрицательной.
 
       ## Предсказательное кодирование и планирование как вывод
 
@@ -422,9 +468,10 @@ tracks:
     content: |
       # アクティブ・インファレンスと自由エネルギー原理
 
-      アクティブ・インファレンス（AIF）は，生成モデルの下でのベイズ推論と
-      して知覚・行為・学習を統一する枠組みである。自由エネルギー原理は，
-      驚きに対する変分上界（自由エネルギー）の最小化を主張する。
+      生成モデルに基づくアクティブ・インファレンスの合成教材である。
+      生物・皮質・注意の記述はモデル上の解釈であり、実証的検証ではない。
+      コードは負の効用に予測エントロピーの 0.1 倍を加えるヒューリスティックで、
+      一般的な EFE の導出でも認識的情報利得の実装でもない。
 
       ## 主要な直観
 
@@ -439,7 +486,11 @@ tracks:
 
       ## 変分自由エネルギー（概略）
 
-      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge 0\)。
+      \(\mathcal{F}(q,\theta;o)=\mathbb{E}_q[\log q-\log p_\theta(o,s)]\ge -\log p_\theta(o)\)。
+
+      正で有限のエビデンスと定義された KL を仮定する。離散確率質量は
+      \(p_\theta(o)\le1\) なので \(\mathcal{F}\ge0\) だが、連続密度は 1 を
+      超えることがあり、\(\mathcal{F}\) は負にもなる。
 
       ## 予測符号化・推論としての行為・推論としての計画
 
@@ -454,19 +505,26 @@ tracks:
     content: |
       # Commentary — Editorial and Curation Guidelines
 
-      - Ensure consistent mathematical notation across languages and sections.
-      - Cover both epistemic and pragmatic terms in the EFE exposition.
-      - Cross-link planning-as-inference from actions and predictive coding.
-      - Prefer concise, reproducible examples over lengthy prose when possible.
+      - This is a synthetic teaching illustration, not empirical validation.
+      - All nine language tracks distinguish probability mass from density.
+      - Both Python examples use negative utility + 0.1 predictive entropy.
+      - That score is a heuristic, not general EFE or an epistemic objective.
+      - External links below have not been verified as supporting evidence.
 
   - id: math-notes
     type: commentary
     content: |
       # Commentary — Mathematical Derivations and Notes
 
-      - Derive the variational free energy from Jensen's inequality.
-      - Note the relationships among ELBO, negative log-evidence, and \(\mathcal{F}\).
-      - Outline gradients under mean-field assumptions.
+      For positive finite evidence and well-defined KL,
+      \(\mathcal{F}=\mathrm{KL}(q\Vert p(s\mid o))-\ln p(o)\ge-\ln p(o)\).
+      Only the discrete probability-mass case implies nonnegativity.
+
+      Density counterexample: let \(p(o\mid s)=2\) on \(0\le o\le1/2\),
+      independent of a discrete state with prior \([1/2,1/2]\). This density
+      integrates to 1. At an interior observation the evidence density is 2
+      and the exact posterior is \([1/2,1/2]\), so KL is zero and
+      \(\mathcal{F}=-\ln2<0\), attaining the corrected lower bound.
 
       ## Gradients (Sketch)
 
@@ -495,62 +553,75 @@ tracks:
   - id: code-python-simulation
     type: code
     content: |
+      # Synthetic discrete illustration, not empirical validation.
+
+      The arrays below are ordinary lists: prior_states sums to one, and each
+      column of A and each B[a] sums to one. C contains illustrative utilities.
+      posterior_update is exact Bayes for one categorical observation. The
+      heuristic policy score is not a general EFE derivation, conditional
+      likelihood ambiguity, or an epistemic information-gain objective.
+
       ```python
-      import numpy as np
+      from math import fsum, log
 
       class DiscreteAIF:
           def __init__(self, A, B, C, prior_states):
               self.A = A  # likelihood p(o|s)
               self.B = B  # transitions p(s'|s,a)
-              self.C = C  # log-preferences over observations
-              self.Qs = prior_states.astype(float)
+              self.C = C  # utilities (unnormalized log-preferences)
+              self.Qs = list(prior_states)
 
           def posterior_update(self, o):
-              ll = np.log(self.A[o] + 1e-16)
-              qs = self.Qs + ll
-              qs = np.exp(qs - qs.max()); qs /= qs.sum()
-              self.Qs = qs
-              return qs
+              weights = [prior * likelihood
+                         for prior, likelihood in zip(self.Qs, self.A[o])]
+              evidence = fsum(weights)
+              if evidence <= 0:
+                  raise ValueError("observation has zero evidence under the prior")
+              self.Qs = [weight / evidence for weight in weights]
+              return list(self.Qs)
 
-          def expected_free_energy(self, a):
-              Ps = self.B[a] @ self.Qs
-              Po = self.A @ Ps
-              risk = -(Po * self.C).sum()
-              ambiguity = -(Po * np.log(Po + 1e-16)).sum()
-              return risk + 0.1 * ambiguity
+          def heuristic_policy_score(self, a):
+              Ps = [fsum(prob * state for prob, state in zip(row, self.Qs))
+                    for row in self.B[a]]
+              Po = [fsum(prob * state for prob, state in zip(row, Ps))
+                    for row in self.A]
+              negative_utility = -fsum(prob * utility
+                                      for prob, utility in zip(Po, self.C))
+              predictive_entropy = -fsum(prob * log(prob) for prob in Po if prob > 0)
+              return negative_utility + 0.1 * predictive_entropy
 
-      # Example sizes: 2 states, 2 observations, 2 actions
-      A = np.array([[0.8, 0.2], [0.2, 0.8]])
-      B = np.stack([
-          np.array([[0.9, 0.1],[0.1,0.9]]),
-          np.array([[0.7, 0.3],[0.3,0.7]])
-      ])
-      C = np.array([0.0, 2.0])
-      agent = DiscreteAIF(A, B, C, prior_states=np.array([0.5, 0.5]))
-
-      obs = 1
-      Qs = agent.posterior_update(obs)
-      Gs = [agent.expected_free_energy(a) for a in range(2)]
-      print(Qs, Gs)
+      # Synthetic example: 2 states, 2 observations, 2 actions.
+      A = [[0.8, 0.2], [0.2, 0.8]]
+      B = [[[0.9, 0.1], [0.1, 0.9]], [[0.7, 0.3], [0.3, 0.7]]]
+      C = [0.0, 2.0]
+      agent = DiscreteAIF(A, B, C, prior_states=[0.5, 0.5])
+      Qs = agent.posterior_update(1)
+      scores = [agent.heuristic_policy_score(a) for a in range(2)]
+      print(Qs, scores)
       ```
 
   - id: code-pseudocode
     type: code
     content: |
+      Synthetic heuristic example; not a general EFE algorithm.
+
       ```text
-      Initialize generative model (A, B, C); initialize Q(s)
+      Initialize normalized categorical model (A, B), utility C, and prior Q(s)
       Repeat:
         Observe o
-        Update Q(s) via variational message passing
+        Update Q(s) = Q(s) * A[o,s] / evidence; fail if evidence is zero
         For each action a:
-          Evaluate EFE G(a)
-        Select action a* = argmin_a G(a)
-        Act and observe next o
+          Score negative expected utility + 0.1 * predictive entropy
+        Select the action with the smallest heuristic score
+        Propagate Q(s) through B[a], act, then observe the next o
       ```
 
   - id: refs
     type: reference
     content: |
+      Unverified external reading links; no bibliographic or evidential claims
+      are made for their contents.
+
       - https://commonmark.org
       - https://en.wikipedia.org/wiki/Variational_Bayesian_methods
       - https://en.wikipedia.org/wiki/Free_energy_principle
@@ -562,6 +633,9 @@ tracks:
   - id: media
     type: media_ref
     content: |
+      Unverified external media links. The example.org entries are illustrative
+      placeholders, not claimed media assets.
+
       - https://www.youtube.com/watch?v=GqaVBa7bL3E
       - https://example.org/slides/aif_tutorial.pdf
       - https://example.org/images/aif_overview.png
@@ -594,6 +668,11 @@ tracks:
     type: revision
     content: |
       # Revision 5
-      - Minor language fixes across tracks.
+      - Corrected the evidence bound across all nine language tracks.
+      - Distinguished continuous densities from discrete probability masses.
+      - Corrected the categorical Bayes update and fail on zero evidence.
+      - Replaced NumPy with standard-library illustrative Python.
+      - Labelled the policy score as heuristic rather than general EFE.
+      - Marked scientific exposition as synthetic, with unverified external links.
 
 

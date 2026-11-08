@@ -37,11 +37,17 @@ class TrackTypeRegistry:
         """Register a custom track type.
 
         Args:
-            name: Track type identifier (must be unique).
+            name: Nonempty track type identifier (must be unique).
             validator: Optional function that takes content and returns warning messages.
             heuristics: Optional function that takes content and returns content heuristics warnings.
             description: Human-readable description.
         """
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("track type name must be a nonempty string")
+        if validator is not None and not callable(validator):
+            raise ValueError("track type validator must be callable")
+        if heuristics is not None and not callable(heuristics):
+            raise ValueError("track type heuristics must be callable")
         if name in self._types:
             raise ValueError(f"track type '{name}' is already registered")
         self._types[name] = {"builtin": False, "description": description}
