@@ -1,8 +1,8 @@
 # MDKV — Upcoming Improvements TODO
 
-Last updated: 2026-11-08 (release integration)
-Current source version: 0.12.0; publication state belongs to the release receipt.
-Fresh post-audit baseline: 571 passed, 95.07% coverage on Python 3.15.2, and 571 passed on Python 3.11.18. Historical 2026-08-31 report: 306 passed / 3 failed; the old I/O-timeout explanation was reported, not independently established.
+Last updated: 2026-11-08 (release merged; dependency refresh in review)
+Current source version: 0.12.0; source is merged on `main`, while tag/GitHub release publication remains a separate authorized step.
+Fresh post-audit baseline: 571 passed, 95.07% coverage on Python 3.15.2, and 571 passed on Python 3.11.18; PR #2 merged as `1dbad9a`, CI run 42513537263 green. Historical 2026-08-31 report: 306 passed / 3 failed; the old I/O-timeout explanation was reported, not independently established.
 
 ## Backlog — open items
 
