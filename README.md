@@ -1,5 +1,11 @@
 # MDKV: Multitrack Markdown Container (Python)
 
+<p align="center">
+  <a href="https://github.com/docxology/mdkv/actions/workflows/ci.yml"><img alt="ci.yml workflow status on main" src="https://github.com/docxology/mdkv/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+  <img alt="Requires Python 3.11 or newer" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
+</p>
+
 A modular Python implementation of the MDKV concept in `MKVD_overview.md`.
 
 ![MDKV graphical abstract: one canonical Markdown source, a ZIP/YAML container with parallel tracks, and deterministic reader, reviewer and archive views under explicit reader, search, write, GUI and converter bounds.](paper/figures/mdkv-graphical-abstract.png)
@@ -252,6 +258,32 @@ See [TODO.md](TODO.md) for planned minor, medium, and major improvements.
 - `mdkv.demo`: demo document builder
 
 License: Apache-2.0. See the `LICENSE` file.
+
+### Package map
+
+Generated on 2026-11-12 from the `import` statements under `mdkv/`. An arrow from A to B means code in A imports B; arrows already implied by a longer path are left out, so the picture shows layering rather than every edge. It shows 8 of the package's 9 top-level parts: the largest ones that import or are imported by others.
+
+```mermaid
+flowchart TB
+    accTitle: Internal dependency map of the mdkv package
+    accDescr: Generated from import statements in mdkv. Each box is a subpackage or module of the package; an arrow from A to B means code in A imports B; arrows already implied by a longer path are omitted. Most-imported: core, storage, services.
+    n_services["services/"]
+    n_core["core/"]
+    n_storage["storage/"]
+    n_cli["cli/"]
+    n_gui["gui/"]
+    n_library["library.py"]
+    n_demo["demo.py"]
+    n_i18n["i18n.py"]
+    n_services --> n_core
+    n_gui --> n_services
+    n_storage --> n_core
+    n_cli --> n_gui
+    n_cli --> n_i18n
+    n_demo --> n_storage
+    n_gui --> n_library
+    n_library --> n_storage
+```
 
 ## Changelog
 
