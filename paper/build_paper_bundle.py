@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from markdown_it import MarkdownIt
 
 from mdkv import (
     MDKVDocument,
@@ -69,7 +70,10 @@ def ensure_list(value: Any) -> list[str]:
 
 
 def build_document(markdown_path: Path, language: str | None) -> MDKVDocument:
-    text = markdown_path.read_text(encoding="utf-8")
+    return _build_document(markdown_path.read_text(encoding="utf-8"), language)
+
+
+def _build_document(text: str, language: str | None) -> MDKVDocument:
     fm, body = split_front_matter_and_body(text)
     body = strip_leading_html_comments(body)
 
@@ -125,6 +129,50 @@ def build_document(markdown_path: Path, language: str | None) -> MDKVDocument:
         doc.add_track(ref_track)
         doc.metadata["sha256_tracks/references.md"] = hashlib.sha256(ref_track.content.encode("utf-8")).hexdigest()
     return doc
+
+
+def _canonical_manuscript_text(directory: Path) -> str:
+    """Compose the numbered Template sources for the native MDKV exporter."""
+    config = yaml.safe_load((directory / "config.yaml").read_text(encoding="utf-8"))
+    paper = config["paper"]
+    author = config["authors"][0]
+    front_matter = {
+        "title": paper["title"],
+        "author": [entry["name"] for entry in config["authors"]],
+        "created": config["project_config"]["mdkv"]["created"],
+        "date": paper["date"],
+        "version": paper["version"],
+        "orcid": author["orcid"],
+        "email": author["email"],
+        "doi": config["publication"]["doi"],
+    }
+
+    sources = sorted(directory.glob("[0-9][0-9]_*.md"))
+    if not sources:
+        raise ValueError(f"No numbered manuscript sections in {directory}")
+    parser = MarkdownIt()
+    sections = []
+    for source in sources:
+        text = source.read_text(encoding="utf-8")
+        lines = text.splitlines(keepends=True)
+        for token in parser.parse(text):
+            if token.type == "heading_open" and token.map is not None:
+                start = token.map[0]
+                lines[start] = "#" + lines[start]
+        text = "".join(lines)
+        if source.name == "99_references.md":
+            text = re.sub(r" \[@[a-z0-9]+\](?=\n|$)", "", text)
+        text = text.replace("{#fig:mdkv-graphical-abstract width=92%}", "")
+        sections.append(text.strip())
+    authors = ", ".join(front_matter["author"])
+    title_block = (
+        f"# {paper['title']}\n\n**{authors}**  \n"
+        f"[ORCID: {author['orcid']}](https://orcid.org/{author['orcid']})  \n"
+        f"<{author['email']}>  \n{paper['date']}  \n"
+        f"[DOI: {front_matter['doi']}](https://doi.org/{front_matter['doi']})"
+    )
+    header = yaml.safe_dump(front_matter, sort_keys=False)
+    return "---\n" + header + "---\n\n" + "\n\n".join((title_block, *sections)) + "\n"
 
 
 def extract_section_by_heading(text: str, heading: str) -> str:
@@ -189,7 +237,7 @@ def get_local_repo_commit(cwd: Path) -> str | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build MDKV publication bundle for the paper")
-    parser.add_argument("--markdown", default=str(Path(__file__).with_name("mdkv_paper.md")), help="Path to the paper markdown source")
+    parser.add_argument("--markdown", type=Path, help="Use a single Markdown source with YAML frontmatter")
     parser.add_argument("--out", default=str(Path(__file__).with_name("paper.mdkv")), help="Output .mdkv file path")
     parser.add_argument("--bundle-dir", default=str(Path(__file__).with_name("_bundle")), help="Directory to write exported files")
     parser.add_argument("--lang", default="en", help="Language code for the primary track")
@@ -198,22 +246,28 @@ def main() -> int:
     parser.add_argument("--no-clone", action="store_true", help="Skip cloning the repository")
     args = parser.parse_args()
 
-    markdown_path = Path(args.markdown)
+    builder_root = Path(__file__).resolve().parents[1]
+    manuscript = builder_root / "docs" / "manuscript"
+    legacy_markdown = Path(__file__).with_name("mdkv_paper.md")
+    markdown_path = args.markdown
+    if markdown_path is None and not manuscript.is_dir():
+        markdown_path = legacy_markdown
     output_mdkv = Path(args.out)
     bundle_dir = Path(args.bundle_dir)
 
-    if not markdown_path.exists():
-        print(f"Markdown source not found: {markdown_path}", file=sys.stderr)
-        return 1
-
     try:
-        doc = build_document(markdown_path, args.lang)
-    except (ValueError, OSError) as exc:
+        if markdown_path is None:
+            source_name = "docs/manuscript/"
+            source_bytes = _canonical_manuscript_text(manuscript).encode("utf-8")
+        else:
+            source_name = markdown_path.name
+            source_bytes = markdown_path.read_bytes()
+        doc = _build_document(source_bytes.decode("utf-8"), args.lang)
+    except (ValueError, OSError, KeyError, IndexError, TypeError, yaml.YAMLError) as exc:
         print(f"Manuscript metadata failed: {exc}", file=sys.stderr)
         return 1
 
     # Capture source custody before clone/bundle generation dirties the tree.
-    builder_root = Path(__file__).resolve().parents[1]
     local_commit = get_local_repo_commit(builder_root)
     status_code, status_output, _ = _run_git(["status", "--porcelain"], cwd=builder_root)
     builder_dirty = bool(status_output) if status_code == 0 else None
@@ -240,7 +294,9 @@ def main() -> int:
         print(f"Unexpected prior track artifacts (preserved): {sorted(stale_tracks)}", file=sys.stderr)
         return 1
 
-    figure_source = Path(__file__).with_name("figures")
+    figure_source = manuscript / "figures"
+    if not figure_source.is_dir():
+        figure_source = Path(__file__).with_name("figures")
     figure_files = sorted(
         path.relative_to(figure_source)
         for path in figure_source.rglob("*") if path.is_file()
@@ -271,8 +327,8 @@ def main() -> int:
     # Emit bundle info
     bundle_info = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "source_markdown": markdown_path.name,
-        "source_sha256": hashlib.sha256(markdown_path.read_bytes()).hexdigest(),
+        "source_markdown": source_name,
+        "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
         "builder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "output_mdkv": output_mdkv.name,
         "repo_url": args.repo_url,

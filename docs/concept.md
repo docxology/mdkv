@@ -2,7 +2,7 @@
 
 MDKV is a multitrack Markdown container. A single `.mdkv` file (a ZIP) holds a manifest plus one or more Markdown tracks:
 
-![One canonical Markdown source is packaged as an MDKV container with parallel tracks; deterministic exports compose reader, reviewer and archive views under explicit reader, search, write, GUI and converter bounds.](../paper/figures/mdkv-graphical-abstract.png)
+![One canonical Markdown source is packaged as an MDKV container with parallel tracks; deterministic exports compose reader, reviewer and archive views under explicit reader, search, write, GUI and converter bounds.](manuscript/figures/mdkv-graphical-abstract.png)
 
 ```text
 doc.mdkv
@@ -82,7 +82,7 @@ uv run mdkv stats doc.mdkv
 
 MDKV is designed with defense-in-depth:
 
-- **Path traversal prevention**: `export_to_files` sanitizes track IDs before using them as filenames, preventing directory escape via malicious track IDs like `../../etc/passwd`.
+- **Path traversal prevention**: `export_to_files` sanitizes track IDs before using them as filenames, keeping output inside the selected directory even when a track identifier is unsafe.
 - **HTML comment injection**: track metadata in export headers is sanitized to prevent `-->` injection that could break out of HTML comments.
 - **YAML-safe metadata**: the `metadata_header` export option uses `yaml.safe_dump` for frontmatter, preventing YAML injection via special characters in titles or metadata values.
 - **Container integrity**: `save_mdkv` detects and rejects duplicate track paths before writing, preventing silent data loss in the ZIP. `load_mdkv` wraps `ValueError` from `Track` construction in `MDKVFormatError` so corrupt manifests produce clean errors.

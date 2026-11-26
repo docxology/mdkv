@@ -45,6 +45,7 @@ MDKV separates an in-memory model from ZIP persistence and presentation services
 
 The package root re-exports the public API documented in [API](api.rst).
 [Format](format.md) defines storage versus editorial validity; [security](security.md)
-defines limits and trust boundaries. The methods manuscript and its owning bundle
-builder live in `paper/`, independently of Sphinx. Artifact checksums attest exact
-outputs; ZIP/generation timestamps are not byte-reproducible build guarantees.
+defines limits and trust boundaries. Maintained manuscript source lives in
+`docs/manuscript/`. The native builder and archived outputs live in `paper/`.
+Artifact checksums attest exact output bytes. ZIP and generation timestamps
+vary between independent builds.

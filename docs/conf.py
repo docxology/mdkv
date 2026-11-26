@@ -23,7 +23,7 @@ extensions = [
 myst_enable_extensions = ["colon_fence", "deflist"]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "README.md", "AGENTS.md"]
+exclude_patterns = ["_build", "README.md", "AGENTS.md", "manuscript/**", "early_design.md", "TODO.md"]
 
 html_theme = "alabaster"
 html_static_path = ["_static"]

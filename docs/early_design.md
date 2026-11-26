@@ -1,7 +1,7 @@
 > Historical, non-normative design exploration. This document includes unimplemented
 > proposals and references not comprehensively reverified by the 0.12.0 audit.
 > The implemented format is ZIP/YAML, not MKV/video or a code-execution engine.
-> Use [docs/format.md](docs/format.md) and [docs/security.md](docs/security.md) for
+> Use [docs/format.md](format.md) and [docs/security.md](security.md) for
 > current contracts; enterprise/scalability claims here are not measured results.
 
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>

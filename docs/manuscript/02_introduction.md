@@ -1,0 +1,9 @@
+# Introduction
+
+Authoring, collaboration, and publishing workflows routinely require: (i) a single canonical text; (ii) multiple translations; (iii) audience‑specific commentary and references; (iv) code listings synchronized with the text; and (v) review and revision notes. Maintaining such layers in separate files and folders creates cognitive load and increases the risk of divergence. The central question is how to preserve a document’s conceptual unity while keeping its layers decoupled for editing, governance, and rendering.
+
+MDKV addresses this need with a multitrack container for Markdown. Rather than overloading a single source with embedded annotations and language variants, MDKV separates concerns into tracks—`primary` (canonical), `translation`, `commentary`, `code`, `reference`, `media_ref`, and `revision`—and composes views at export time. The container format is intentionally modest: plain Markdown and YAML wrapped in ZIP, optimized for transparency, diff‑friendliness, and longevity.
+
+Design motivations and lineage. MDKV applies general container principles (clear manifest, independent tracks, robust round‑trip) from adjacent domains to plaintext authoring. It favors human‑inspectable, durable primitives over custom binary formats, enabling simple tooling and long‑term readability. The initial public release standardizes a minimal spec and a reference implementation with CLI and GUI.
+
+Contributions. (i) A precise model and container format with minimal but sufficient validation; (ii) a modular architecture separating model, storage, and services, surfaced via CLI and GUI; (iii) detailed use cases spanning multilingual publishing, layered collaboration, reproducible distribution, and governance; and (iv) guidance for cryptographic provenance and conformance.

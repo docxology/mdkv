@@ -13,7 +13,9 @@ MDKV Documentation: Concept, Format, Architecture and Operations
    api
    security
    license
-   manuscript/MANUSCRIPT_STATUS
+   verification
+   publication
+   manuscript_status
 
 .. note::
    MDKV is designed for modular, multi-track Markdown documents packaged as a

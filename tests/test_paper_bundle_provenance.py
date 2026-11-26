@@ -63,3 +63,35 @@ def test_bundle_records_pre_generation_source_custody(tmp_path: Path, custody: s
     checksums = yaml.safe_load((paper / "_bundle/CHECKSUMS.yaml").read_text(encoding="utf-8"))
     assert checksums["_bundle/figures/graphic.png"] == hashlib.sha256(b"synthetic-figure").hexdigest()
     assert git("status", "--porcelain") != ""  # Generated outputs exist only after the observation.
+
+
+def test_default_builder_uses_canonical_numbered_manuscript(tmp_path: Path):
+    project = Path(__file__).resolve().parents[1]
+    out = tmp_path / "paper.mdkv"
+    bundle = tmp_path / "bundle"
+    result = subprocess.run(
+        [
+            sys.executable, str(project / "paper/build_paper_bundle.py"),
+            "--no-clone", "--out", str(out), "--bundle-dir", str(bundle),
+        ],
+        cwd=project, capture_output=True, text=True, check=False, timeout=60,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    from mdkv import load_mdkv
+
+    document = load_mdkv(out)
+    assert list(document.tracks) == ["primary", "references"]
+    assert "Добро пожаловать" in document.tracks["primary"].content
+    assert "欢迎" in document.tracks["primary"].content
+    assert "[@matroska9559]" not in document.tracks["references"].content
+    info = yaml.safe_load((bundle / "BUNDLE_INFO.yaml").read_text(encoding="utf-8"))
+    assert info["source_markdown"] == "docs/manuscript/"
+    assert info["cloned_commit"] is None
+
+    checksums = yaml.safe_load((bundle / "CHECKSUMS.yaml").read_text(encoding="utf-8"))
+    assert len(checksums) == 8
+    assert all(
+        hashlib.sha256((tmp_path / path).read_bytes()).hexdigest() == digest
+        for path, digest in checksums.items()
+    )
