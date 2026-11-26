@@ -6,285 +6,34 @@
   <img alt="Requires Python 3.11 or newer" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
 </p>
 
-A modular Python implementation of the MDKV concept in `MKVD_overview.md`.
+MDKV packages related Markdown tracks in a portable ZIP file with a YAML
+manifest. Use it to keep primary text, translations, commentary, code,
+references, media links, and revision notes together while publishing
+different views for different audiences.
 
-![MDKV graphical abstract: one canonical Markdown source, a ZIP/YAML container with parallel tracks, and deterministic reader, reviewer and archive views under explicit reader, search, write, GUI and converter bounds.](paper/figures/mdkv-graphical-abstract.png)
+![One canonical Markdown source becomes a multitrack container and produces reader, reviewer, and archive views](docs/manuscript/figures/mdkv-graphical-abstract.png)
 
-- Zip-based `.mdkv` container with `manifest.yaml` and `tracks/`.
-- Tracks: primary, translation, commentary, code, reference, media_ref, revision.
-- Services: validation, search, export (Markdown/HTML/JSON, PDF/EPUB/DOCX via pandoc), diff, stats, CLI.
+- [Documentation index](docs/README.md)
+- [CLI and Python usage](docs/usage.md)
+- [Container format](docs/format.md) and [security boundaries](docs/security.md)
+- [Manuscript](docs/manuscript/README.md) and [publication build](docs/publication.md)
 
-## Why MDKV?
+## Quickstart
 
-MDKV packages related Markdown "tracks" into a single, portable file while preserving structure and intent. This enables:
+Install uv and run from this checkout:
 
-- Multilingual documents without branching: author a single canonical `primary` track alongside any number of `translation` tracks.
-- Layered collaboration: keep `commentary` and `reference` separate from canonical content; include or exclude them per audience.
-- Reproducible publishing: export just the tracks needed for a channel (e.g., primary-only HTML, or primary+refs Markdown) deterministically.
-- Governance-friendly history: `revision` tracks make review notes and change summaries first-class.
-- Plaintext portability: Markdown in a ZIP with a YAML manifest—easy to diff, archive, and pass around.
-
-## Quickstart (uv)
-
-```bash
-# install uv once per machine (Linux/macOS)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# from repo root: create .venv and install runtime + dev deps from uv.lock
-uv sync --extra dev
-uv run pytest -q
-uv run mdkv --help
+```sh
+uv sync --locked --extra dev
+uv run mdkv init --title "Example" --author "You" --out example.mdkv
+uv run mdkv validate example.mdkv
+uv run mdkv export example.mdkv
 ```
 
-## Create a document
-
-```bash
-uv run mdkv init --title "Doc" --author "You" --out doc.mdkv
-uv run mdkv info doc.mdkv
-uv run mdkv validate doc.mdkv
-uv run mdkv export doc.mdkv > out.md
-uv run mdkv export --html doc.mdkv > out.html
-```
-
-## Import from Markdown
-
-```bash
-# Import an existing Markdown file as a new .mdkv document
-uv run mdkv import README.md --out imported.mdkv --title "Imported" --author "You"
-```
-
-## CLI Commands
-
-| Command | Description |
-|---|---|
-| `init` | Create a new .mdkv document |
-| `info` | Show document metadata |
-| `list-tracks` | List all tracks |
-| `add-track` | Add a new track (`--content` or `--file`) |
-| `remove-track` | Remove a track by id |
-| `rename-track` | Rename a track |
-| `move-track` | Reorder a track (`--after-id`, omit for first position) |
-| `update-track` | Update track content (`--content` or `--file`) |
-| `export` | Export to Markdown, HTML, JSON, or PDF/EPUB/DOCX (pandoc), or individual files |
-| `export-tracks` | Export filtered tracks as Markdown |
-| `search` | Regex search across tracks (`-i` for case-insensitive) |
-| `validate` | Validate document (`--json` for JSON output) |
-| `set-meta` / `get-meta` | Manage metadata |
-| `import` | Import a Markdown file into a new .mdkv |
-| `diff` | Compare two .mdkv documents |
-| `stats` | Show document statistics |
-| `history` | Show revision history for a track (from revision tracks) |
-| `save-incremental` | Validated atomic full-container rewrite (Python boolean reports prior-container validity) |
-| `batch validate` / `batch stats` | Run operations across multiple .mdkv files |
-| `completions` | Generate shell completion scripts |
-| `gui` | Launch web GUI |
-| `license` | Show license info |
-
-### Export options
-
-```bash
-# Markdown (all tracks)
-uv run mdkv export doc.mdkv
-
-# HTML with specific track types
-uv run mdkv export doc.mdkv --html --types primary,commentary
-
-# Export tracks as individual files
-uv run mdkv export doc.mdkv --out-dir tracks_out/
-
-# Markdown with YAML frontmatter
-uv run mdkv export doc.mdkv --metadata-header
-
-# Other formats via --format (json is built-in; pdf/epub/docx require pandoc)
-uv run mdkv export doc.mdkv --format json
-```
-
-### Add/update tracks from files
-
-```bash
-# Add a track with content read from a file
-uv run mdkv add-track doc.mdkv --id notes --type commentary --file notes.md
-
-# Update a track's content from a file
-uv run mdkv update-track doc.mdkv --id primary --file updated.md
-```
-
-### Validate with JSON output
-
-```bash
-# Human-readable
-uv run mdkv validate doc.mdkv
-
-# JSON output for CI/automation
-uv run mdkv validate doc.mdkv --json
-```
-
-### Diff two documents
-
-```bash
-uv run mdkv diff doc_v1.mdkv doc_v2.mdkv
-```
-
-Reports changes in title, authors, version, tracks (added/removed/modified), and metadata.
-
-### Statistics
-
-```bash
-uv run mdkv stats doc.mdkv
-```
-
-Shows track count, types, languages, character/line counts.
-
-## Python API
-
-```python
-from datetime import datetime, timezone
-from mdkv import (
-    MDKVDocument, Track,
-    save_mdkv, load_mdkv,
-    validate_document, validate_track,
-    export_to_files,
-    diff_documents,
-    compute_stats,
-)
-
-doc = MDKVDocument(title="T", authors=["A"], created=datetime.now(timezone.utc))
-doc.add_track(Track("primary", "primary", "en", "tracks/primary.md", "# Hello"))
-
-# Track IDs and ordering
-print(doc.track_ids)  # ["primary"]
-doc.add_track(Track("notes", "commentary", None, "tracks/notes.md", "note"))
-doc.move_track("notes", None)  # move notes to first position
-
-# Save and reload
-save_mdkv(doc, "doc.mdkv")
-loaded = load_mdkv("doc.mdkv")
-
-# Validate (returns issues, raises on ERROR)
-issues = validate_document(loaded)
-
-# Validate a single track
-track_issues = validate_track(loaded.get_track("primary"))
-
-# Diff two documents
-result = diff_documents(doc, loaded)
-if not result.has_changes:
-    print("Identical")
-
-# Compute statistics
-stats = compute_stats(loaded)
-print(f"{stats.track_count} tracks, {stats.total_characters} chars")
-
-# JSON serialization
-data = doc.to_dict()
-restored = MDKVDocument.from_dict(data)
-```
-
-## Docs
-
-```bash
-uv run sphinx-build -b html docs docs/_build/html
-```
-
-See `docs/` for concept, format, architecture, usage, CLI, and API reference.
-
-## GUI
-
-```bash
-uv run mdkv gui --path doc.mdkv
-```
-
-The GUI exposes a REST API with endpoints for search, stats, diff, validate,
-and CRUD operations on documents and tracks.
-
-The editor selects one canonical track; preview checkboxes do not change what is
-being edited. Saves no longer parse combined Markdown comments. Unchanged saves
-retain exact track text; editing in a browser textarea normalizes line endings.
-Installed library examples load in memory and use explicit Save As. The server is
-loopback-only, shared-state and unauthenticated; see [security](docs/security.md).
-
-## Features
-
-- Structured container: `.mdkv` is a ZIP with `manifest.yaml` and `tracks/` directory
-- Track types: `primary`, `translation`, `commentary`, `code`, `reference`, `media_ref`, `revision`
-- Validation: required fields, primary track, path uniqueness, content heuristics, version format
-- Search: regex across tracks with type/language filters, case-insensitive support
-- Export: Markdown (filtered, with frontmatter), HTML (with type filtering), individual files
-- Diff: compare two documents with structured `DiffResult`
-- Stats: `DocumentStats` with track counts, characters, lines, languages
-- CLI + Python API: create, inspect, modify, search, validate, export, import, diff, stats
-- Type safety: `py.typed` marker for PEP 561
-- Security: path traversal prevention, YAML-safe headers, HTML comment injection prevention
+The [CLI reference](docs/cli.md) includes track operations, search, exports,
+and the loopback GUI.
 
 ## Development
 
-```bash
-uv sync --locked --extra dev
-uv run pytest -q --cov=mdkv --cov-report=term-missing
-uv run sphinx-build -b html docs docs/_build/html
-uv run ruff check mdkv
-uv run mypy mdkv
-uv build --out-dir docs/_build/dist
-```
-
-Current version: `grep '^version' pyproject.toml` (canonical source; mirrored in
-`mdkv/__init__.py`'s `__version__`, which `mdkv --version` reports — keep both in
-sync; release history in [CHANGELOG.md](CHANGELOG.md)). Dated status (version, tests,
-coverage): `uv run python scripts_status.py --tests`. Next planned work:
-[TODO.md](TODO.md). Agent orientation notes: [AGENTS.md](AGENTS.md).
-
-MDKV 0.12.0 strengthens container/resource boundaries and intentionally
-rejects ambiguous ZIP/YAML, unsafe paths and colliding export filenames. HTML
-escapes raw tags; custom types require process-local registration. Combined
-Markdown is a view, not a reversible import format. Package versions identify
-source, not proof that a GitHub tag/release has been published.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
-
-## Roadmap
-
-See [TODO.md](TODO.md) for planned minor, medium, and major improvements.
-
-## Package structure
-
-- `mdkv.core`: types, errors, validation
-- `mdkv.storage`: save/load container (`MDKVFormatError`)
-- `mdkv.services`: search, export, diff, stats
-- `mdkv.cli`: CLI entry point (`mdkv` or `python -m mdkv`)
-- `mdkv.gui`: FastAPI web GUI
-- `mdkv.common`: logging utilities
-- `mdkv.i18n`: internationalization (gettext-based)
-- `mdkv.library`: example definition builder
-- `mdkv.demo`: demo document builder
-
-License: Apache-2.0. See the `LICENSE` file.
-
-### Package map
-
-Generated on 2026-11-12 from the `import` statements under `mdkv/`. An arrow from A to B means code in A imports B; arrows already implied by a longer path are left out, so the picture shows layering rather than every edge. It shows 8 of the package's 9 top-level parts: the largest ones that import or are imported by others.
-
-```mermaid
-flowchart TB
-    accTitle: Internal dependency map of the mdkv package
-    accDescr: Generated from import statements in mdkv. Each box is a subpackage or module of the package; an arrow from A to B means code in A imports B; arrows already implied by a longer path are omitted. Most-imported: core, storage, services.
-    n_services["services/"]
-    n_core["core/"]
-    n_storage["storage/"]
-    n_cli["cli/"]
-    n_gui["gui/"]
-    n_library["library.py"]
-    n_demo["demo.py"]
-    n_i18n["i18n.py"]
-    n_services --> n_core
-    n_gui --> n_services
-    n_storage --> n_core
-    n_cli --> n_gui
-    n_cli --> n_i18n
-    n_demo --> n_storage
-    n_gui --> n_library
-    n_library --> n_storage
-```
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+Use the [verification guide](docs/verification.md) to run tests and build the
+Sphinx site. See the [contribution guide](CONTRIBUTING.md),
+[release history](CHANGELOG.md), and [backlog](docs/TODO.md).
