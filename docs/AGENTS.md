@@ -7,4 +7,5 @@
 - Docs maintenance: `docs/index.rst` drives the Sphinx toctree; add new `.md`
   pages there. Keep `format.md` in sync with the parser implementation in
   `mdkv/` when the format changes.
-- No mock framework in tests; run `uv run pytest` from the repo root.
+- No mock framework in tests. Run the [locked verification steps](verification.md)
+  from the repo root.

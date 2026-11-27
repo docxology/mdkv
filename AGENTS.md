@@ -9,7 +9,8 @@
   bundle scripts and archived outputs remain in `paper/`.
 - MDKV uses a ZIP envelope with a YAML manifest and Markdown tracks. Current
   format guarantees are documented in [the format guide](docs/format.md).
-- Prefer real behavioral fixtures; older orchestration tests include mocks. Run `uv run pytest -q` from the repo root.
+- Prefer real behavioral fixtures. Older orchestration tests include mocks.
+  Run the [locked verification steps](docs/verification.md) from the repo root.
   GUI: `uv run python run_gui.py --path <owned-fixture.mdkv>`.
 - Repository-wide policy for template projects is maintained in the template repository, not restated here.
 
@@ -43,7 +44,7 @@ Verify with `scripts_status.py`.
 ## Status pointers (2026-08-31)
 
 - Current version: canonical source is `version` in `pyproject.toml`; `mdkv/__init__.py` mirrors it in `__version__` (used by `mdkv --version`) — bump both together. Release history lives only in `CHANGELOG.md` (TODO.md may reference it, never restate it).
-- Test/coverage status: verify with `uv run pytest -q --cov=mdkv --cov-report=term-missing` from repo root; dated claims live in `docs/TODO.md`.
+- Dated test and coverage claims live in `docs/TODO.md`.
 - Next actions: `docs/TODO.md` ("Backlog — open items" section).
 
 ## Gotchas (local env, 2026-08-31)
