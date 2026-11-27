@@ -1,7 +1,6 @@
 # MDKV: Multitrack Markdown Container (Python)
 
 <p align="center">
-  <a href="https://github.com/docxology/mdkv/actions/workflows/ci.yml"><img alt="ci.yml workflow status on main" src="https://github.com/docxology/mdkv/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
   <img alt="Requires Python 3.11 or newer" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
 </p>
@@ -20,7 +19,7 @@ different views for different audiences.
 
 ## Quickstart
 
-Install uv and run from this checkout:
+Use Python 3.11 or newer. Install uv and run from this checkout to create and check a local example container:
 
 ```sh
 uv sync --locked --extra dev
