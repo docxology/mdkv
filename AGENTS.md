@@ -24,9 +24,12 @@
 
 ## Gotchas
 
-- This directory is reached through a symlink from
-  `projects/ongoing/File_Types/mdkv`; edit here (canonical), not through
-  lane copies.
+- Edit the source in the MDKV checkout. The [publication guide](docs/publication.md)
+  stages a detached Template worktree at `projects/working/mdkv` for PDF and
+  HTML. Make source changes in the checkout used to create that worktree.
+- The [native bundle wrapper](paper/build_paper_bundle.sh) and
+  [Template preparation script](scripts/01_prepare_manuscript.py) are the
+  entry points for the two builds in the publication guide.
 - `_built/` and `paper/_bundle/` are generated artifacts; regenerate via the
   build scripts rather than hand-editing.
 
