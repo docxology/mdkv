@@ -4,6 +4,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from sphinx import version_info as sphinx_version_info
+
 # Add project root to path for autodoc
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -36,7 +38,10 @@ autodoc_default_options = {
 
 autosectionlabel_prefix_document = True
 
-# Native annotations are complete. Sphinx's legacy type-comment enrichment
-# mutates inherited Pydantic annotations and breaks later FastAPI imports.
+# Native annotations are complete. Sphinx 9.0 still mutates inherited
+# Pydantic annotations with type-comment enrichment disabled. Use its
+# supported class-based loader to keep later FastAPI imports working.
 autodoc_use_type_comments = False
+if sphinx_version_info[:2] == (9, 0):
+    autodoc_use_legacy_class_based = True
 autodoc_typehints = "description"
